@@ -40,6 +40,14 @@ export async function askJson({ system, user, schema, name, webSearch = false },
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
     body: JSON.stringify(body),
   });
+  if (res.status === 429) {
+    // Sin saldo también llega como 429: eso no se arregla esperando.
+    const j = await res.clone().json().catch(() => ({}));
+    if (j.error?.code === 'insufficient_quota' || /credit|quota|billing/i.test(j.error?.message || '')) {
+      pauseAi('la cuenta de OpenAI no tiene saldo (añádelo en platform.openai.com > Billing)');
+      throw new Error(`OpenAI 429: ${j.error?.message || 'sin saldo'}`);
+    }
+  }
   if ((res.status === 429 || res.status >= 500) && attempt < 4) {
     const wait = Number(res.headers.get('retry-after')) * 1000 || 3000 * (attempt + 1);
     await new Promise((r) => setTimeout(r, wait));
