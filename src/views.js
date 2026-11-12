@@ -60,7 +60,7 @@ const I = {
   back: '<path d="M15 5l-7 7 7 7"/>',
   download: '<path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/>',
 };
-const icon = (n, size = 20) =>
+export const icon = (n, size = 20) =>
   `<svg class="ic" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n]}</svg>`;
 
 const CSS = `
@@ -162,7 +162,7 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}td.nw{white-space:no
 }
 `;
 
-function shell(title, active, body, { refresh = false } = {}) {
+export function shell(title, active, body, { refresh = false } = {}) {
   const link = (href, key, ic, label) => `<a href="${href}" class="${active === key ? 'on' : ''}">${icon(ic)}<span>${label}</span></a>`;
   return `<!doctype html><html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -179,6 +179,7 @@ ${refresh ? '<meta http-equiv="refresh" content="15">' : ''}
   ${link('/', 'panel', 'home', 'Panel')}
   ${link('/ofertas', 'ofertas', 'tag', 'Ofertas')}
   ${link('/recien-llegados', 'nuevos', 'spark', 'Recién llegados')}
+  ${link('/seo', 'seo', 'layers', 'Google y descripciones')}
   ${link('/salir', 'salir', 'out', 'Salir')}
  </nav>
  <div class="foot"><img src="/static/mariposa.svg" alt="">Stock y precios con BTS</div>
