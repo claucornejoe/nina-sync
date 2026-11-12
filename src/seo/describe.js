@@ -33,6 +33,7 @@ export function buildPrompt(p, { webSearch }) {
     `Eres redactora de fichas de producto de una perfumería online española. Escribes en español de España, con tono cercano y elegante.`,
     `Reglas de Google Merchant Center que debes cumplir: habla SOLO del producto; nada de precios, descuentos, ofertas, envíos, plazos, devoluciones, «compra», «mejor precio», «original», nombre de la tienda, enlaces, emojis ni MAYÚSCULAS de énfasis; no compares con otras marcas.`,
     `No inventes nada. Si no conoces con seguridad la familia olfativa o las notas${webSearch ? ', búscalas en internet (web oficial de la marca, Fragrantica, Notino o Douglas); si tampoco las encuentras' : ''}, deja esos campos vacíos y pon seguro=false.`,
+    `Nada de afirmaciones médicas o de salud (curar, tratar, prevenir enfermedades, adelgazar) ni promesas de resultados garantizados: Google las rechaza. En cosmética describe textura, acabado, tipo de piel y uso; en complementos, solo qué contiene y cómo se toma según el envase.`,
     `Las notas, en español y en minúscula (p. ej. «bergamota», «pachuli»). Máximo 5 por grupo.`,
   ].join('\n');
   const user = [
@@ -81,7 +82,11 @@ export function renderDescription(p, ai) {
     if (b.length) items.push(['Notas de fondo', b.join(', ')]);
   }
   for (const d of list(ai?.detalles).slice(0, 4)) items.push([null, d]);
-  if (f.sizes.length) items.push([f.sizes.length > 1 ? 'Tamaños' : 'Tamaño', f.sizes.join(', ').replace(/(\d)ml\b/gi, '$1 ml')]);
+  if (f.sizes.length) {
+    const sizeLike = f.sizes.every((x) => /\d\s?(ml|g|gr|oz|cl|l)\b/i.test(x));
+    const label = sizeLike ? (f.sizes.length > 1 ? 'Tamaños' : 'Tamaño') : (p.tags || []).some((t) => /^mq-|maquillaje/i.test(t)) ? 'Tonos' : 'Formatos';
+    items.push([label, f.sizes.join(', ').replace(/(\d)ml\b/gi, '$1 ml')]);
+  }
 
   const head = intro || `${f.title}${f.type ? `, ${f.type.toLowerCase()}` : ''}${f.gender ? ` ${GENDER_ES[f.gender]}` : ''}${f.brand ? ` de ${f.brand}` : ''}.`;
   return `<p>${esc(head)}</p>\n<ul>\n${items.map(([k, v]) => `<li>${k ? `<strong>${esc(k)}:</strong> ` : ''}${esc(v)}</li>`).join('\n')}\n</ul>`;

@@ -150,3 +150,11 @@ test('Icecat: fotos en orden y plan sin repetir', async () => {
   assert.equal(logo.replaceProvisional, true);
   assert.equal(logo.add[0].url.split('/').pop(), 'a.jpg');
 });
+
+test('maquillaje y skin care: categoría por etiqueta y tonos', () => {
+  const lab = { title: 'Maybelline Superstay Matte Ink', vendor: 'Maybelline', productType: 'Maquillaje', tags: ['maquillaje', 'mq-labios', 'Maybelline'], variants: [{ title: '20 Pioneer' }, { title: '65 Seductress' }] };
+  assert.equal(ruleCategory(lab).name, 'Maquillaje de labios');
+  assert.equal(ruleCategory({ ...lab, tags: ['skin-care', 'sc-serums'], productType: 'Cuidado de la piel' }).name, 'Sérums faciales');
+  assert.equal(ruleCategory({ ...lab, tags: ['skin-care', 'sc-cremas'], productType: 'Cuidado de la piel' }), null);
+  assert.match(renderDescription(lab, { intro: 'Labial líquido mate.', familia_olfativa: '', notas_salida: [], notas_corazon: [], notas_fondo: [], detalles: [], seguro: true }), /Tonos:<\/strong> 20 Pioneer, 65 Seductress/);
+});
