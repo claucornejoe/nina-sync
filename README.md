@@ -25,6 +25,7 @@ Página **Google y descripciones** del panel (`/seo`). A cada producto, en cuant
 - **Categoría de producto de Shopify** (la taxonomía que Shopify envía a Google). Los perfumes por reglas, según su tipo (Eau de Parfum, Eau de Toilette, colonia, body mist, extracto…). Lo que no sea perfume, con IA entre las categorías que da la búsqueda de Shopify.
 - **Descripción breve con IA** (OpenAI, `OPENAI_API_KEY`): una o dos frases y una lista con marca, tipo, para quién, familia olfativa, notas y tamaños. Sin precios, envíos, ofertas ni nombre de la tienda, como pide Google. Si la IA no está segura de las notas, no las pone. Solo sustituye la descripción plantilla o una vacía; una escrita a mano no se toca.
 - **Campos de Google Shopping**: género (de las etiquetas Mujer/Hombre/Unisex), edad «adult» y estado «new», y el EAN como código de barras si falta.
+- **Fotos «No image available» de BTS**: pone la foto real de otro tamaño si BTS la tiene; si no, el logo de Nina (`public/sin-foto.png`) hasta tener fotos reales. Necesita el permiso `write_files` en la app de Shopify.
 - **Nunca toca etiquetas** ni colecciones. Los productos con la etiqueta `seo-manual` se saltan.
 
 Desde la página se puede probar con un producto (ver sin guardar o rehacer y guardar) y lanzar un repaso de todo. El aviso de productos nuevos se registra solo al arrancar si `PUBLIC_URL` está puesta.

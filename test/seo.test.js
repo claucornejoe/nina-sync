@@ -95,3 +95,11 @@ test('firma del webhook y número de producto', () => {
 test('lee el texto de la respuesta de OpenAI', () => {
   assert.equal(outputText({ output: [{ type: 'web_search_call' }, { type: 'message', content: [{ type: 'output_text', text: '{"a":1}' }] }] }), '{"a":1}');
 });
+
+test('detecta la foto «No image available»', async () => {
+  const { isPlaceholderUrl, placeholderMedia } = await import('../src/seo/images.js');
+  assert.equal(isPlaceholderUrl('https://cdn.shopify.com/s/files/1/1019/1378/8729/files/no_image_5197e856-1e2b-47eb-b122-32c4cd31d17f.webp?v=1794460915'), true);
+  assert.equal(isPlaceholderUrl('https://images.btswholesaler.com/imgs/productos_cosmetica/imagenes/no_image.webp'), true);
+  assert.equal(isPlaceholderUrl('https://cdn.shopify.com/s/files/1/files/3349668576128.webp?v=1'), false);
+  assert.deepEqual(placeholderMedia({ media: [{ id: 'm1', url: 'https://x/files/no_image_a.webp' }, { id: 'm2', url: 'https://x/files/123.webp' }] }).map((m) => m.id), ['m1']);
+});

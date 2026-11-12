@@ -7,9 +7,11 @@ import * as store from './store.js';
 import { askJson } from './openai.js';
 import { ruleCategory, googleGender, isGtin } from './categories.js';
 import { SCHEMA, buildPrompt, renderDescription, isReplaceable } from './describe.js';
+import { placeholderMedia, logoUrl, realImageFor } from './images.js';
 
 // Productos sin categoría posible: no se reintenta con IA hasta pasadas 24 h.
 const catFailed = new Map();
+const imgFailed = new Map();
 
 /** Qué le falta a un producto. */
 export function needs(p, { capReached = false } = {}) {
@@ -19,7 +21,8 @@ export function needs(p, { capReached = false } = {}) {
   const g = p.google || {};
   const google = (!g.gender && !!googleGender(p.tags)) || !g.ageGroup || !g.condition;
   const barcodes = p.variants.filter((v) => !v.barcodes.length && isGtin(v.sku));
-  return { category, description, google, barcodes, any: category || description || google || barcodes.length > 0 };
+  const image = !(imgFailed.get(p.id) > Date.now()) && !!logoUrl() && placeholderMedia(p).length > 0;
+  return { category, description, google, barcodes, image, any: category || description || google || image || barcodes.length > 0 };
 }
 
 // ---- Categoría con IA para lo que no es perfume ----
@@ -107,11 +110,29 @@ export async function processProduct(productId, { origin = 'manual', preview = f
       if (!g.condition) metafields.push(mf('condition', 'new'));
       out.googleFields = true;
     }
+    // Foto «No image available» de BTS: la foto real de otro tamaño si BTS la tiene; si no, el logo de Nina.
+    let image = null;
+    if (n.image) {
+      const real = await realImageFor(p).catch(() => null);
+      image = { source: real || logoUrl(), remove: placeholderMedia(p).map((m) => m.id), kind: real ? 'foto de otro tamaño' : 'logo de Nina' };
+      metafields.push({ namespace: 'nina_seo', key: 'foto', type: 'single_line_text_field', value: real ? 'bts' : 'logo' });
+      out.note = [out.note, `Sin foto en BTS: puesta ${image.kind}`].filter(Boolean).join(' · ');
+    }
     if (metafields.length) update.metafields = metafields;
     out.barcodes = n.barcodes.length;
     out.aiCalls = counter.n;
 
     if (!preview) {
+      if (image) {
+        try {
+          await sh.replaceImages(p.id, image.remove, image.source, p.title);
+        } catch (e) {
+          imgFailed.set(p.id, Date.now() + 86400_000);
+          update.metafields = (update.metafields || []).filter((m) => m.key !== 'foto');
+          out.note = 'No se pudo cambiar la foto: ' + (/access|denied|scope|permis/i.test(e.message) ? 'falta el permiso write_files en la app de Shopify' : e.message.slice(0, 200));
+        }
+      }
+      if (update.metafields && !update.metafields.length) delete update.metafields;
       if (Object.keys(update).length > 1) await sh.updateProduct(update);
       if (n.barcodes.length) await sh.setBarcodes(p.id, n.barcodes.map((v) => ({ id: v.id, ean: v.sku })));
       if (Object.keys(update).length > 1 || n.barcodes.length || out.note) await store.log(out);
