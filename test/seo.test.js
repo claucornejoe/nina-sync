@@ -103,3 +103,24 @@ test('detecta la foto «No image available»', async () => {
   assert.equal(isPlaceholderUrl('https://cdn.shopify.com/s/files/1/files/3349668576128.webp?v=1'), false);
   assert.deepEqual(placeholderMedia({ media: [{ id: 'm1', url: 'https://x/files/no_image_a.webp' }, { id: 'm2', url: 'https://x/files/123.webp' }] }).map((m) => m.id), ['m1']);
 });
+
+test('OpenAI: si la búsqueda web da 400, repite sin búsqueda', async () => {
+  const { askJson } = await import('../src/seo/openai.js');
+  process.env.OPENAI_API_KEY = 'k';
+  const calls = [];
+  const orig = globalThis.fetch;
+  globalThis.fetch = async (_u, o) => {
+    const b = JSON.parse(o.body);
+    calls.push(!!b.tools);
+    if (b.tools) return new Response(JSON.stringify({ error: { message: 'Web search not supported with json_schema' } }), { status: 400 });
+    return new Response(JSON.stringify({ output: [{ type: 'message', content: [{ type: 'output_text', text: '{"ok":true}' }] }] }), { status: 200 });
+  };
+  try {
+    const r = await askJson({ system: 's', user: 'u', schema: {}, name: 'x', webSearch: true });
+    assert.deepEqual(r, { ok: true });
+    assert.deepEqual(calls, [true, false]);
+  } finally {
+    globalThis.fetch = orig;
+    delete process.env.OPENAI_API_KEY;
+  }
+});

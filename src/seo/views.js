@@ -54,6 +54,7 @@ export function seoPage({ rows, totals, aiToday, queue, sweeping, state, setting
  <form method="post" action="/seo/repasar"><button class="btn" ${busy ? 'disabled' : ''}>${icon('sync', 18).replace('class="ic"', busy ? 'class="ic spin"' : 'class="ic"')} ${busy ? 'Trabajando…' : 'Repasar todos ahora'}</button></form>
 </section>
 
+${settings.aiPaused ? `<div class="alert">${icon('alert')}<div><b>Las descripciones están en pausa una hora:</b> ${esc(settings.aiPaused)}.</div></div>` : ''}
 <div class="kpis">
  ${kpi('layers', 'Categorías puestas', totals.categories)}
  ${kpi('spark', 'Descripciones escritas', totals.descriptions, 'destacado')}

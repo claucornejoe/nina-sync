@@ -4,7 +4,7 @@ import { shopInfo } from '../shopify.js';
 import { seo } from './settings.js';
 import * as sh from './shopify.js';
 import * as store from './store.js';
-import { askJson } from './openai.js';
+import { askJson, aiPaused } from './openai.js';
 import { ruleCategory, googleGender, isGtin } from './categories.js';
 import { SCHEMA, buildPrompt, renderDescription, isReplaceable } from './describe.js';
 import { placeholderMedia, logoUrl, realImageFor } from './images.js';
@@ -17,7 +17,7 @@ const imgFailed = new Map();
 export function needs(p, { capReached = false } = {}) {
   if ((p.tags || []).some((t) => t.toLowerCase() === seo.skipTag)) return { any: false };
   const category = !p.category && !(catFailed.get(p.id) > Date.now());
-  const description = !!seo.openaiKey() && !capReached && !p.aiDescription && isReplaceable(p.descriptionHtml);
+  const description = !!seo.openaiKey() && !capReached && !aiPaused() && !p.aiDescription && isReplaceable(p.descriptionHtml);
   const g = p.google || {};
   const google = (!g.gender && !!googleGender(p.tags)) || !g.ageGroup || !g.condition;
   const barcodes = p.variants.filter((v) => !v.barcodes.length && isGtin(v.sku));

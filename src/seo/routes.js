@@ -8,6 +8,7 @@ import * as store from './store.js';
 import * as sh from './shopify.js';
 import { enqueue, sweep, processProduct, queueStatus, isSweeping } from './worker.js';
 import { seoPage } from './views.js';
+import { aiPaused } from './openai.js';
 
 const WEBHOOK_PATH = '/webhooks/products-create';
 const state = { webhook: 'sin comprobar', lastSweep: null, preview: null };
@@ -56,7 +57,7 @@ export async function mountSeo(app, auth) {
         queue: queueStatus(),
         sweeping: isSweeping(),
         state,
-        settings: { hasKey: !!seo.openaiKey(), model: seo.model, webSearch: seo.webSearch, auto: seo.auto, maxPerDay: seo.maxPerDay, publicUrl: config.publicUrl },
+        settings: { aiPaused: aiPaused(), hasKey: !!seo.openaiKey(), model: seo.model, webSearch: seo.webSearch, auto: seo.auto, maxPerDay: seo.maxPerDay, publicUrl: config.publicUrl },
         preview,
       }),
     );

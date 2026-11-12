@@ -12,10 +12,18 @@ export function outputText(resp) {
   return '';
 }
 
+// Si OpenAI falla por la cuenta (clave, saldo, modelo), se para la IA una hora para no llenar el informe de errores.
+let paused = null; // { until, reason }
+function pauseAi(reason) {
+  paused = { until: Date.now() + 3600_000, reason };
+}
+export const aiPaused = () => (paused && paused.until > Date.now() ? paused.reason : null);
+
 /** Devuelve el objeto JSON que pide `schema`. */
 export async function askJson({ system, user, schema, name, webSearch = false }, attempt = 0) {
   const key = seo.openaiKey();
   if (!key) throw new Error('Falta OPENAI_API_KEY en Railway');
+  if (aiPaused()) throw new Error('IA en pausa: ' + aiPaused());
   const body = {
     model: seo.model,
     input: [
@@ -38,7 +46,15 @@ export async function askJson({ system, user, schema, name, webSearch = false },
     return askJson({ system, user, schema, name, webSearch }, attempt + 1);
   }
   const j = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(`OpenAI ${res.status}: ${j.error?.message || 'error'}`);
+  if (!res.ok) {
+    const msg = j.error?.message || 'error';
+    // Si el modelo no admite la búsqueda web junto con la respuesta en JSON, se repite sin búsqueda.
+    if (res.status === 400 && webSearch) return askJson({ system, user, schema, name, webSearch: false }, attempt);
+    if (res.status === 401) pauseAi('la clave de OpenAI no es válida (revisa OPENAI_API_KEY)');
+    else if (j.error?.code === 'insufficient_quota' || /quota|billing|credit/i.test(msg)) pauseAi('la cuenta de OpenAI no tiene saldo');
+    else if (res.status === 404 || /model/i.test(msg)) pauseAi(`el modelo ${seo.model} no está disponible en tu cuenta (cambia OPENAI_MODEL)`);
+    throw new Error(`OpenAI ${res.status}: ${msg}`);
+  }
   const text = outputText(j);
   try {
     return JSON.parse(text);
