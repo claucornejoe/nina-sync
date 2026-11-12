@@ -20,9 +20,8 @@ export function cleanTitle(t) {
   if (letters.length && upper.length > 0.6 * letters.length) {
     t = t
       .split(' ')
-      .map((w) => (['de', 'eau'].includes(w.toLowerCase()) ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()))
+      .map((w) => (['de', 'eau'].includes(w.toLowerCase()) ? w : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()))
       .join(' ')
-      .replace(/^eau\b/, 'Eau')
       .replace(/\bEau De\b/g, 'Eau de');
   }
   return t;
