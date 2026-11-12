@@ -3,7 +3,7 @@ import express from 'express';
 import crypto from 'node:crypto';
 import cron from 'node-cron';
 import { config } from '../config.js';
-import { seo } from './settings.js';
+import { seo, publicBase } from './settings.js';
 import * as store from './store.js';
 import * as sh from './shopify.js';
 import { enqueue, sweep, processProduct, queueStatus, isSweeping } from './worker.js';
@@ -57,7 +57,7 @@ export async function mountSeo(app, auth) {
         queue: queueStatus(),
         sweeping: isSweeping(),
         state,
-        settings: { aiPaused: aiPaused(), hasKey: !!seo.openaiKey(), model: seo.model, webSearch: seo.webSearch, auto: seo.auto, maxPerDay: seo.maxPerDay, publicUrl: config.publicUrl },
+        settings: { aiPaused: aiPaused(), hasKey: !!seo.openaiKey(), model: seo.model, webSearch: seo.webSearch, auto: seo.auto, maxPerDay: seo.maxPerDay, publicUrl: publicBase() },
         preview,
       }),
     );
@@ -85,12 +85,12 @@ export async function mountSeo(app, auth) {
 
   if (seo.auto) {
     // Suscripción al webhook (necesita PUBLIC_URL).
-    if (config.publicUrl) {
-      const uri = config.publicUrl.replace(/\/+$/, '') + WEBHOOK_PATH;
+    if (publicBase()) {
+      const uri = publicBase() + WEBHOOK_PATH;
       sh.ensureWebhook(uri)
         .then((r) => (state.webhook = r === 'creado' ? 'activo (recién creado)' : 'activo'))
         .catch((e) => {
-          state.webhook = 'error: ' + e.message.slice(0, 200);
+          state.webhook = `error con la dirección ${uri}: ` + e.message.slice(0, 200);
           console.error('No se pudo crear el webhook de productos:', e.message);
         });
     } else state.webhook = 'falta PUBLIC_URL';

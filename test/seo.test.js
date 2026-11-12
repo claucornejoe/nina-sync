@@ -124,3 +124,11 @@ test('OpenAI: si la búsqueda web da 400, repite sin búsqueda', async () => {
     delete process.env.OPENAI_API_KEY;
   }
 });
+
+test('PUBLIC_URL siempre con https y sin barra final', async () => {
+  const { publicBase } = await import('../src/seo/settings.js');
+  assert.equal(publicBase('nina-sync-production.up.railway.app/'), 'https://nina-sync-production.up.railway.app');
+  assert.equal(publicBase('http://x.up.railway.app'), 'https://x.up.railway.app');
+  assert.equal(publicBase(' https://x.up.railway.app// '), 'https://x.up.railway.app');
+  assert.equal(publicBase(''), '');
+});

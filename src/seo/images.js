@@ -1,6 +1,6 @@
 // Fotos: los productos que BTS trae con la imagen «No image available» reciben la foto real de otro
 // tamaño (si BTS la tiene) o, mientras tanto, el logo de Nina Beauty.
-import { config } from '../config.js';
+import { publicBase } from './settings.js';
 import { fetchCatalog } from '../bts.js';
 
 const PLACEHOLDER = /\/no_image[^/]*\.(webp|png|jpe?g)(\?|$)/i;
@@ -14,7 +14,7 @@ export function placeholderMedia(p) {
 /** URL pública del logo provisional (public/sin-foto.png servido por el panel). */
 export function logoUrl() {
   if (process.env.NO_PHOTO_URL) return process.env.NO_PHOTO_URL;
-  return config.publicUrl ? config.publicUrl.replace(/\/+$/, '') + '/static/sin-foto.png' : '';
+  return publicBase() ? publicBase() + '/static/sin-foto.png' : '';
 }
 
 /** Foto real de BTS de cualquiera de los tamaños del producto, o null. */
