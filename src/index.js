@@ -1,6 +1,8 @@
 import express from 'express';
 import cron from 'node-cron';
 import crypto from 'node:crypto';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { config } from './config.js';
 import * as db from './db.js';
 import { runSync, isRunning } from './sync.js';
@@ -13,6 +15,7 @@ await db.closeStaleRuns();
 const app = express();
 app.set('trust proxy', 1);
 app.use(express.urlencoded({ extended: false }));
+app.use('/static', express.static(path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public'), { maxAge: '7d' }));
 
 // ---- Sesión: cookie firmada con la contraseña del panel ----
 const COOKIE = 'nina_sync';
@@ -50,7 +53,8 @@ let task;
 app.get('/', auth, async (_req, res) => {
   const runs = await db.listRuns(100);
   const offers = (await db.activeOffers()).length;
-  res.send(views.dashboard({ runs, running: isRunning(), nextRun: nextCronDate(), offers }));
+  const newArrivals = (await db.activeNewArrivals()).length;
+  res.send(views.dashboard({ runs, running: isRunning(), nextRun: nextCronDate(), offers, newArrivals, dryRun: config.dryRun }));
 });
 
 app.post('/sync', auth, (_req, res) => {
@@ -73,6 +77,7 @@ app.get('/sync/:id', auth, async (req, res) => {
 });
 
 app.get('/ofertas', auth, async (_req, res) => res.send(views.offersPage(await db.activeOffers())));
+app.get('/recien-llegados', auth, async (_req, res) => res.send(views.newArrivalsPage(await db.activeNewArrivals())));
 
 // ---- Automática cada 4 horas ----
 task = cron.schedule(config.cron, () => runSync('cron'), { timezone: config.timezone });

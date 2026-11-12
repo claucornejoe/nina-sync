@@ -57,7 +57,7 @@ test('el informe se dibuja', () => {
   const run = { id: 3, started_at: new Date(), finished_at: new Date(), trigger: 'cron', status: 'ok', summary: { stockChanges: 1 } };
   const changes = [{ product_title: 'A <b>', variant_title: '50ml', ean: '1', kind: 'precio', old_value: '10', new_value: '9', on_sale: true, price_drop: true }];
   const html = reportHtml({ run, changes });
-  assert.match(html, /Informe de la sincronización #3/);
+  assert.match(html, /Sincronización #3/);
   assert.match(html, /A &lt;b&gt;/);
   assert.match(changesCsv(changes), /Baja de precio/);
 });
