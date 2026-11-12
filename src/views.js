@@ -96,6 +96,11 @@ h1{font-size:40px;line-height:1.1}h2{font-size:28px;margin:36px 0 14px}h3{font-s
 .hero .meta span{display:flex;align-items:center;gap:8px;color:var(--grafito)}
 .hero .meta .ic{color:var(--frambuesa)}
 .hero form{position:relative;z-index:1}
+.progreso{margin-top:18px;background:var(--blanco);border:1px solid var(--linea);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sombra)}
+.progreso .ptop{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:14px}
+.progreso .ptop span{color:var(--gris);font-size:13px}
+.pbar{height:10px;background:var(--petalo);border-radius:99px;overflow:hidden;margin:12px 0 8px}
+.pbar div{height:100%;background:linear-gradient(90deg,var(--rosa),var(--frambuesa));border-radius:99px;transition:width .6s ease}
 /* Botones y chips */
 .btn{display:inline-flex;align-items:center;gap:10px;background:var(--frambuesa);color:#fff;border:0;border-radius:999px;padding:14px 26px;font:600 15px var(--sans);cursor:pointer;box-shadow:0 8px 20px rgba(201,47,96,.28);transition:transform .15s,box-shadow .15s}
 .btn:hover{transform:translateY(-1px);box-shadow:0 10px 26px rgba(201,47,96,.34);text-decoration:none}
@@ -224,7 +229,7 @@ function greeting() {
   return h < 6 ? 'Buenas noches' : h < 13 ? 'Buenos días' : h < 20 ? 'Buenas tardes' : 'Buenas noches';
 }
 
-export function dashboard({ runs, running, nextRun, offers, newArrivals = 0, dryRun = false }) {
+export function dashboard({ runs, running, nextRun, offers, newArrivals = 0, dryRun = false, progress = null }) {
   const last = runs[0];
   const s = last?.summary || {};
   const rows = runs
@@ -251,6 +256,7 @@ export function dashboard({ runs, running, nextRun, offers, newArrivals = 0, dry
   <button class="btn" ${running ? 'disabled' : ''}>${icon('sync', 18).replace('class="ic"', running ? 'class="ic spin"' : 'class="ic"')} ${running ? 'Sincronizando…' : 'Sincronizar ahora'}</button>
  </form>
 </section>
+${running ? progressCard(progress) : ''}
 ${last?.status === 'error' ? `<div class="alert">${icon('alert')}<div><b>La última sincronización falló.</b><br>${esc(last.error || '')}</div></div>` : ''}
 
 <div class="kpis">
@@ -265,7 +271,47 @@ ${last?.status === 'error' ? `<div class="alert">${icon('alert')}<div><b>La últ
 <thead><tr><th>Nº</th><th>Fecha y hora</th><th>Tipo</th><th>Estado</th><th>Stock</th><th>Precios</th><th>Ofertas</th><th>Nuevos</th><th>Duración</th><th></th></tr></thead>
 <tbody>${rows || `<tr><td colspan="10"><div class="empty"><img src="/static/mariposa.svg" alt="">Todavía no hay sincronizaciones.</div></td></tr>`}</tbody>
 </table></div></div>`;
-  return shell('Panel', 'panel', body, { refresh: running });
+  return shell('Panel', 'panel', body, { refresh: false });
+}
+
+function progressText(p) {
+  if (!p) return { title: 'Sincronizando…', detail: '', pct: 5 };
+  const frac = p.total ? Math.min(1, p.done / p.total) : 0;
+  const pct = Math.round(((p.step + frac) / p.steps) * 100);
+  const n = (x) => Number(x).toLocaleString('es-ES');
+  const detail = p.total ? `${n(p.done)} de ${n(p.total)}` : p.done ? n(p.done) : '';
+  const t = p.elapsed;
+  return { title: `Paso ${p.step + 1} de ${p.steps}: ${p.label}`, detail, pct: Math.max(3, pct), time: `${Math.floor(t / 60)} min ${t % 60} s` };
+}
+
+function progressCard(p) {
+  const x = progressText(p);
+  return `<section class="progreso" id="progreso">
+ <div class="ptop"><b id="ptitle">${esc(x.title)}</b><span id="ptime">${esc(x.time || '')}</span></div>
+ <div class="pbar"><div id="pfill" style="width:${x.pct}%"></div></div>
+ <div class="sub" id="pdetail">${esc(x.detail)}</div>
+</section>
+<script>
+(function(){
+  var steps=0;
+  function fmt(n){return Number(n).toLocaleString('es-ES')}
+  async function poll(){
+    try{
+      var r=await fetch('/progreso',{cache:'no-store'}); var j=await r.json();
+      if(!j.running){location.reload();return}
+      var p=j.progress; if(p){
+        var frac=p.total?Math.min(1,p.done/p.total):0;
+        document.getElementById('pfill').style.width=Math.max(3,Math.round((p.step+frac)/p.steps*100))+'%';
+        document.getElementById('ptitle').textContent='Paso '+(p.step+1)+' de '+p.steps+': '+p.label;
+        document.getElementById('pdetail').textContent=p.total?fmt(p.done)+' de '+fmt(p.total):(p.done?fmt(p.done):'');
+        document.getElementById('ptime').textContent=Math.floor(p.elapsed/60)+' min '+(p.elapsed%60)+' s';
+      }
+    }catch(e){}
+    setTimeout(poll,2000);
+  }
+  setTimeout(poll,2000);
+})();
+</script>`;
 }
 
 export function reportHtml({ run, changes }, { filter = '', baseUrl = '' } = {}) {

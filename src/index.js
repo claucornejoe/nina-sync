@@ -7,6 +7,7 @@ import { config } from './config.js';
 import * as db from './db.js';
 import { runSync, isRunning } from './sync.js';
 import * as views from './views.js';
+import * as progress from './progress.js';
 import { mountSeo } from './seo/routes.js';
 
 if (!config.panelPassword) throw new Error('Falta PANEL_PASSWORD');
@@ -55,8 +56,10 @@ app.get('/', auth, async (_req, res) => {
   const runs = await db.listRuns(100);
   const offers = (await db.activeOffers()).length;
   const newArrivals = (await db.activeNewArrivals()).length;
-  res.send(views.dashboard({ runs, running: isRunning(), nextRun: nextCronDate(), offers, newArrivals, dryRun: config.dryRun }));
+  res.send(views.dashboard({ runs, running: isRunning(), nextRun: nextCronDate(), offers, newArrivals, dryRun: config.dryRun, progress: progress.get() }));
 });
+
+app.get('/progreso', auth, (_req, res) => res.json({ running: isRunning(), progress: progress.get() }));
 
 app.post('/sync', auth, (_req, res) => {
   runSync('manual'); // en segundo plano

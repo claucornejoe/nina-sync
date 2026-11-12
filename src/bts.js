@@ -68,7 +68,7 @@ function asList(j) {
  * Datos de BTS (coste, PVP recomendado y stock) para los EAN de la tienda, indexados por EAN.
  * @param {string[]} eans
  */
-export async function fetchCatalog(eans) {
+export async function fetchCatalog(eans, onProgress = () => {}) {
   const unique = [...new Set(eans.filter(Boolean))];
   const byEan = new Map();
   for (let i = 0; i < unique.length; i += BATCH) {
@@ -80,6 +80,7 @@ export async function fetchCatalog(eans) {
       const p = normalize(raw);
       if (p.ean) byEan.set(p.ean, p);
     }
+    onProgress(Math.min(i + BATCH, unique.length), unique.length);
   }
   if (unique.length > 0 && byEan.size === 0) throw new Error('BTS devolvió 0 productos; no se toca nada en Shopify');
   return byEan;

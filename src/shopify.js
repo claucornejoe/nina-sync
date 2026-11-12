@@ -59,7 +59,7 @@ export async function getLocationId() {
 }
 
 /** Todas las variantes con su EAN (SKU o código de barras), precio y stock. */
-export async function getAllVariants(locationId) {
+export async function getAllVariants(locationId, onProgress = () => {}) {
   const out = [];
   let after = null;
   const q = `query($after: String, $loc: ID!) {
@@ -89,6 +89,7 @@ export async function getAllVariants(locationId) {
       });
     }
     after = d.productVariants.pageInfo.hasNextPage ? d.productVariants.pageInfo.endCursor : null;
+    onProgress(out.length);
   } while (after);
   return out;
 }

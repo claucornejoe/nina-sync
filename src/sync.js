@@ -5,6 +5,7 @@ import { planSync, planNewProducts } from './plan.js';
 import { createNewArrivals, expireNewArrivals } from './newArrivals.js';
 import * as db from './db.js';
 import { sendReport } from './mail.js';
+import * as progress from './progress.js';
 
 let running = null;
 
@@ -15,8 +16,10 @@ export function isRunning() {
 /** Lanza una sincronización. Si ya hay una en marcha, devuelve esa. */
 export function runSync(trigger = 'manual', { dryRun = config.dryRun } = {}) {
   if (running) return running;
+  progress.start();
   running = doSync(trigger, dryRun).finally(() => {
     running = null;
+    progress.stop();
   });
   return running;
 }
@@ -33,8 +36,11 @@ async function doSync(trigger, dryRun) {
 
     // 2. Datos de BTS y de Shopify.
     const locationId = await shopify.getLocationId();
-    const variants = await shopify.getAllVariants(locationId);
-    const bts = await fetchCatalog(variants.map((v) => v.ean));
+    progress.step(1);
+    const variants = await shopify.getAllVariants(locationId, (n) => progress.tick(n));
+    progress.step(2);
+    const bts = await fetchCatalog(variants.map((v) => v.ean), (n, t) => progress.tick(n, t));
+    progress.step(3);
 
     // 3. Planificar.
     const prevCosts = await db.getCosts([...bts.keys()]);
@@ -46,17 +52,26 @@ async function doSync(trigger, dryRun) {
 
     // 4. Aplicar.
     if (!dryRun) {
+      const work = 1 + plan.priceUpdates.size + plan.tagUpdates.length + plan.offerProducts.size;
+      let done = 0;
+      progress.step(4, work);
       await shopify.setQuantities(locationId, plan.stockUpdates);
-      for (const [productId, vs] of plan.priceUpdates) await shopify.updatePrices(productId, vs);
+      progress.tick(++done);
+      for (const [productId, vs] of plan.priceUpdates) {
+        await shopify.updatePrices(productId, vs);
+        progress.tick(++done);
+      }
 
       const until = new Date(Date.now() + r.offerDays * 86400_000);
       for (const t of plan.tagUpdates) {
         if (t.remove.length) await shopify.removeTags(t.productId, t.remove);
         if (t.add.length) await shopify.addTags(t.productId, t.add);
+        progress.tick(++done);
       }
       for (const [productId, title] of plan.offerProducts) {
         await shopify.addTags(productId, [r.offerTag]);
         await db.upsertOffer(productId, title, until);
+        progress.tick(++done);
       }
     }
 
@@ -73,6 +88,7 @@ async function doSync(trigger, dryRun) {
 
     // 6. Novedades de BTS: se crean solas con la etiqueta «recien-llegado» (30 días).
     let created = [];
+    progress.step(5);
     try {
       const known = new Set(variants.map((v) => v.ean));
       const fresh = planNewProducts(await fetchNewProducts(r.newProductsDays, known), r);
@@ -86,6 +102,7 @@ async function doSync(trigger, dryRun) {
     }
     plan.changes.push(...(await expireNewArrivals({ dryRun })));
 
+    progress.step(6);
     if (!dryRun) await db.saveCosts([...bts.values()]);
     await db.saveChanges(runId, plan.changes);
     const count = (k) => plan.changes.filter((c) => c.kind === k).length;
