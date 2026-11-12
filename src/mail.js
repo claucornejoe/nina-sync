@@ -24,7 +24,7 @@ export async function sendReport(runId) {
 <p>${fmtDate(run.started_at)} · ${run.trigger === 'cron' ? 'automática' : 'manual'}${run.dry_run ? ' · prueba (no se cambió nada)' : ''}</p>
 ${run.error ? `<p><b>Error:</b> ${esc(run.error)}</p>` : ''}
 <ul><li>Cambios de stock: <b>${s.stockChanges ?? 0}</b></li><li>Cambios de precio: <b>${s.priceChanges ?? 0}</b> (bajadas: ${s.priceDrops ?? 0})</li>
-<li>Nuevas en «Ofertas de la semana»: <b>${s.newOffers ?? 0}</b></li><li>Retirados por perder dinero: ${s.losingMoney ?? 0}</li></ul>
+<li>Nuevas en «Ofertas de la semana»: <b>${s.newOffers ?? 0}</b></li><li>Retirados por perder dinero: ${s.losingMoney ?? 0}</li><li>Categorías corregidas: ${s.tagChanges ?? 0}</li><li>Recién llegados creados: <b>${s.newProducts ?? 0}</b>${s.newProductErrors ? ` (${s.newProductErrors} con error)` : ''}</li></ul>
 ${offers.length ? `<h3>Ofertas</h3><ul>${offers.map((c) => `<li>${esc(c.product_title)} ${esc(c.variant_title || '')}: ${esc(c.old_value)} → <b>${esc(c.new_value)}</b></li>`).join('')}</ul>` : ''}
 ${url ? `<p><a href="${url}" style="background:#C92F60;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Ver el informe completo</a></p>` : ''}
 </div>`;

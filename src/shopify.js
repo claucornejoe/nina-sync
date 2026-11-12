@@ -151,3 +151,58 @@ export async function productsWithTag(tag) {
   } while (after);
   return out;
 }
+
+/** Producto existente con ese título exacto (sin distinguir mayúsculas), con sus opciones y tamaños. */
+export async function findProductByTitle(title) {
+  const q = `title:"${title.replace(/["\\]/g, ' ')}"`;
+  const d = await gql(
+    `query($q: String!) { products(first: 10, query: $q) { nodes { id title options { name optionValues { name } } } } }`,
+    { q },
+  );
+  return d.products.nodes.find((p) => p.title.toLowerCase() === title.toLowerCase()) || null;
+}
+
+let onlineStorePublication = null;
+async function getOnlineStorePublicationId() {
+  if (process.env.SHOPIFY_PUBLICATION_ID) return process.env.SHOPIFY_PUBLICATION_ID;
+  if (onlineStorePublication) return onlineStorePublication;
+  const d = await gql(`{ publications(first: 20) { nodes { id catalog { title } } } }`);
+  const p = d.publications.nodes.find((n) => /tienda online|online store/i.test(n.catalog?.title || ''));
+  if (!p) throw new Error('No encuentro el canal Tienda online');
+  onlineStorePublication = p.id;
+  return p.id;
+}
+
+export async function publishToOnlineStore(productId) {
+  const d = await gql(
+    `mutation($id: ID!, $input: [PublicationInput!]!) { publishablePublish(id: $id, input: $input) { userErrors { field message } } }`,
+    { id: productId, input: [{ publicationId: await getOnlineStorePublicationId() }] },
+  );
+  const errs = d.publishablePublish.userErrors;
+  if (errs.length) throw new Error('publishablePublish: ' + JSON.stringify(errs));
+}
+
+/** Crea un producto con uno o varios tamaños y lo publica en la tienda online. */
+export async function createProduct(input) {
+  const d = await gql(
+    `mutation($input: ProductSetInput!) { productSet(input: $input, synchronous: true) { product { id title } userErrors { field message } } }`,
+    { input },
+  );
+  const errs = d.productSet.userErrors;
+  if (errs.length) throw new Error('productSet: ' + JSON.stringify(errs));
+  const product = d.productSet.product;
+  await publishToOnlineStore(product.id);
+  return product;
+}
+
+/** Añade tamaños nuevos a un producto existente. */
+export async function addVariants(productId, variants) {
+  const d = await gql(
+    `mutation($productId: ID!, $variants: [ProductVariantsBulkInput!]!) {
+      productVariantsBulkCreate(productId: $productId, variants: $variants) { userErrors { field message } }
+    }`,
+    { productId, variants },
+  );
+  const errs = d.productVariantsBulkCreate.userErrors;
+  if (errs.length) throw new Error('productVariantsBulkCreate: ' + JSON.stringify(errs));
+}

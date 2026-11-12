@@ -49,6 +49,10 @@ export function normalize(p) {
     cost: parseMoney(p.price ?? p.product_price),
     rrp: parseMoney(p.recommended_price),
     stock: Number(p.stock ?? p.product_stock ?? 0) || 0,
+    manufacturer: p.manufacturer ?? p.manufacturer_name ?? '',
+    categories: p.categories ?? '',
+    gender: p.gender ?? '',
+    image: p.image ?? '',
   };
 }
 
@@ -79,4 +83,29 @@ export async function fetchCatalog(eans) {
   }
   if (unique.length > 0 && byEan.size === 0) throw new Error('BTS devolvió 0 productos; no se toca nada en Shopify');
   return byEan;
+}
+
+/**
+ * Productos que BTS añadió en los últimos `days` días y que no están en la tienda.
+ * getNewProducts no trae categorías, así que se completan con getProducts.
+ * @param {Set<string>} knownEans EAN que ya están en Shopify
+ */
+export async function fetchNewProducts(days, knownEans) {
+  const fresh = [];
+  for (let page = 1; page < 200; page++) {
+    const j = await get('getNewProducts', [
+      ['days', String(days)],
+      ['page', String(page)],
+      ['page_size', '500'],
+      ['language_code', config.bts.lang],
+    ]);
+    for (const raw of j?.products || []) {
+      const p = normalize(raw);
+      if (p.ean && !knownEans.has(p.ean)) fresh.push(p);
+    }
+    if (!j?.pagination?.has_next_page) break;
+  }
+  if (!fresh.length) return [];
+  const full = await fetchCatalog(fresh.map((p) => p.ean)).catch(() => new Map());
+  return fresh.map((p) => full.get(p.ean)).filter(Boolean);
 }

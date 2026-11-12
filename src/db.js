@@ -39,6 +39,16 @@ export async function migrate() {
       started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       until TIMESTAMPTZ NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS new_arrivals (
+      product_id TEXT PRIMARY KEY,
+      product_title TEXT,
+      started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      until TIMESTAMPTZ NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS bts_new_seen (
+      ean TEXT PRIMARY KEY,
+      first_seen TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
   `);
 }
 
@@ -110,4 +120,32 @@ export async function closeStaleRuns() {
   await pool.query(
     `UPDATE sync_runs SET status='error', finished_at=now(), error='Interrumpida (reinicio del servidor)' WHERE status='running'`,
   );
+}
+
+/** De una lista de EAN nuevos, devuelve los que aún no se habían procesado. */
+export async function filterUnseenNew(eans) {
+  if (!eans.length) return [];
+  const seen = new Set((await pool.query('SELECT ean FROM bts_new_seen WHERE ean = ANY($1)', [eans])).rows.map((r) => r.ean));
+  return eans.filter((e) => !seen.has(e));
+}
+
+export async function markNewSeen(eans) {
+  if (eans.length) await pool.query('INSERT INTO bts_new_seen(ean) SELECT unnest($1::text[]) ON CONFLICT DO NOTHING', [eans]);
+}
+
+export async function upsertNewArrival(productId, title, until) {
+  await pool.query(
+    `INSERT INTO new_arrivals(product_id, product_title, until) VALUES ($1,$2,$3)
+     ON CONFLICT (product_id) DO UPDATE SET until=EXCLUDED.until, product_title=EXCLUDED.product_title`,
+    [productId, title, until],
+  );
+}
+export async function expiredNewArrivals() {
+  return (await pool.query('SELECT * FROM new_arrivals WHERE until < now()')).rows;
+}
+export async function deleteNewArrival(productId) {
+  await pool.query('DELETE FROM new_arrivals WHERE product_id=$1', [productId]);
+}
+export async function activeNewArrivals() {
+  return (await pool.query('SELECT * FROM new_arrivals WHERE until >= now() ORDER BY until')).rows;
 }

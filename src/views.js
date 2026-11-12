@@ -21,6 +21,10 @@ const KIND = {
   sin_bts: 'Ya no está en BTS',
   pierde: 'Retirado: pierde dinero',
   oferta_fin: 'Fin de oferta',
+  etiquetas: 'Categoría',
+  nuevo: 'Recién llegado',
+  nuevo_error: 'Novedad no creada',
+  nuevo_fin: 'Fin de «Recién llegados»',
 };
 const TRIGGER = { cron: 'Automática', manual: 'Manual' };
 
@@ -81,7 +85,7 @@ export function dashboard({ runs, running, nextRun, offers }) {
     .map((r) => {
       const s = r.summary || {};
       return `<tr><td><a href="/sync/${r.id}">#${r.id}</a></td><td>${fmtDate(r.started_at)}</td><td>${TRIGGER[r.trigger] || esc(r.trigger)}</td><td>${statusTag(r)}</td>
-<td>${s.stockChanges ?? '—'}</td><td>${s.priceChanges ?? '—'}</td><td>${s.newOffers ?? '—'}</td><td>${duration(r)}</td><td><a href="/sync/${r.id}">Ver informe</a></td></tr>`;
+<td>${s.stockChanges ?? '—'}</td><td>${s.priceChanges ?? '—'}</td><td>${s.newOffers ?? '—'}</td><td>${s.newProducts ?? '—'}</td><td>${duration(r)}</td><td><a href="/sync/${r.id}">Ver informe</a></td></tr>`;
     })
     .join('');
   return layout(
@@ -94,8 +98,8 @@ export function dashboard({ runs, running, nextRun, offers }) {
 </div>
 ${running ? '<p class="muted">Hay una sincronización en curso. Recarga la página en un minuto.</p>' : ''}
 <h2>Historial</h2>
-<div class="tablewrap"><table><thead><tr><th>Nº</th><th>Fecha y hora</th><th>Tipo</th><th>Estado</th><th>Stock</th><th>Precios</th><th>Ofertas nuevas</th><th>Duración</th><th></th></tr></thead>
-<tbody>${rows || '<tr><td colspan="9">Todavía no hay sincronizaciones.</td></tr>'}</tbody></table></div>`,
+<div class="tablewrap"><table><thead><tr><th>Nº</th><th>Fecha y hora</th><th>Tipo</th><th>Estado</th><th>Stock</th><th>Precios</th><th>Ofertas nuevas</th><th>Recién llegados</th><th>Duración</th><th></th></tr></thead>
+<tbody>${rows || '<tr><td colspan="10">Todavía no hay sincronizaciones.</td></tr>'}</tbody></table></div>`,
   );
 }
 
@@ -122,8 +126,10 @@ ${run.error ? `<div class="card"><b>Error:</b> ${esc(run.error)}</div>` : ''}
 <div class="kpi"><b>${s.newOffers ?? 0}</b><small>a «Ofertas de la semana»</small></div>
 <div class="kpi"><b>${s.missingInBts ?? 0}</b><small>ya no están en BTS</small></div>
 <div class="kpi"><b>${s.losingMoney ?? 0}</b><small>retirados (pierden dinero)</small></div>
+<div class="kpi"><b>${s.tagChanges ?? 0}</b><small>categorías corregidas</small></div>
+<div class="kpi"><b>${s.newProducts ?? 0}</b><small>recién llegados creados</small></div>
 </div>
-${standalone ? '' : `<p class="filters">Ver: ${link('', 'todo')} ${link('ofertas', 'ofertas')} ${link('precio', 'precios')} ${link('stock', 'stock')} · <a href="/sync/${run.id}.csv">Descargar CSV</a></p>`}
+${standalone ? '' : `<p class="filters">Ver: ${link('', 'todo')} ${link('ofertas', 'ofertas')} ${link('precio', 'precios')} ${link('stock', 'stock')} ${link('etiquetas', 'categorías')} ${link('nuevo', 'recién llegados')} · <a href="/sync/${run.id}.csv">Descargar CSV</a></p>`}
 <h2>Cambios (${shown.length})</h2>
 <div class="tablewrap"><table><thead><tr><th>Producto</th><th>Qué</th><th>Antes</th><th>Ahora</th><th>Oferta</th><th>Detalle</th></tr></thead>
 <tbody>${rows || '<tr><td colspan="6">Sin cambios.</td></tr>'}</tbody></table></div>`;

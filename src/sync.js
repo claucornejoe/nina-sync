@@ -1,7 +1,8 @@
 import { config } from './config.js';
 import * as shopify from './shopify.js';
-import { fetchCatalog } from './bts.js';
-import { planSync } from './plan.js';
+import { fetchCatalog, fetchNewProducts } from './bts.js';
+import { planSync, planNewProducts } from './plan.js';
+import { createNewArrivals, expireNewArrivals } from './newArrivals.js';
 import * as db from './db.js';
 import { sendReport } from './mail.js';
 
@@ -48,6 +49,10 @@ async function doSync(trigger, dryRun) {
       for (const [productId, vs] of plan.priceUpdates) await shopify.updatePrices(productId, vs);
 
       const until = new Date(Date.now() + r.offerDays * 86400_000);
+      for (const t of plan.tagUpdates) {
+        if (t.remove.length) await shopify.removeTags(t.productId, t.remove);
+        if (t.add.length) await shopify.addTags(t.productId, t.add);
+      }
       for (const [productId, title] of plan.offerProducts) {
         await shopify.addTags(productId, [r.offerTag]);
         await db.upsertOffer(productId, title, until);
@@ -65,6 +70,21 @@ async function doSync(trigger, dryRun) {
       plan.changes.push({ productId: o.product_id, productTitle: o.product_title, kind: 'oferta_fin', oldValue: r.offerTag, newValue: '', note: 'Termina la oferta de la semana' });
     }
 
+    // 6. Novedades de BTS: se crean solas con la etiqueta «recien-llegado» (30 días).
+    let created = [];
+    try {
+      const known = new Set(variants.map((v) => v.ean));
+      const fresh = planNewProducts(await fetchNewProducts(r.newProductsDays, known), r);
+      const unseen = new Set(await db.filterUnseenNew(fresh.map((p) => p.ean)));
+      const todo = fresh.filter((p) => unseen.has(p.ean));
+      if (r.autoCreateNew) created = await createNewArrivals(todo, locationId, { dryRun });
+      if (!dryRun) await db.markNewSeen(created.filter((c) => c.kind === 'nuevo').map((c) => c.ean));
+      plan.changes.push(...created);
+    } catch (e) {
+      console.error('No se pudieron procesar las novedades de BTS:', e.message);
+    }
+    plan.changes.push(...(await expireNewArrivals({ dryRun })));
+
     await db.saveChanges(runId, plan.changes);
     const count = (k) => plan.changes.filter((c) => c.kind === k).length;
     const summary = {
@@ -79,6 +99,10 @@ async function doSync(trigger, dryRun) {
       offersEnded: count('oferta_fin'),
       missingInBts: plan.missing,
       losingMoney: count('pierde'),
+      tagChanges: count('etiquetas'),
+      newProducts: created.filter((c) => c.kind === 'nuevo').length,
+      newProductErrors: created.filter((c) => c.kind === 'nuevo_error').length,
+      newArrivalsEnded: count('nuevo_fin'),
     };
     await db.finishRun(runId, 'ok', summary);
     await sendReport(runId).catch((e) => console.error('No se pudo enviar el informe por correo:', e.message));

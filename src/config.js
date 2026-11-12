@@ -40,6 +40,10 @@ export const config = {
     offerTag: process.env.OFFER_TAG || 'oferta-semana',
     offerDays: num('OFFER_DAYS', 7),
     manualPriceTag: process.env.MANUAL_PRICE_TAG || 'precio-manual',
+    newProductsDays: num('NEW_PRODUCTS_DAYS', 7),
+    newArrivalTag: process.env.NEW_ARRIVAL_TAG || 'recien-llegado',
+    newArrivalDays: num('NEW_ARRIVAL_DAYS', 30),
+    autoCreateNew: process.env.AUTO_CREATE_NEW !== 'false',
   },
 
   databaseUrl: process.env.DATABASE_URL,

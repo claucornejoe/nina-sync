@@ -1,4 +1,5 @@
 import { computePrice, computeStock, round2 } from './pricing.js';
+import { expectedTags, tagDiff, isPerfumeCategory } from './tags.js';
 
 const money = (n) => (n === null || n === undefined ? '' : Number(n).toFixed(2));
 const eur = (n) => money(n).replace('.', ',') + ' €';
@@ -15,11 +16,14 @@ export function planSync(variants, bts, r) {
   const offerProducts = new Map(); // productId -> title
   const changes = [];
   let missing = 0;
+  const byProduct = new Map(); // productId -> { title, tags, bts: [] }
 
   for (const v of variants) {
     if (!v.ean) continue;
     const base = { ean: v.ean, productTitle: v.productTitle, variantTitle: v.variantTitle, productId: v.productId };
     const b = bts.get(v.ean);
+    if (!byProduct.has(v.productId)) byProduct.set(v.productId, { title: v.productTitle, tags: v.tags || [], bts: [] });
+    if (b) byProduct.get(v.productId).bts.push(b);
     let targetStock;
 
     if (!b) {
@@ -72,5 +76,32 @@ export function planSync(variants, bts, r) {
     if (targetStock !== v.available) stockUpdates.push({ inventoryItemId: v.inventoryItemId, quantity: targetStock });
   }
 
-  return { stockUpdates, priceUpdates, offerProducts, changes, missing };
+  // Etiquetas de colección (género, tipo, marca, Árabe) según los datos de BTS.
+  const tagUpdates = [];
+  for (const [productId, p] of byProduct) {
+    if (!p.bts.length || !p.bts.some((b) => isPerfumeCategory(b.categories))) continue;
+    const { add, remove } = tagDiff(p.tags, expectedTags(p.title, p.bts));
+    if (!add.length && !remove.length) continue;
+    tagUpdates.push({ productId, add, remove });
+    changes.push({
+      productId,
+      productTitle: p.title,
+      kind: 'etiquetas',
+      oldValue: remove.length ? 'quita: ' + remove.join(', ') : '',
+      newValue: add.length ? 'añade: ' + add.join(', ') : '',
+      note: 'Para que caiga en la colección correcta',
+    });
+  }
+
+  return { stockUpdates, priceUpdates, offerProducts, tagUpdates, changes, missing };
 }
+
+/** Novedades de BTS que son perfumes rentables y con stock suficiente. */
+export function planNewProducts(newProducts, r) {
+  return newProducts
+    .filter((p) => isPerfumeCategory(p.categories) && computeStock(p.stock, r) > 0 && p.cost)
+    .map((p) => ({ ...p, pricing: computePrice(p.cost, p.rrp, r) }))
+    .filter((p) => p.pricing.status !== 'pierde');
+}
+
+export { eur, money };
