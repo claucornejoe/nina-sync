@@ -9,6 +9,7 @@ import * as sh from './shopify.js';
 import { enqueue, sweep, processProduct, queueStatus, isSweeping } from './worker.js';
 import { seoPage } from './views.js';
 import { aiPaused } from './openai.js';
+import * as icecat from './icecat.js';
 
 const WEBHOOK_PATH = '/webhooks/products-create';
 const state = { webhook: 'sin comprobar', lastSweep: null, preview: null };
@@ -29,6 +30,7 @@ export function parseProductId(s) {
 
 export async function mountSeo(app, auth) {
   await store.migrate();
+  await icecat.migrate();
 
   // Shopify avisa cada vez que se crea un producto (a mano, por CSV o desde Nina Sync).
   app.post(WEBHOOK_PATH, express.raw({ type: '*/*', limit: '2mb' }), (req, res) => {
@@ -59,6 +61,7 @@ export async function mountSeo(app, auth) {
         state,
         settings: { aiPaused: aiPaused(), hasKey: !!seo.openaiKey(), model: seo.model, webSearch: seo.webSearch, auto: seo.auto, maxPerDay: seo.maxPerDay, publicUrl: publicBase() },
         preview,
+        icecat: { status: icecat.icecatStatus(), summary: await icecat.summary(), samples: await icecat.samples() },
       }),
     );
   });
@@ -68,6 +71,16 @@ export async function mountSeo(app, auth) {
       .then((r) => (state.lastSweep = { at: new Date(), ...r }))
       .catch((e) => (state.lastSweep = { at: new Date(), error: e.message }));
     setTimeout(() => res.redirect('/seo'), 1500);
+  });
+
+  // Fotos extra de Icecat: primero comprobar (no cambia nada), luego añadir.
+  app.post('/seo/icecat/comprobar', auth, (_req, res) => {
+    icecat.checkAll().catch((e) => console.error('Icecat:', e.message));
+    setTimeout(() => res.redirect('/seo#fotos'), 1500);
+  });
+  app.post('/seo/icecat/anadir', auth, (_req, res) => {
+    icecat.addAll().catch((e) => console.error('Icecat:', e.message));
+    setTimeout(() => res.redirect('/seo#fotos'), 1500);
   });
 
   // Un producto: «Ver sin guardar» o «Rehacer y guardar».

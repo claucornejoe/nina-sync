@@ -132,3 +132,21 @@ test('PUBLIC_URL siempre con https y sin barra final', async () => {
   assert.equal(publicBase(' https://x.up.railway.app// '), 'https://x.up.railway.app');
   assert.equal(publicBase(''), '');
 });
+
+test('Icecat: fotos en orden y plan sin repetir', async () => {
+  const { parseGallery, plan } = await import('../src/seo/icecat.js');
+  const photos = parseGallery({ data: { Gallery: [
+    { Pic: 'https://images.icecat.biz/b.jpg', IsMain: 'N', PicWidth: '800' },
+    { Pic: 'https://images.icecat.biz/a.jpg', IsMain: 'Y', PicWidth: '800' },
+    { Pic: 'https://images.icecat.biz/a.jpg', IsMain: 'N', PicWidth: '800' },
+    { Pic: 'https://images.icecat.biz/peq.jpg', IsMain: 'N', PicWidth: '100' },
+    { Pic: 'https://images.icecat.biz/c.jpg', IsMain: 'N' },
+  ] } });
+  assert.deepEqual(photos.map((p) => p.url.split('/').pop()), ['a.jpg', 'b.jpg', 'c.jpg']);
+  const normal = plan({ media: [{ url: 'https://cdn.shopify.com/files/123.webp' }] }, photos);
+  assert.equal(normal.replaceProvisional, false);
+  assert.deepEqual(normal.add.map((p) => p.url.split('/').pop()), ['b.jpg', 'c.jpg']);
+  const logo = plan({ media: [{ url: 'https://cdn.shopify.com/files/sin-foto.png?v=1' }] }, photos);
+  assert.equal(logo.replaceProvisional, true);
+  assert.equal(logo.add[0].url.split('/').pop(), 'a.jpg');
+});
