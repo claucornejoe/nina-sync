@@ -1,0 +1,19 @@
+{
+  "name": "nina-sync",
+  "version": "1.0.0",
+  "description": "Sincroniza stock y precios de BTS Wholesaler con la tienda Shopify de Nina Beauty",
+  "type": "module",
+  "main": "src/index.js",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node src/index.js",
+    "sync": "node src/cli.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.16",
+    "pg": "^8.13.1"
+  }
+}
