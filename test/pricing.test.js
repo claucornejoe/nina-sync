@@ -54,3 +54,17 @@ test('coste de envío para Nina', () => {
   assert.equal(shippingCost(39, r), 6);
   assert.equal(shippingCost(38.95, r), 1.49);
 });
+
+test('ganancia mínima de 2 € (esmalte Nurana)', () => {
+  const p = computePrice(3.2, 9.99, { ...r, minProfit: 2 });
+  assert.equal(p.price, 8.95);
+  assert.ok(p.profit >= 2);
+  const sin = computePrice(3.2, 9.99, r);
+  assert.equal(sin.price, 6.95);
+});
+
+test('ganancia mínima no pasa del PVP', () => {
+  const p = computePrice(3.2, 7.5, { ...r, minProfit: 2 });
+  assert.equal(p.status, 'pvp');
+  assert.ok(p.price <= 7.5);
+});

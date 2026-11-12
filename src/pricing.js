@@ -2,6 +2,7 @@
 // Precio = (coste BTS × 1,21 ÷ 0,70 + 0,35 PayPal) ÷ 0,911, redondeado hacia arriba a ,95.
 // El envío lo paga el cliente (4,95 €) salvo en pedidos desde el mínimo de envío gratis,
 // donde los 6 € de BTS salen de la ganancia: por eso la ganancia sí los descuenta.
+// Si deja menos de minProfit (2 €), sube lo justo para dejarlo.
 // Si supera el PVP recomendado se baja al PVP (y a ,95 si sigue ganando más de 0,50 €).
 // Si a ese precio pierde dinero, el tamaño no se vende (stock 0).
 
@@ -35,7 +36,16 @@ export function profit(price, cost, r) {
  * @returns {{price:number, compareAt:number|null, profit:number, status:'formula'|'pvp'|'pierde'}}
  */
 export function computePrice(cost, rrp, r) {
-  const formula = ceil95((cost * r.vat / r.margin + r.paypalFixed) / r.paypalNet);
+  let formula = ceil95((cost * r.vat / r.margin + r.paypalFixed) / r.paypalNet);
+  // Ganancia mínima por producto (Clau, 2026-11-12): los baratos suben lo justo para dejar al menos minProfit.
+  if (r.minProfit && profit(formula, cost, r) < r.minProfit) {
+    let p = formula;
+    for (let i = 0; i < 3 && profit(p, cost, r) < r.minProfit; i++) {
+      p = ceil95((cost * r.vat + r.paypalFixed + shippingCost(p, r) + r.minProfit) / r.paypalNet);
+      if (profit(p, cost, r) < r.minProfit) p = ceil95((cost * r.vat + r.paypalFixed + r.shipping + r.minProfit) / r.paypalNet);
+    }
+    formula = Math.max(formula, p);
+  }
   let price = formula;
   let status = 'formula';
   if (rrp && formula > rrp) {
