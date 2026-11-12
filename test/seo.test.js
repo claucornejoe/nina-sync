@@ -95,3 +95,73 @@ test('firma del webhook y número de producto', () => {
 test('lee el texto de la respuesta de OpenAI', () => {
   assert.equal(outputText({ output: [{ type: 'web_search_call' }, { type: 'message', content: [{ type: 'output_text', text: '{"a":1}' }] }] }), '{"a":1}');
 });
+
+test('detecta la foto «No image available»', async () => {
+  const { isPlaceholderUrl, placeholderMedia } = await import('../src/seo/images.js');
+  assert.equal(isPlaceholderUrl('https://cdn.shopify.com/s/files/1/1019/1378/8729/files/no_image_5197e856-1e2b-47eb-b122-32c4cd31d17f.webp?v=1794460915'), true);
+  assert.equal(isPlaceholderUrl('https://images.btswholesaler.com/imgs/productos_cosmetica/imagenes/no_image.webp'), true);
+  assert.equal(isPlaceholderUrl('https://cdn.shopify.com/s/files/1/files/3349668576128.webp?v=1'), false);
+  assert.deepEqual(placeholderMedia({ media: [{ id: 'm1', url: 'https://x/files/no_image_a.webp' }, { id: 'm2', url: 'https://x/files/123.webp' }] }).map((m) => m.id), ['m1']);
+});
+
+test('OpenAI: si la búsqueda web da 400, repite sin búsqueda', async () => {
+  const { askJson } = await import('../src/seo/openai.js');
+  process.env.OPENAI_API_KEY = 'k';
+  const calls = [];
+  const orig = globalThis.fetch;
+  globalThis.fetch = async (_u, o) => {
+    const b = JSON.parse(o.body);
+    calls.push(!!b.tools);
+    if (b.tools) return new Response(JSON.stringify({ error: { message: 'Web search not supported with json_schema' } }), { status: 400 });
+    return new Response(JSON.stringify({ output: [{ type: 'message', content: [{ type: 'output_text', text: '{"ok":true}' }] }] }), { status: 200 });
+  };
+  try {
+    const r = await askJson({ system: 's', user: 'u', schema: {}, name: 'x', webSearch: true });
+    assert.deepEqual(r, { ok: true });
+    assert.deepEqual(calls, [true, false]);
+  } finally {
+    globalThis.fetch = orig;
+    delete process.env.OPENAI_API_KEY;
+  }
+});
+
+test('PUBLIC_URL siempre con https y sin barra final', async () => {
+  const { publicBase } = await import('../src/seo/settings.js');
+  assert.equal(publicBase('nina-sync-production.up.railway.app/'), 'https://nina-sync-production.up.railway.app');
+  assert.equal(publicBase('http://x.up.railway.app'), 'https://x.up.railway.app');
+  assert.equal(publicBase(' https://x.up.railway.app// '), 'https://x.up.railway.app');
+  assert.equal(publicBase(''), '');
+});
+
+test('Icecat: fotos en orden y plan sin repetir', async () => {
+  const { parseGallery, plan } = await import('../src/seo/icecat.js');
+  const photos = parseGallery({ data: { Gallery: [
+    { Pic: 'https://images.icecat.biz/b.jpg', IsMain: 'N', PicWidth: '800' },
+    { Pic: 'https://images.icecat.biz/a.jpg', IsMain: 'Y', PicWidth: '800' },
+    { Pic: 'https://images.icecat.biz/a.jpg', IsMain: 'N', PicWidth: '800' },
+    { Pic: 'https://images.icecat.biz/peq.jpg', IsMain: 'N', PicWidth: '100' },
+    { Pic: 'https://images.icecat.biz/c.jpg', IsMain: 'N' },
+  ] } });
+  assert.deepEqual(photos.map((p) => p.url.split('/').pop()), ['a.jpg', 'b.jpg', 'c.jpg']);
+  const normal = plan({ media: [{ url: 'https://cdn.shopify.com/files/123.webp' }] }, photos);
+  assert.equal(normal.replaceProvisional, false);
+  assert.deepEqual(normal.add.map((p) => p.url.split('/').pop()), ['b.jpg', 'c.jpg']);
+  const logo = plan({ media: [{ url: 'https://cdn.shopify.com/files/sin-foto.png?v=1' }] }, photos);
+  assert.equal(logo.replaceProvisional, true);
+  assert.equal(logo.add[0].url.split('/').pop(), 'a.jpg');
+});
+
+test('maquillaje y skin care: categoría por etiqueta y tonos', () => {
+  const lab = { title: 'Maybelline Superstay Matte Ink', vendor: 'Maybelline', productType: 'Maquillaje', tags: ['maquillaje', 'mq-labios', 'Maybelline'], variants: [{ title: '20 Pioneer' }, { title: '65 Seductress' }] };
+  assert.equal(ruleCategory(lab).name, 'Maquillaje de labios');
+  assert.equal(ruleCategory({ ...lab, tags: ['skin-care', 'sc-serums'], productType: 'Cuidado de la piel' }).name, 'Sérums faciales');
+  assert.equal(ruleCategory({ ...lab, tags: ['skin-care', 'sc-cremas'], productType: 'Cuidado de la piel' }), null);
+  assert.match(renderDescription(lab, { intro: 'Labial líquido mate.', familia_olfativa: '', notas_salida: [], notas_corazon: [], notas_fondo: [], detalles: [], seguro: true }), /Tonos:<\/strong> 20 Pioneer, 65 Seductress/);
+});
+
+test('quita líneas repetidas sin negrita', async () => {
+  const { stripRedundant, usefulDetail } = await import('../src/seo/describe.js');
+  const html = '<p>Hola.</p>\n<ul>\n<li><strong>Tipo:</strong> Eau de Parfum</li>\n<li>tipo: eau de parfum</li>\n<li>para: mujer</li>\n<li>tamaños: 30 ml</li>\n<li>Frasco de vidrio facetado (imagen comercial ampliamente usada)</li>\n<li>Incluye loción corporal de 100 ml</li>\n</ul>';
+  assert.equal(stripRedundant(html), '<p>Hola.</p>\n<ul>\n<li><strong>Tipo:</strong> Eau de Parfum</li>\n<li>Incluye loción corporal de 100 ml</li>\n</ul>');
+  assert.equal(usefulDetail('Concentración: eau de parfum'), false);
+});

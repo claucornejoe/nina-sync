@@ -4,22 +4,26 @@ import { shopInfo } from '../shopify.js';
 import { seo } from './settings.js';
 import * as sh from './shopify.js';
 import * as store from './store.js';
-import { askJson } from './openai.js';
+import { askJson, aiPaused } from './openai.js';
 import { ruleCategory, googleGender, isGtin } from './categories.js';
-import { SCHEMA, buildPrompt, renderDescription, isReplaceable } from './describe.js';
+import { SCHEMA, buildPrompt, renderDescription, isReplaceable, stripRedundant } from './describe.js';
+import { placeholderMedia, logoUrl, realImageFor } from './images.js';
 
 // Productos sin categoría posible: no se reintenta con IA hasta pasadas 24 h.
 const catFailed = new Map();
+const imgFailed = new Map();
 
 /** Qué le falta a un producto. */
 export function needs(p, { capReached = false } = {}) {
   if ((p.tags || []).some((t) => t.toLowerCase() === seo.skipTag)) return { any: false };
   const category = !p.category && !(catFailed.get(p.id) > Date.now());
-  const description = !!seo.openaiKey() && !capReached && !p.aiDescription && isReplaceable(p.descriptionHtml);
+  const description = !!seo.openaiKey() && !capReached && !aiPaused() && !p.aiDescription && isReplaceable(p.descriptionHtml);
   const g = p.google || {};
   const google = (!g.gender && !!googleGender(p.tags)) || !g.ageGroup || !g.condition;
   const barcodes = p.variants.filter((v) => !v.barcodes.length && isGtin(v.sku));
-  return { category, description, google, barcodes, any: category || description || google || barcodes.length > 0 };
+  const cleanup = !!p.aiDescription && stripRedundant(p.descriptionHtml) !== p.descriptionHtml;
+  const image = !(imgFailed.get(p.id) > Date.now()) && !!logoUrl() && placeholderMedia(p).length > 0;
+  return { category, description, google, barcodes, image, cleanup, any: category || description || google || image || cleanup || barcodes.length > 0 };
 }
 
 // ---- Categoría con IA para lo que no es perfume ----
@@ -74,7 +78,7 @@ export async function processProduct(productId, { origin = 'manual', preview = f
 
     if (n.category) {
       let cat = ruleCategory(p);
-      if (!cat && seo.openaiKey()) cat = await aiCategory(p, counter);
+      if (!cat && seo.openaiKey()) cat = await aiCategory(p, counter).catch((e) => ((out.error = 'Categoría: ' + String(e.message).slice(0, 380)), null));
       if (cat) {
         update.category = cat.id;
         out.category = cat.name;
@@ -88,14 +92,24 @@ export async function processProduct(productId, { origin = 'manual', preview = f
       if (!seo.openaiKey()) out.note = [out.note, 'Descripción pendiente: falta OPENAI_API_KEY'].filter(Boolean).join(' · ');
       else if ((await store.aiCallsToday()) + counter.n >= seo.maxPerDay) out.capped = true; // mañana sigue
       else {
-        const { system, user } = buildPrompt(p, { webSearch: seo.webSearch });
-        counter.n++;
-        const ai = await askJson({ system, user, schema: SCHEMA, name: 'ficha', webSearch: seo.webSearch });
-        update.descriptionHtml = renderDescription(p, ai);
-        metafields.push({ namespace: 'nina_seo', key: 'descripcion', type: 'single_line_text_field', value: `ia ${new Date().toISOString().slice(0, 10)}${ai.seguro ? '' : ' sin notas'}` });
-        out.description = true;
-        out.descriptionHtml = update.descriptionHtml;
+        // Un fallo de la IA no impide guardar la categoría, los campos de Google ni la foto.
+        try {
+          const { system, user } = buildPrompt(p, { webSearch: seo.webSearch });
+          counter.n++;
+          const ai = await askJson({ system, user, schema: SCHEMA, name: 'ficha', webSearch: seo.webSearch });
+          update.descriptionHtml = renderDescription(p, ai);
+          metafields.push({ namespace: 'nina_seo', key: 'descripcion', type: 'single_line_text_field', value: `ia ${new Date().toISOString().slice(0, 10)}${ai.seguro ? '' : ' sin notas'}` });
+          out.description = true;
+          out.descriptionHtml = update.descriptionHtml;
+        } catch (e) {
+          out.error = 'Descripción: ' + String(e.message || e).slice(0, 380);
+        }
       }
+    }
+
+    if (n.cleanup && !update.descriptionHtml) {
+      update.descriptionHtml = stripRedundant(p.descriptionHtml);
+      out.note = [out.note, 'Quitadas líneas repetidas de la descripción'].filter(Boolean).join(' · ');
     }
 
     if (n.google) {
@@ -107,14 +121,32 @@ export async function processProduct(productId, { origin = 'manual', preview = f
       if (!g.condition) metafields.push(mf('condition', 'new'));
       out.googleFields = true;
     }
+    // Foto «No image available» de BTS: la foto real de otro tamaño si BTS la tiene; si no, el logo de Nina.
+    let image = null;
+    if (n.image) {
+      const real = await realImageFor(p).catch(() => null);
+      image = { source: real || logoUrl(), remove: placeholderMedia(p).map((m) => m.id), kind: real ? 'foto de otro tamaño' : 'logo de Nina' };
+      metafields.push({ namespace: 'nina_seo', key: 'foto', type: 'single_line_text_field', value: real ? 'bts' : 'logo' });
+      out.note = [out.note, `Sin foto en BTS: puesta ${image.kind}`].filter(Boolean).join(' · ');
+    }
     if (metafields.length) update.metafields = metafields;
     out.barcodes = n.barcodes.length;
     out.aiCalls = counter.n;
 
     if (!preview) {
+      if (image) {
+        try {
+          await sh.replaceImages(p.id, image.remove, image.source, p.title);
+        } catch (e) {
+          imgFailed.set(p.id, Date.now() + 86400_000);
+          update.metafields = (update.metafields || []).filter((m) => m.key !== 'foto');
+          out.note = 'No se pudo cambiar la foto: ' + (/access|denied|scope|permis/i.test(e.message) ? 'falta el permiso write_files en la app de Shopify' : e.message.slice(0, 200));
+        }
+      }
+      if (update.metafields && !update.metafields.length) delete update.metafields;
       if (Object.keys(update).length > 1) await sh.updateProduct(update);
       if (n.barcodes.length) await sh.setBarcodes(p.id, n.barcodes.map((v) => ({ id: v.id, ean: v.sku })));
-      if (Object.keys(update).length > 1 || n.barcodes.length || out.note) await store.log(out);
+      if (Object.keys(update).length > 1 || n.barcodes.length || out.note || out.error) await store.log(out);
     }
     return out;
   } catch (e) {

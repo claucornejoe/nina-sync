@@ -3,11 +3,13 @@ import express from 'express';
 import crypto from 'node:crypto';
 import cron from 'node-cron';
 import { config } from '../config.js';
-import { seo } from './settings.js';
+import { seo, publicBase } from './settings.js';
 import * as store from './store.js';
 import * as sh from './shopify.js';
 import { enqueue, sweep, processProduct, queueStatus, isSweeping } from './worker.js';
 import { seoPage } from './views.js';
+import { aiPaused } from './openai.js';
+import * as icecat from './icecat.js';
 
 const WEBHOOK_PATH = '/webhooks/products-create';
 const state = { webhook: 'sin comprobar', lastSweep: null, preview: null };
@@ -28,6 +30,7 @@ export function parseProductId(s) {
 
 export async function mountSeo(app, auth) {
   await store.migrate();
+  await icecat.migrate();
 
   // Shopify avisa cada vez que se crea un producto (a mano, por CSV o desde Nina Sync).
   app.post(WEBHOOK_PATH, express.raw({ type: '*/*', limit: '2mb' }), (req, res) => {
@@ -56,8 +59,9 @@ export async function mountSeo(app, auth) {
         queue: queueStatus(),
         sweeping: isSweeping(),
         state,
-        settings: { hasKey: !!seo.openaiKey(), model: seo.model, webSearch: seo.webSearch, auto: seo.auto, maxPerDay: seo.maxPerDay, publicUrl: config.publicUrl },
+        settings: { aiPaused: aiPaused(), hasKey: !!seo.openaiKey(), model: seo.model, webSearch: seo.webSearch, auto: seo.auto, maxPerDay: seo.maxPerDay, publicUrl: publicBase() },
         preview,
+        icecat: { status: icecat.icecatStatus(), summary: await icecat.summary(), samples: await icecat.samples() },
       }),
     );
   });
@@ -67,6 +71,16 @@ export async function mountSeo(app, auth) {
       .then((r) => (state.lastSweep = { at: new Date(), ...r }))
       .catch((e) => (state.lastSweep = { at: new Date(), error: e.message }));
     setTimeout(() => res.redirect('/seo'), 1500);
+  });
+
+  // Fotos extra de Icecat: primero comprobar (no cambia nada), luego añadir.
+  app.post('/seo/icecat/comprobar', auth, (_req, res) => {
+    icecat.checkAll().catch((e) => console.error('Icecat:', e.message));
+    setTimeout(() => res.redirect('/seo#fotos'), 1500);
+  });
+  app.post('/seo/icecat/anadir', auth, (_req, res) => {
+    icecat.addAll().catch((e) => console.error('Icecat:', e.message));
+    setTimeout(() => res.redirect('/seo#fotos'), 1500);
   });
 
   // Un producto: «Ver sin guardar» o «Rehacer y guardar».
@@ -84,12 +98,12 @@ export async function mountSeo(app, auth) {
 
   if (seo.auto) {
     // Suscripción al webhook (necesita PUBLIC_URL).
-    if (config.publicUrl) {
-      const uri = config.publicUrl.replace(/\/+$/, '') + WEBHOOK_PATH;
+    if (publicBase()) {
+      const uri = publicBase() + WEBHOOK_PATH;
       sh.ensureWebhook(uri)
         .then((r) => (state.webhook = r === 'creado' ? 'activo (recién creado)' : 'activo'))
         .catch((e) => {
-          state.webhook = 'error: ' + e.message.slice(0, 200);
+          state.webhook = `error con la dirección ${uri}: ` + e.message.slice(0, 200);
           console.error('No se pudo crear el webhook de productos:', e.message);
         });
     } else state.webhook = 'falta PUBLIC_URL';

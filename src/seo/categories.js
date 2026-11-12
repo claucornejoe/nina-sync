@@ -14,16 +14,33 @@ export const PERFUME_CATEGORIES = {
   samples: { id: C + 'hb-3-2-8-9', name: 'Muestras y sets de descubrimiento' },
 };
 
+// Maquillaje y cuidado de la piel: por la etiqueta de sección que ponen los CSV (mq-*, sc-*).
+// Las que no son concretas (cremas, limpieza, sets…) las decide la IA.
+export const TAG_CATEGORIES = {
+  'mq-ojos': { id: C + 'hb-3-2-6-3', name: 'Maquillaje para ojos' },
+  'mq-rostro': { id: C + 'hb-3-2-6-4', name: 'Maquillaje para cara y mejillas' },
+  'mq-labios': { id: C + 'hb-3-2-6-5', name: 'Maquillaje de labios' },
+  'mq-unas': { id: C + 'hb-3-2-7-11', name: 'Esmaltes de uñas' },
+  'sc-serums': { id: C + 'hb-3-2-9-21', name: 'Sérums faciales' },
+  'sc-solar': { id: C + 'hb-3-2-9-15', name: 'Protector solar' },
+  'sc-suplementos': { id: C + 'hb-1-9-6', name: 'Vitaminas y complementos' },
+  'sc-tonicos': { id: C + 'hb-3-2-9-17', name: 'Tónicos y astringentes' },
+  'sc-mascarillas': { id: C + 'hb-3-2-9-13', name: 'Máscaras y peelings para cuidado de la piel' },
+  'sc-sets': { id: C + 'hb-3-2-9-25', name: 'Kits y sets de cuidado de la piel' },
+};
+
 const has = (tags, t) => (tags || []).some((x) => x.toLowerCase() === t.toLowerCase());
 
 /** ¿Es un perfume? Por las etiquetas de tipo que pone Nina Sync o por el tipo de producto. */
 export function isPerfume(p) {
   const types = ['Eau de Parfum', 'Eau de Toilette', 'Parfum', 'Colonia', 'Body Mist', 'Perfume', 'Estuche'];
+  if (/maquillaje|cuidado de la piel/i.test(p.productType || '') || (p.tags || []).some((t) => /^(mq|sc)-/i.test(t))) return false;
   return /perfum|fragan|colonia/i.test(p.productType || '') || types.some((t) => has(p.tags, t));
 }
 
 /** Categoría por reglas para perfumes; null si no es perfume (entonces decide la IA). */
 export function ruleCategory(p) {
+  for (const t of p.tags || []) if (TAG_CATEGORIES[t.toLowerCase()]) return TAG_CATEGORIES[t.toLowerCase()];
   if (!isPerfume(p)) return null;
   const t = String(p.title || '').toLowerCase();
   if (/\b(hair mist|perfume (para el )?cabello|hair perfume|capilar)\b/.test(t)) return PERFUME_CATEGORIES.hair;

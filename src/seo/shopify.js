@@ -7,6 +7,8 @@ const PRODUCT_FIELDS = `id title vendor productType tags status descriptionHtml
   gAge: metafield(namespace: "mm-google-shopping", key: "age_group") { value }
   gCond: metafield(namespace: "mm-google-shopping", key: "condition") { value }
   ninaDesc: metafield(namespace: "nina_seo", key: "descripcion") { value }
+  ninaFoto: metafield(namespace: "nina_seo", key: "foto") { value }
+  media(first: 20) { nodes { id ... on MediaImage { image { url } } } }
   variants(first: 50) { nodes { id title sku barcodes(first: 3) { nodes { value } } } }`;
 
 const shape = (p) => ({
@@ -20,6 +22,8 @@ const shape = (p) => ({
   category: p.category,
   google: { gender: p.gGender?.value, ageGroup: p.gAge?.value, condition: p.gCond?.value },
   aiDescription: p.ninaDesc?.value || null,
+  photoMark: p.ninaFoto?.value || null,
+  media: (p.media?.nodes || []).map((m) => ({ id: m.id, url: m.image?.url || '' })),
   variants: p.variants.nodes.map((v) => ({ id: v.id, title: v.title, sku: (v.sku || '').trim(), barcodes: v.barcodes.nodes.map((b) => b.value) })),
 });
 
@@ -81,4 +85,19 @@ export async function ensureWebhook(uri) {
   const errs = c.webhookSubscriptionCreate.userErrors;
   if (errs.length) throw new Error('webhookSubscriptionCreate: ' + JSON.stringify(errs));
   return 'creado';
+}
+
+/** Sustituye imágenes: borra las indicadas y añade la nueva (queda como principal si no hay otras). */
+export async function replaceImages(productId, removeIds, source, alt) {
+  if (removeIds.length) {
+    const d = await gql(`mutation($ids: [ID!]!) { fileDelete(fileIds: $ids) { deletedFileIds userErrors { field message code } } }`, { ids: removeIds });
+    const errs = d.fileDelete.userErrors;
+    if (errs.length) throw new Error('fileDelete: ' + JSON.stringify(errs));
+  }
+  const d = await gql(
+    `mutation($product: ProductUpdateInput!, $media: [CreateMediaInput!]) { productUpdate(product: $product, media: $media) { userErrors { field message } } }`,
+    { product: { id: productId }, media: [{ originalSource: source, mediaContentType: 'IMAGE', alt }] },
+  );
+  const errs = d.productUpdate.userErrors;
+  if (errs.length) throw new Error('productUpdate(media): ' + JSON.stringify(errs));
 }

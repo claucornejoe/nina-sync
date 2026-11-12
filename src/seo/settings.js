@@ -18,3 +18,12 @@ export const seo = {
   skipTag: process.env.SEO_SKIP_TAG || 'seo-manual',
   shopName: process.env.SHOP_NAME || 'Nina Beauty',
 };
+
+/** PUBLIC_URL con https:// y sin barra final (Shopify rechaza direcciones sin https). */
+export function publicBase(raw = process.env.PUBLIC_URL || '') {
+  let u = String(raw).trim().replace(/\/+$/, '');
+  if (!u) return '';
+  u = u.replace(/^http:\/\//i, 'https://');
+  if (!/^https:\/\//i.test(u)) u = 'https://' + u;
+  return u;
+}

@@ -23,7 +23,30 @@ function previewBox(p) {
 </div>`;
 }
 
-export function seoPage({ rows, totals, aiToday, queue, sweeping, state, settings, preview }) {
+function icecatSection(ic) {
+  if (!ic) return '';
+  const s = ic.summary || {};
+  const st = ic.status;
+  const busy = st && !st.finished;
+  const progress = st ? `${st.adding ? 'Añadiendo' : 'Comprobando'}: ${st.done} de ${st.total || '…'}${st.finished ? ' · terminado' : ''}` : '';
+  const thumbs = (ic.samples || [])
+    .map((r) => `<div class="card" style="padding:12px"><div class="prod" style="font-size:13px">${esc(r.product_title)}</div><div class="muted">${r.pics} fotos</div>
+<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">${(r.urls || []).slice(0, 4).map((u) => `<img src="${esc(u.url)}" alt="" loading="lazy" style="width:64px;height:64px;object-fit:contain;background:#fff;border:1px solid var(--linea);border-radius:8px">`).join('')}</div></div>`)
+    .join('');
+  return `<h2 id="fotos">Fotos extra (Icecat)</h2>
+<div class="card">
+ <p style="margin-top:0">Icecat es el catálogo donde las marcas dejan sus fotos oficiales para las tiendas. Primero se <b>comprueba</b> cuántas fotos hay por producto (no cambia nada). Después, si te convence, se <b>añaden</b> hasta 3 fotos más por producto, sin repetirlas por tamaño. Si un producto tiene el logo provisional, la foto oficial lo sustituye.</p>
+ ${s.checked ? `<p><b>${s.any}</b> de ${s.checked} productos tienen fotos en Icecat · <b>${s.two}</b> con 2 o más · <b>${s.four}</b> con 4 o más · ya añadidas en <b>${s.added}</b>.${s.errors ? ` <span class="chip error">${s.errors} ${s.errors === 1 ? "error" : "errores"}</span> <span class="muted">${esc(s.last_error || '')}</span>` : ''}</p>` : ''}
+ ${progress ? `<p class="muted">${esc(progress)}</p>` : ''}
+ <div style="display:flex;gap:12px;flex-wrap:wrap">
+  <form method="post" action="/seo/icecat/comprobar"><button class="btn ghost" ${busy ? 'disabled' : ''}>Comprobar fotos en Icecat</button></form>
+  ${s.any ? `<form method="post" action="/seo/icecat/anadir" onsubmit="return confirm('¿Añadir las fotos de Icecat a ${s.any - s.added} productos?')"><button class="btn" ${busy ? 'disabled' : ''}>Añadir fotos a ${s.any - s.added} productos</button></form>` : ''}
+ </div>
+</div>
+${thumbs ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:12px">${thumbs}</div>` : ''}`;
+}
+
+export function seoPage({ rows, totals, aiToday, queue, sweeping, state, settings, preview, icecat }) {
   const busy = sweeping || queue.pending > 0 || queue.active > 0;
   const table = rows
     .map(
@@ -54,6 +77,7 @@ export function seoPage({ rows, totals, aiToday, queue, sweeping, state, setting
  <form method="post" action="/seo/repasar"><button class="btn" ${busy ? 'disabled' : ''}>${icon('sync', 18).replace('class="ic"', busy ? 'class="ic spin"' : 'class="ic"')} ${busy ? 'Trabajando…' : 'Repasar todos ahora'}</button></form>
 </section>
 
+${settings.aiPaused ? `<div class="alert">${icon('alert')}<div><b>Las descripciones están en pausa una hora:</b> ${esc(settings.aiPaused)}.</div></div>` : ''}
 <div class="kpis">
  ${kpi('layers', 'Categorías puestas', totals.categories)}
  ${kpi('spark', 'Descripciones escritas', totals.descriptions, 'destacado')}
@@ -75,10 +99,12 @@ ${previewBox(preview)}
  ${check(String(state.webhook).startsWith('activo'), 'Aviso de productos nuevos', settings.auto ? esc(state.webhook) : 'Desactivado con SEO_AUTO=false.')}
 </ul>
 
+${icecatSection(icecat)}
+
 <h2>Últimos productos</h2>
 <div class="tablecard"><div class="tablewrap"><table>
 <thead><tr><th>Fecha</th><th>Producto</th><th>Categoría</th><th>Descripción</th><th>Origen</th><th>Detalle</th></tr></thead>
 <tbody>${table || `<tr><td colspan="6"><div class="empty"><img src="/static/mariposa.svg" alt="">Todavía no se ha procesado ningún producto.</div></td></tr>`}</tbody>
 </table></div></div>`;
-  return shell('Google y descripciones', 'seo', body, { refresh: busy });
+  return shell('Google y descripciones', 'seo', body, { refresh: busy || (icecat?.status && !icecat.status.finished) });
 }

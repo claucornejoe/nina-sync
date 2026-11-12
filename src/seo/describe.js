@@ -14,7 +14,7 @@ export const SCHEMA = {
     notas_salida: { type: 'array', items: { type: 'string' } },
     notas_corazon: { type: 'array', items: { type: 'string' } },
     notas_fondo: { type: 'array', items: { type: 'string' } },
-    detalles: { type: 'array', items: { type: 'string' }, description: 'Hasta 4 datos objetivos más (contenido de un estuche, acabado, uso…). Sin precios ni envíos.' },
+    detalles: { type: 'array', items: { type: 'string' }, description: 'Solo si aportan algo: hasta 3 datos objetivos (contenido de un estuche, acabado, uso). No repitas marca, tipo, concentración, género ni tamaños. Sin precios ni envíos. Normalmente vacío en perfumes.' },
     seguro: { type: 'boolean', description: 'true si las notas y la familia están comprobadas en una fuente fiable o se conocen con certeza.' },
   },
 };
@@ -33,6 +33,7 @@ export function buildPrompt(p, { webSearch }) {
     `Eres redactora de fichas de producto de una perfumería online española. Escribes en español de España, con tono cercano y elegante.`,
     `Reglas de Google Merchant Center que debes cumplir: habla SOLO del producto; nada de precios, descuentos, ofertas, envíos, plazos, devoluciones, «compra», «mejor precio», «original», nombre de la tienda, enlaces, emojis ni MAYÚSCULAS de énfasis; no compares con otras marcas.`,
     `No inventes nada. Si no conoces con seguridad la familia olfativa o las notas${webSearch ? ', búscalas en internet (web oficial de la marca, Fragrantica, Notino o Douglas); si tampoco las encuentras' : ''}, deja esos campos vacíos y pon seguro=false.`,
+    `Nada de afirmaciones médicas o de salud (curar, tratar, prevenir enfermedades, adelgazar) ni promesas de resultados garantizados: Google las rechaza. En cosmética describe textura, acabado, tipo de piel y uso; en complementos, solo qué contiene y cómo se toma según el envase.`,
     `Las notas, en español y en minúscula (p. ej. «bergamota», «pachuli»). Máximo 5 por grupo.`,
   ].join('\n');
   const user = [
@@ -62,6 +63,15 @@ export function cleanText(s) {
 }
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+// Detalles que repiten datos que ya van en la lista, o que hablan de la imagen: fuera.
+const REDUNDANT = /^(marca|tipo|para|g[eé]nero|concentraci[oó]n|familia|notas?|tama[nñ]os?|tonos?|formatos?|contenido neto)\b|imagen/i;
+export const usefulDetail = (d) => !!d && !REDUNDANT.test(String(d).trim());
+
+/** Quita de una descripción ya escrita las líneas sueltas sin negrita que repiten datos (versiones anteriores). */
+export function stripRedundant(html) {
+  return String(html || '').replace(/\n?<li>(?!\s*<strong>)([^<]*)<\/li>/g, (m, txt) => (usefulDetail(txt) ? m : ''));
+}
+
 const list = (a) => (a || []).map((x) => String(x).trim().replace(/\.$/, '')).filter((x) => x && !BANNED.test(x)).slice(0, 5);
 
 /** HTML final de la descripción (sin precio, envío ni nada de la tienda). */
@@ -80,8 +90,12 @@ export function renderDescription(p, ai) {
     if (c.length) items.push(['Notas de corazón', c.join(', ')]);
     if (b.length) items.push(['Notas de fondo', b.join(', ')]);
   }
-  for (const d of list(ai?.detalles).slice(0, 4)) items.push([null, d]);
-  if (f.sizes.length) items.push([f.sizes.length > 1 ? 'Tamaños' : 'Tamaño', f.sizes.join(', ').replace(/(\d)ml\b/gi, '$1 ml')]);
+  for (const d of list(ai?.detalles).filter(usefulDetail).slice(0, 3)) items.push([null, d]);
+  if (f.sizes.length) {
+    const sizeLike = f.sizes.every((x) => /\d\s?(ml|g|gr|oz|cl|l)\b/i.test(x));
+    const label = sizeLike ? (f.sizes.length > 1 ? 'Tamaños' : 'Tamaño') : (p.tags || []).some((t) => /^mq-|maquillaje/i.test(t)) ? 'Tonos' : 'Formatos';
+    items.push([label, f.sizes.join(', ').replace(/(\d)ml\b/gi, '$1 ml')]);
+  }
 
   const head = intro || `${f.title}${f.type ? `, ${f.type.toLowerCase()}` : ''}${f.gender ? ` ${GENDER_ES[f.gender]}` : ''}${f.brand ? ` de ${f.brand}` : ''}.`;
   return `<p>${esc(head)}</p>\n<ul>\n${items.map(([k, v]) => `<li>${k ? `<strong>${esc(k)}:</strong> ` : ''}${esc(v)}</li>`).join('\n')}\n</ul>`;
