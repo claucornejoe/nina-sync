@@ -77,7 +77,7 @@ export async function processProduct(productId, { origin = 'manual', preview = f
 
     if (n.category) {
       let cat = ruleCategory(p);
-      if (!cat && seo.openaiKey()) cat = await aiCategory(p, counter);
+      if (!cat && seo.openaiKey()) cat = await aiCategory(p, counter).catch((e) => ((out.error = 'Categoría: ' + String(e.message).slice(0, 380)), null));
       if (cat) {
         update.category = cat.id;
         out.category = cat.name;
@@ -91,13 +91,18 @@ export async function processProduct(productId, { origin = 'manual', preview = f
       if (!seo.openaiKey()) out.note = [out.note, 'Descripción pendiente: falta OPENAI_API_KEY'].filter(Boolean).join(' · ');
       else if ((await store.aiCallsToday()) + counter.n >= seo.maxPerDay) out.capped = true; // mañana sigue
       else {
-        const { system, user } = buildPrompt(p, { webSearch: seo.webSearch });
-        counter.n++;
-        const ai = await askJson({ system, user, schema: SCHEMA, name: 'ficha', webSearch: seo.webSearch });
-        update.descriptionHtml = renderDescription(p, ai);
-        metafields.push({ namespace: 'nina_seo', key: 'descripcion', type: 'single_line_text_field', value: `ia ${new Date().toISOString().slice(0, 10)}${ai.seguro ? '' : ' sin notas'}` });
-        out.description = true;
-        out.descriptionHtml = update.descriptionHtml;
+        // Un fallo de la IA no impide guardar la categoría, los campos de Google ni la foto.
+        try {
+          const { system, user } = buildPrompt(p, { webSearch: seo.webSearch });
+          counter.n++;
+          const ai = await askJson({ system, user, schema: SCHEMA, name: 'ficha', webSearch: seo.webSearch });
+          update.descriptionHtml = renderDescription(p, ai);
+          metafields.push({ namespace: 'nina_seo', key: 'descripcion', type: 'single_line_text_field', value: `ia ${new Date().toISOString().slice(0, 10)}${ai.seguro ? '' : ' sin notas'}` });
+          out.description = true;
+          out.descriptionHtml = update.descriptionHtml;
+        } catch (e) {
+          out.error = 'Descripción: ' + String(e.message || e).slice(0, 380);
+        }
       }
     }
 
@@ -135,7 +140,7 @@ export async function processProduct(productId, { origin = 'manual', preview = f
       if (update.metafields && !update.metafields.length) delete update.metafields;
       if (Object.keys(update).length > 1) await sh.updateProduct(update);
       if (n.barcodes.length) await sh.setBarcodes(p.id, n.barcodes.map((v) => ({ id: v.id, ean: v.sku })));
-      if (Object.keys(update).length > 1 || n.barcodes.length || out.note) await store.log(out);
+      if (Object.keys(update).length > 1 || n.barcodes.length || out.note || out.error) await store.log(out);
     }
     return out;
   } catch (e) {
