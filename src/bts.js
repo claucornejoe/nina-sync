@@ -1,24 +1,38 @@
 import { config } from './config.js';
 import { parseMoney } from './pricing.js';
 
-// Cliente de la API v2.0 de BTS Wholesaler.
-// La URL base y el token JWT salen del panel de cliente de BTS.
-// La forma exacta de la respuesta no es pública, así que se aceptan
-// varias envolturas habituales ({data:[]}, {products:[]}, [] ...).
+// Cliente de la API de BTS Wholesaler (documentación v2.1, 27-10-2026).
+// Base: https://api.btswholesaler.com/v1/api · Auth: Bearer JWT · Límite: 120 peticiones/min.
+// Se usa getProducts (máx. 25 SKU por llamada), que trae coste, PVP recomendado y stock
+// solo de lo que la cuenta puede vender. Un EAN que no vuelve = no se puede vender.
 
-async function call(fn, body) {
-  const url = `${config.bts.apiUrl()}/${fn}`;
+const BATCH = 25;
+const MIN_GAP_MS = 550; // ~110 peticiones/min, por debajo del límite de 120
+let lastCall = 0;
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function get(fn, params) {
+  const url = new URL(`${config.bts.apiUrl()}/${fn}`);
+  for (const [k, v] of params) url.searchParams.append(k, v);
+
   for (let attempt = 0; ; attempt++) {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${config.bts.token()}`, 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify(body),
-    });
-    if ((res.status === 429 || res.status >= 500) && attempt < 4) {
-      await new Promise((r) => setTimeout(r, 3000 * (attempt + 1)));
+    const wait = lastCall + MIN_GAP_MS - Date.now();
+    if (wait > 0) await sleep(wait);
+    lastCall = Date.now();
+
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${config.bts.token()}`, Accept: 'application/json' } });
+    if (res.status === 429 && attempt < 6) {
+      const retry = Number(res.headers.get('retry-after')) || 10;
+      await sleep(retry * 1000 + 500);
+      continue;
+    }
+    if (res.status >= 500 && attempt < 3) {
+      await sleep(3000 * (attempt + 1));
       continue;
     }
     const text = await res.text();
+    if (res.status === 401) throw new Error('BTS rechaza el token (401): revisa BTS_TOKEN');
     if (!res.ok) throw new Error(`BTS ${fn} respondió ${res.status}: ${text.slice(0, 300)}`);
     try {
       return JSON.parse(text);
@@ -28,39 +42,41 @@ async function call(fn, body) {
   }
 }
 
-function extractList(j) {
-  if (Array.isArray(j)) return j;
-  for (const k of ['data', 'products', 'items', 'result', 'results']) {
-    if (Array.isArray(j?.[k])) return j[k];
-    if (Array.isArray(j?.[k]?.products)) return j[k].products;
-    if (Array.isArray(j?.[k]?.items)) return j[k].items;
-  }
-  throw new Error('No reconozco la respuesta de BTS: ' + JSON.stringify(j).slice(0, 300));
-}
-
 export function normalize(p) {
   return {
-    ean: String(p.ean ?? p.EAN ?? p.barcode ?? '').trim(),
-    name: p.name ?? p.title ?? '',
-    cost: parseMoney(p.price ?? p.cost ?? p.wholesale_price),
-    rrp: parseMoney(p.recommended_price ?? p.rrp ?? p.pvp),
-    stock: Number(p.stock ?? p.quantity ?? 0) || 0,
+    ean: String(p.ean ?? p.product_sku ?? '').trim(),
+    name: p.name ?? p.product_name ?? '',
+    cost: parseMoney(p.price ?? p.product_price),
+    rrp: parseMoney(p.recommended_price),
+    stock: Number(p.stock ?? p.product_stock ?? 0) || 0,
   };
 }
 
-/** Catálogo completo de BTS indexado por EAN. */
-export async function fetchCatalog() {
+function asList(j) {
+  if (Array.isArray(j)) return j;
+  if (Array.isArray(j?.products)) return j.products;
+  if (j && typeof j === 'object' && j.ean) return [j];
+  if (j?.error || j?.message) return []; // p. ej. ningún SKU encontrado en ese lote
+  throw new Error('Respuesta de BTS getProducts no reconocida: ' + JSON.stringify(j).slice(0, 300));
+}
+
+/**
+ * Datos de BTS (coste, PVP recomendado y stock) para los EAN de la tienda, indexados por EAN.
+ * @param {string[]} eans
+ */
+export async function fetchCatalog(eans) {
+  const unique = [...new Set(eans.filter(Boolean))];
   const byEan = new Map();
-  const limit = config.bts.pageSize;
-  for (let page = 1; page < 1000; page++) {
-    const j = await call(config.bts.listPath, { page, limit, lang: config.bts.lang });
-    const list = extractList(j);
+  for (let i = 0; i < unique.length; i += BATCH) {
+    const chunk = unique.slice(i, i + BATCH);
+    const params = chunk.map((e, k) => [`product_sku[${k}]`, e]);
+    params.push(['language_code', config.bts.lang]);
+    const list = asList(await get('getProducts', params));
     for (const raw of list) {
       const p = normalize(raw);
       if (p.ean) byEan.set(p.ean, p);
     }
-    if (list.length < limit) break;
   }
-  if (byEan.size === 0) throw new Error('BTS devolvió 0 productos; no se toca nada en Shopify');
+  if (unique.length > 0 && byEan.size === 0) throw new Error('BTS devolvió 0 productos; no se toca nada en Shopify');
   return byEan;
 }

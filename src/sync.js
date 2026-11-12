@@ -31,9 +31,9 @@ async function doSync(trigger, dryRun) {
     }
 
     // 2. Datos de BTS y de Shopify.
-    const bts = await fetchCatalog();
     const locationId = await shopify.getLocationId();
     const variants = await shopify.getAllVariants(locationId);
+    const bts = await fetchCatalog(variants.map((v) => v.ean));
 
     // 3. Planificar.
     const plan = planSync(variants, bts, r);

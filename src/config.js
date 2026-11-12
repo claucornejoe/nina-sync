@@ -24,11 +24,9 @@ export const config = {
   },
 
   bts: {
-    apiUrl: () => req('BTS_API_URL').replace(/\/+$/, ''),
+    apiUrl: () => (process.env.BTS_API_URL || 'https://api.btswholesaler.com/v1/api').replace(/\/+$/, ''),
     token: () => req('BTS_TOKEN'),
-    listPath: process.env.BTS_LIST_PATH || 'getListProducts',
-    pageSize: num('BTS_PAGE_SIZE', 500),
-    lang: process.env.BTS_LANG || 'es',
+    lang: process.env.BTS_LANG || 'es-ES',
   },
 
   rules: {

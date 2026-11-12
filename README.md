@@ -16,7 +16,7 @@ Sincroniza el stock y los precios de **BTS Wholesaler** con la tienda Shopify de
 - Los productos con la etiqueta `precio-manual` no cambian de precio (solo de stock).
 - Antes de tocar nada comprueba que la tienda conectada es la de Nina Beauty. Si BTS no trae más de la mitad de los EAN, cancela para no vaciar la tienda por un fallo de BTS.
 
-Empareja por **EAN**, que está en el SKU de cada tamaño en Shopify.
+Empareja por **EAN**, que está en el SKU de cada tamaño en Shopify. Consulta BTS con `getProducts` (25 EAN por llamada, respetando el límite de 120 peticiones por minuto): con unos 3.700 tamaños tarda alrededor de un minuto y medio.
 
 ## Puesta en marcha en Railway
 
