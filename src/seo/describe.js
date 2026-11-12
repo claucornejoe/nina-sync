@@ -14,7 +14,7 @@ export const SCHEMA = {
     notas_salida: { type: 'array', items: { type: 'string' } },
     notas_corazon: { type: 'array', items: { type: 'string' } },
     notas_fondo: { type: 'array', items: { type: 'string' } },
-    detalles: { type: 'array', items: { type: 'string' }, description: 'Hasta 4 datos objetivos más (contenido de un estuche, acabado, uso…). Sin precios ni envíos.' },
+    detalles: { type: 'array', items: { type: 'string' }, description: 'Solo si aportan algo: hasta 3 datos objetivos (contenido de un estuche, acabado, uso). No repitas marca, tipo, concentración, género ni tamaños. Sin precios ni envíos. Normalmente vacío en perfumes.' },
     seguro: { type: 'boolean', description: 'true si las notas y la familia están comprobadas en una fuente fiable o se conocen con certeza.' },
   },
 };
