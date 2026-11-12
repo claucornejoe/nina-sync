@@ -158,3 +158,10 @@ test('maquillaje y skin care: categoría por etiqueta y tonos', () => {
   assert.equal(ruleCategory({ ...lab, tags: ['skin-care', 'sc-cremas'], productType: 'Cuidado de la piel' }), null);
   assert.match(renderDescription(lab, { intro: 'Labial líquido mate.', familia_olfativa: '', notas_salida: [], notas_corazon: [], notas_fondo: [], detalles: [], seguro: true }), /Tonos:<\/strong> 20 Pioneer, 65 Seductress/);
 });
+
+test('quita líneas repetidas sin negrita', async () => {
+  const { stripRedundant, usefulDetail } = await import('../src/seo/describe.js');
+  const html = '<p>Hola.</p>\n<ul>\n<li><strong>Tipo:</strong> Eau de Parfum</li>\n<li>tipo: eau de parfum</li>\n<li>para: mujer</li>\n<li>tamaños: 30 ml</li>\n<li>Frasco de vidrio facetado (imagen comercial ampliamente usada)</li>\n<li>Incluye loción corporal de 100 ml</li>\n</ul>';
+  assert.equal(stripRedundant(html), '<p>Hola.</p>\n<ul>\n<li><strong>Tipo:</strong> Eau de Parfum</li>\n<li>Incluye loción corporal de 100 ml</li>\n</ul>');
+  assert.equal(usefulDetail('Concentración: eau de parfum'), false);
+});

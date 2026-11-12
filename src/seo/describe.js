@@ -63,6 +63,15 @@ export function cleanText(s) {
 }
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+// Detalles que repiten datos que ya van en la lista, o que hablan de la imagen: fuera.
+const REDUNDANT = /^(marca|tipo|para|g[eé]nero|concentraci[oó]n|familia|notas?|tama[nñ]os?|tonos?|formatos?|contenido neto)\b|imagen/i;
+export const usefulDetail = (d) => !!d && !REDUNDANT.test(String(d).trim());
+
+/** Quita de una descripción ya escrita las líneas sueltas sin negrita que repiten datos (versiones anteriores). */
+export function stripRedundant(html) {
+  return String(html || '').replace(/\n?<li>(?!\s*<strong>)([^<]*)<\/li>/g, (m, txt) => (usefulDetail(txt) ? m : ''));
+}
+
 const list = (a) => (a || []).map((x) => String(x).trim().replace(/\.$/, '')).filter((x) => x && !BANNED.test(x)).slice(0, 5);
 
 /** HTML final de la descripción (sin precio, envío ni nada de la tienda). */
@@ -81,7 +90,7 @@ export function renderDescription(p, ai) {
     if (c.length) items.push(['Notas de corazón', c.join(', ')]);
     if (b.length) items.push(['Notas de fondo', b.join(', ')]);
   }
-  for (const d of list(ai?.detalles).slice(0, 4)) items.push([null, d]);
+  for (const d of list(ai?.detalles).filter(usefulDetail).slice(0, 3)) items.push([null, d]);
   if (f.sizes.length) {
     const sizeLike = f.sizes.every((x) => /\d\s?(ml|g|gr|oz|cl|l)\b/i.test(x));
     const label = sizeLike ? (f.sizes.length > 1 ? 'Tamaños' : 'Tamaño') : (p.tags || []).some((t) => /^mq-|maquillaje/i.test(t)) ? 'Tonos' : 'Formatos';

@@ -6,7 +6,7 @@ import * as sh from './shopify.js';
 import * as store from './store.js';
 import { askJson, aiPaused } from './openai.js';
 import { ruleCategory, googleGender, isGtin } from './categories.js';
-import { SCHEMA, buildPrompt, renderDescription, isReplaceable } from './describe.js';
+import { SCHEMA, buildPrompt, renderDescription, isReplaceable, stripRedundant } from './describe.js';
 import { placeholderMedia, logoUrl, realImageFor } from './images.js';
 
 // Productos sin categoría posible: no se reintenta con IA hasta pasadas 24 h.
@@ -21,8 +21,9 @@ export function needs(p, { capReached = false } = {}) {
   const g = p.google || {};
   const google = (!g.gender && !!googleGender(p.tags)) || !g.ageGroup || !g.condition;
   const barcodes = p.variants.filter((v) => !v.barcodes.length && isGtin(v.sku));
+  const cleanup = !!p.aiDescription && stripRedundant(p.descriptionHtml) !== p.descriptionHtml;
   const image = !(imgFailed.get(p.id) > Date.now()) && !!logoUrl() && placeholderMedia(p).length > 0;
-  return { category, description, google, barcodes, image, any: category || description || google || image || barcodes.length > 0 };
+  return { category, description, google, barcodes, image, cleanup, any: category || description || google || image || cleanup || barcodes.length > 0 };
 }
 
 // ---- Categoría con IA para lo que no es perfume ----
@@ -104,6 +105,11 @@ export async function processProduct(productId, { origin = 'manual', preview = f
           out.error = 'Descripción: ' + String(e.message || e).slice(0, 380);
         }
       }
+    }
+
+    if (n.cleanup && !update.descriptionHtml) {
+      update.descriptionHtml = stripRedundant(p.descriptionHtml);
+      out.note = [out.note, 'Quitadas líneas repetidas de la descripción'].filter(Boolean).join(' · ');
     }
 
     if (n.google) {
