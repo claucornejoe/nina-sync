@@ -37,7 +37,8 @@ async function doSync(trigger, dryRun) {
     const bts = await fetchCatalog(variants.map((v) => v.ean));
 
     // 3. Planificar.
-    const plan = planSync(variants, bts, r);
+    const prevCosts = await db.getCosts([...bts.keys()]);
+    const plan = planSync(variants, bts, r, prevCosts);
     const withEan = variants.filter((v) => v.ean).length;
     if (withEan > 20 && plan.missing > withEan * 0.5) {
       throw new Error(`BTS no trae ${plan.missing} de ${withEan} EAN: parece un fallo de BTS, no se toca nada`);
@@ -85,6 +86,7 @@ async function doSync(trigger, dryRun) {
     }
     plan.changes.push(...(await expireNewArrivals({ dryRun })));
 
+    if (!dryRun) await db.saveCosts([...bts.values()]);
     await db.saveChanges(runId, plan.changes);
     const count = (k) => plan.changes.filter((c) => c.kind === k).length;
     const summary = {

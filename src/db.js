@@ -45,6 +45,12 @@ export async function migrate() {
       started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       until TIMESTAMPTZ NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS bts_costs (
+      ean TEXT PRIMARY KEY,
+      cost NUMERIC,
+      rrp NUMERIC,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
     CREATE TABLE IF NOT EXISTS bts_new_seen (
       ean TEXT PRIMARY KEY,
       first_seen TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -148,4 +154,22 @@ export async function deleteNewArrival(productId) {
 }
 export async function activeNewArrivals() {
   return (await pool.query('SELECT * FROM new_arrivals WHERE until >= now() ORDER BY until')).rows;
+}
+
+/** Coste y PVP de BTS vistos en la última sincronización, por EAN. */
+export async function getCosts(eans) {
+  if (!eans.length) return new Map();
+  const rows = (await pool.query('SELECT ean, cost, rrp FROM bts_costs WHERE ean = ANY($1)', [eans])).rows;
+  return new Map(rows.map((r) => [r.ean, { cost: r.cost === null ? null : Number(r.cost), rrp: r.rrp === null ? null : Number(r.rrp) }]));
+}
+export async function saveCosts(items) {
+  const list = items.filter((b) => b.ean && b.cost);
+  for (let i = 0; i < list.length; i += 1000) {
+    const chunk = list.slice(i, i + 1000);
+    await pool.query(
+      `INSERT INTO bts_costs(ean, cost, rrp) SELECT * FROM unnest($1::text[], $2::numeric[], $3::numeric[])
+       ON CONFLICT (ean) DO UPDATE SET cost=EXCLUDED.cost, rrp=EXCLUDED.rrp, updated_at=now()`,
+      [chunk.map((b) => b.ean), chunk.map((b) => b.cost), chunk.map((b) => b.rrp ?? null)],
+    );
+  }
 }

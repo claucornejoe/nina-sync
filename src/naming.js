@@ -50,9 +50,10 @@ const NOUN = {
   Perfume: 'un perfume',
 };
 
-export function description(title, brand, gender, type) {
+export function description(title, brand, gender, type, freeFrom = 39) {
+  const envio = freeFrom ? `Envío gratis desde ${String(freeFrom).replace('.', ',')} € a la península y Baleares.` : 'Envío a la península y Baleares.';
   return (
     `<p><strong>${esc(title)}</strong> es ${NOUN[type] || 'un perfume'} ${PARA[gender] || ''} de ${esc(brand)}, 100 % original.</p>` +
-    '<ul><li>Producto original con su caja precintada.</li><li>Envío gratis a la península y Baleares.</li><li>Entrega en 24 a 72 horas laborables.</li></ul>'
+    `<ul><li>Producto original con su caja precintada.</li><li>${envio}</li><li>Entrega en 24 a 72 horas laborables.</li></ul>`
   );
 }

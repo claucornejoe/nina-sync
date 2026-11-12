@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { planSync } from '../src/plan.js';
 import { reportHtml, changesCsv } from '../src/views.js';
 
-const r = { vat: 1.21, margin: 0.7, shipping: 6, paypalFixed: 0.35, paypalNet: 0.911, minProfitAfterRounding: 0.5, minStock: 3, manualPriceTag: 'precio-manual' };
+const r = { vat: 1.21, margin: 0.7, shipping: 6, shippingPrice: 4.95, freeShippingFrom: 39, paypalFixed: 0.35, paypalNet: 0.911, minProfitAfterRounding: 0.5, minStock: 3, manualPriceTag: 'precio-manual' };
 const v = (o) => ({ id: 'V' + o.ean, productId: 'P1', productTitle: 'Perfume X', variantTitle: '100ml', inventoryItemId: 'I' + o.ean, tags: [], compareAt: null, ...o });
 
 test('stock < 3 pasa a 0 y >= 3 se copia', () => {
@@ -18,13 +18,25 @@ test('EAN que ya no está en BTS queda a 0', () => {
   assert.equal(p.changes[0].kind, 'sin_bts');
 });
 
-test('bajada de precio => oferta de la semana', () => {
+test('BTS baja el coste => oferta de la semana', () => {
   const bts = new Map([['1', { ean: '1', cost: 26.3, rrp: 143, stock: 100 }]]);
-  const p = planSync([v({ ean: '1', available: 100, price: 60.95, compareAt: 143 })], bts, r);
-  assert.equal(p.priceUpdates.get('P1')[0].price, '56.95');
+  const prev = new Map([['1', { cost: 29, rrp: 143 }]]);
+  const p = planSync([v({ ean: '1', available: 100, price: 55.95, compareAt: 143 })], bts, r, prev);
+  assert.equal(p.priceUpdates.get('P1')[0].price, '50.95');
   assert.ok(p.offerProducts.has('P1'));
   const c = p.changes.find((x) => x.kind === 'precio');
   assert.ok(c.priceDrop && c.onSale);
+});
+
+test('bajada solo por la fórmula (sin envío) no es oferta', () => {
+  const bts = new Map([['1', { ean: '1', cost: 26.3, rrp: 143, stock: 100 }]]);
+  const prev = new Map([['1', { cost: 26.3, rrp: 143 }]]);
+  for (const pc of [prev, new Map()]) {
+    const p = planSync([v({ ean: '1', available: 100, price: 56.95, compareAt: 143 })], bts, r, pc);
+    assert.equal(p.priceUpdates.get('P1')[0].price, '50.95');
+    assert.equal(p.offerProducts.size, 0);
+    assert.match(p.changes.find((x) => x.kind === 'precio').note, /ajuste de fórmula/);
+  }
 });
 
 test('subida de precio no es oferta', () => {
@@ -35,7 +47,7 @@ test('subida de precio no es oferta', () => {
 
 test('sin cambios => nada que hacer', () => {
   const bts = new Map([['1', { ean: '1', cost: 26.3, rrp: 143, stock: 100 }]]);
-  const p = planSync([v({ ean: '1', available: 100, price: 56.95, compareAt: 143 })], bts, r);
+  const p = planSync([v({ ean: '1', available: 100, price: 50.95, compareAt: 143 })], bts, r);
   assert.equal(p.changes.length, 0);
   assert.equal(p.stockUpdates.length, 0);
 });

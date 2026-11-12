@@ -1,5 +1,7 @@
-// Fórmula de precio acordada con Clau (2026-11-10).
-// Precio = (coste BTS × 1,21 ÷ 0,70 + 6 envío + 0,35 PayPal) ÷ 0,911, redondeado hacia arriba a ,95.
+// Fórmula de precio (Clau, 2026-11-12: el envío ya no va dentro del precio).
+// Precio = (coste BTS × 1,21 ÷ 0,70 + 0,35 PayPal) ÷ 0,911, redondeado hacia arriba a ,95.
+// El envío lo paga el cliente (4,95 €) salvo en pedidos desde el mínimo de envío gratis,
+// donde los 6 € de BTS salen de la ganancia: por eso la ganancia sí los descuenta.
 // Si supera el PVP recomendado se baja al PVP (y a ,95 si sigue ganando más de 0,50 €).
 // Si a ese precio pierde dinero, el tamaño no se vende (stock 0).
 
@@ -17,8 +19,14 @@ export function floor95(x) {
   return round2(n + 0.95);
 }
 
+/** Lo que le cuesta a Nina el envío de un pedido con este precio. */
+export function shippingCost(price, r) {
+  if (r.freeShippingFrom == null || price >= r.freeShippingFrom) return r.shipping;
+  return round2(r.shipping - (r.shippingPrice || 0) * r.paypalNet);
+}
+
 export function profit(price, cost, r) {
-  return round2(price * r.paypalNet - r.paypalFixed - r.shipping - cost * r.vat);
+  return round2(price * r.paypalNet - r.paypalFixed - shippingCost(price, r) - cost * r.vat);
 }
 
 /**
@@ -27,7 +35,7 @@ export function profit(price, cost, r) {
  * @returns {{price:number, compareAt:number|null, profit:number, status:'formula'|'pvp'|'pierde'}}
  */
 export function computePrice(cost, rrp, r) {
-  const formula = ceil95((cost * r.vat / r.margin + r.shipping + r.paypalFixed) / r.paypalNet);
+  const formula = ceil95((cost * r.vat / r.margin + r.paypalFixed) / r.paypalNet);
   let price = formula;
   let status = 'formula';
   if (rrp && formula > rrp) {

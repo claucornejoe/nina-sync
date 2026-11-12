@@ -72,7 +72,7 @@ export async function createNewArrivals(items, locationId, { dryRun }) {
             productType: 'Perfume',
             status: 'ACTIVE',
             tags: [...tags, r.newArrivalTag],
-            descriptionHtml: description(g.title, tags[2] || brand, gender, type),
+            descriptionHtml: description(g.title, tags[2] || brand, gender, type, config.rules.freeShippingFrom),
             seo: {
               title: `${g.title} | Nina Beauty`.slice(0, 70),
               description: `Compra ${g.title} de ${tags[2] || brand} al mejor precio. Perfume 100 % original con envío gratis en España.`.slice(0, 320),

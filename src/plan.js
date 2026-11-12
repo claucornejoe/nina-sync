@@ -9,8 +9,11 @@ const eur = (n) => money(n).replace('.', ',') + ' €';
  * @param {Array} variants variantes de Shopify (ver shopify.getAllVariants)
  * @param {Map} bts catálogo BTS por EAN (ver bts.fetchCatalog)
  * @param {object} r reglas (config.rules)
+ * @param {Map} prevCosts coste y PVP de BTS de la sincronización anterior, por EAN.
+ *   Solo es «oferta» si el precio baja porque BTS ha bajado el coste o el PVP; una bajada
+ *   por cambiar la fórmula (por ejemplo, quitar el envío del precio) no lo es.
  */
-export function planSync(variants, bts, r) {
+export function planSync(variants, bts, r, prevCosts = new Map()) {
   const stockUpdates = [];
   const priceUpdates = new Map(); // productId -> [{id, price, compareAtPrice}]
   const offerProducts = new Map(); // productId -> title
@@ -44,7 +47,10 @@ export function planSync(variants, bts, r) {
           const priceChanged = Math.abs(round2(p.price) - round2(v.price)) >= 0.01;
           const cmpChanged = round2(p.compareAt ?? 0) !== round2(v.compareAt ?? 0);
           if (priceChanged || cmpChanged) {
-            const priceDrop = p.price < v.price - 0.001;
+            const prev = prevCosts.get(v.ean);
+            const btsDropped = !!prev && (b.cost < Number(prev.cost) - 0.001 || (b.rrp && prev.rrp && b.rrp < Number(prev.rrp) - 0.001));
+            const priceDrop = p.price < v.price - 0.001 && btsDropped;
+            const formulaOnly = !prev || (Math.abs(b.cost - Number(prev.cost)) < 0.001 && Math.abs((b.rrp || 0) - Number(prev.rrp || 0)) < 0.001);
             const onSale = !!(p.compareAt && p.compareAt > p.price);
             if (!priceUpdates.has(v.productId)) priceUpdates.set(v.productId, []);
             priceUpdates.get(v.productId).push({ id: v.id, price: money(p.price), compareAtPrice: p.compareAt ? money(p.compareAt) : null });
@@ -55,7 +61,12 @@ export function planSync(variants, bts, r) {
               newValue: eur(p.price) + (p.compareAt ? ` (PVP ${eur(p.compareAt)})` : ''),
               onSale,
               priceDrop,
-              note: `Coste BTS ${eur(b.cost)} · ganancia ${eur(p.profit)}` + (p.status === 'pvp' ? ' · topado al PVP' : ''),
+              note:
+                `Coste BTS ${eur(b.cost)}` +
+                (prev && !formulaOnly ? ` (antes ${eur(Number(prev.cost))})` : '') +
+                ` · ganancia ${eur(p.profit)}` +
+                (p.status === 'pvp' ? ' · topado al PVP' : '') +
+                (formulaOnly ? ' · ajuste de fórmula, BTS no ha cambiado el coste' : ''),
             });
             if (priceDrop) offerProducts.set(v.productId, v.productTitle);
           }
