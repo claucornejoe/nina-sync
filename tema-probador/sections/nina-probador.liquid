@@ -1,0 +1,47 @@
+{%- comment -%} Nina Beauty · Probador virtual de maquillaje (labios). Usa assets/nina-probador.js, .css y nina-probador-labios.json {%- endcomment -%}
+{{ 'nina-probador.css' | asset_url | stylesheet_tag }}
+<style>
+  #shopify-section-{{ section.id }} .np-seccion {
+    max-width: 1240px; margin-inline: auto;
+    padding-block: {{ section.settings.padding_top }}px {{ section.settings.padding_bottom }}px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  #shopify-section-{{ section.id }} .np-cabecera { text-align: center; margin: 0 auto 28px; max-width: 640px; }
+  #shopify-section-{{ section.id }} .np-antetitulo { margin: 0 0 6px; font-size: 12px; letter-spacing: .16em; text-transform: uppercase; color: #C92F60; font-weight: 500; }
+  #shopify-section-{{ section.id }} .np-titulo { margin: 0; font-size: clamp(32px, 4.4vw, 48px); line-height: 1.05; font-weight: 500; text-wrap: balance; }
+  #shopify-section-{{ section.id }} .np-sub { margin: 12px 0 0; color: #6E6E6E; }
+</style>
+<div class="np-seccion">
+  {%- if section.settings.titulo != blank -%}
+    <header class="np-cabecera">
+      {%- if section.settings.antetitulo != blank -%}<p class="np-antetitulo">{{ section.settings.antetitulo }}</p>{%- endif -%}
+      <h1 class="np-titulo h1">{{ section.settings.titulo }}</h1>
+      {%- if section.settings.texto != blank -%}<div class="np-sub">{{ section.settings.texto }}</div>{%- endif -%}
+    </header>
+  {%- endif -%}
+  <div
+    data-nina-probador
+    data-tonos-url="{{ 'nina-probador-labios.json' | asset_url }}"
+    data-carrito="{{ section.settings.carrito }}"
+  >
+    <noscript>Para usar el probador virtual necesitas activar JavaScript.</noscript>
+  </div>
+</div>
+<script type="module" src="{{ 'nina-probador.js' | asset_url }}"></script>
+
+{% schema %}
+{
+  "name": "Probador virtual",
+  "tag": "section",
+  "class": "nina-probador",
+  "settings": [
+    { "type": "text", "id": "antetitulo", "label": "Antetítulo", "default": "Probador virtual" },
+    { "type": "text", "id": "titulo", "label": "Título", "default": "Encuentra tu labial ideal" },
+    { "type": "richtext", "id": "texto", "label": "Texto", "default": "<p>Activa la cámara, elige una marca y prueba los tonos más vendidos en tus labios.</p>" },
+    { "type": "checkbox", "id": "carrito", "label": "Mostrar botón «Añadir a la cesta»", "default": true },
+    { "type": "range", "id": "padding_top", "label": "Margen superior", "min": 0, "max": 100, "step": 4, "unit": "px", "default": 40 },
+    { "type": "range", "id": "padding_bottom", "label": "Margen inferior", "min": 0, "max": 100, "step": 4, "unit": "px", "default": 56 }
+  ],
+  "presets": [{ "name": "Probador virtual" }]
+}
+{% endschema %}

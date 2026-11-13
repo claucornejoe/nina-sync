@@ -1,0 +1,9 @@
+{
+  "sections": {
+    "probador": {
+      "type": "nina-probador",
+      "settings": {}
+    }
+  },
+  "order": ["probador"]
+}
