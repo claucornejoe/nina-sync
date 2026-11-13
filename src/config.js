@@ -39,6 +39,7 @@ export const config = {
     paypalFixed: num('PAYPAL_FIXED', 0.35),
     paypalNet: num('PAYPAL_NET', 0.911),
     minProfitAfterRounding: num('MIN_PROFIT_ROUNDING', 0.5),
+    rounding: process.env.PRICE_ROUNDING || 'charm', // charm: ,99 hasta 100 € y ...9 € desde 100 €; '99'; '95'
     minProfit: num('MIN_PROFIT', 2), // ganancia mínima por producto (si el PVP lo permite)
     offerTag: process.env.OFFER_TAG || 'oferta-semana',
     offerDays: num('OFFER_DAYS', 7),

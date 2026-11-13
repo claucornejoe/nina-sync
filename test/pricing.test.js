@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { shippingCost, computePrice, computeStock, parseMoney, ceil95, floor95 } from '../src/pricing.js';
+import { roundUp, roundDown, shippingCost, computePrice, computeStock, parseMoney, ceil95, floor95 } from '../src/pricing.js';
 
 const r = { vat: 1.21, margin: 0.7, shipping: 6, shippingPrice: 4.95, freeShippingFrom: 39, paypalFixed: 0.35, paypalNet: 0.911, minProfitAfterRounding: 0.5, minStock: 3 };
 
@@ -67,4 +67,24 @@ test('ganancia mínima no pasa del PVP', () => {
   const p = computePrice(3.2, 7.5, { ...r, minProfit: 2 });
   assert.equal(p.status, 'pvp');
   assert.ok(p.price <= 7.5);
+});
+
+test('redondeo charm: ,99 por debajo de 100 y ...9 desde 100', () => {
+  const c = { rounding: 'charm' };
+  assert.equal(roundUp(6.5, c), 6.99);
+  assert.equal(roundUp(41.2, c), 41.99);
+  assert.equal(roundUp(99.5, c), 99.99);
+  assert.equal(roundUp(99.995, c), 109);
+  assert.equal(roundUp(126.2, c), 129);
+  assert.equal(roundUp(129, c), 129);
+  assert.equal(roundDown(164.95, c), 159);
+  assert.equal(roundDown(105, c), 99.99);
+  assert.equal(roundDown(73.5, c), 72.99);
+  assert.equal(roundUp(41.2, { rounding: '99' }), 41.99);
+  assert.equal(roundUp(126.2, { rounding: '99' }), 126.99);
+});
+
+test('precio con redondeo charm', () => {
+  const p = computePrice(26.3, 143, { ...r, rounding: 'charm' });
+  assert.equal(p.price, 50.99);
 });
