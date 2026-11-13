@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { config } from './config.js';
 
 let cachedToken = null; // { token, expiresAt }
@@ -99,10 +100,12 @@ export async function setQuantities(locationId, items) {
   for (let i = 0; i < items.length; i += 250) {
     const chunk = items.slice(i, i + 250);
     const d = await gql(
-      `mutation($input: InventorySetQuantitiesInput!) {
-        inventorySetQuantities(input: $input) { userErrors { field message } }
+      // Desde la API 2026-04 Shopify exige una clave de idempotencia en esta mutación.
+      `mutation($input: InventorySetQuantitiesInput!, $key: String!) {
+        inventorySetQuantities(input: $input) @idempotent(key: $key) { userErrors { field message } }
       }`,
       {
+        key: randomUUID(),
         input: {
           name: 'available',
           reason: 'correction',
