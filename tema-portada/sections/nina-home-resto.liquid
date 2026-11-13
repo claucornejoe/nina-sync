@@ -1,0 +1,159 @@
+{{ 'nina-home.css' | asset_url | stylesheet_tag }}
+{%- liquid
+  assign s = section.settings
+  assign nav = '/collections/ideas-para-navidad'
+  assign sc_logo = 'nina-skincare-logo-azul.svg' | asset_url
+  assign arrow = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>'
+-%}
+<div class="nh">
+
+  {%- if s.show_gifts -%}
+  <section class="nh-band nh-band--petalo">
+    <div class="nh-wrap">
+      <div class="nh-center">
+        <span class="nh-kicker">{{ s.gifts_kicker }}</span>
+        <h2 class="nh-h2 nh-serif" style="font-size:44px">{{ s.gifts_title }}</h2>
+      </div>
+      <div class="nh-gifts">
+        <a class="nh-gift" href="{{ nav }}?filter.v.price.lte=30">
+          <div><span class="nh-gift__k">Detalles</span><div class="nh-gift__a nh-serif">Hasta 30 €</div></div>
+          <p>Minis, colonias y sets pequeños para el amigo invisible y los compromisos.</p>
+          <span class="nh-arrow">Ver regalos {{ arrow }}</span>
+        </a>
+        <a class="nh-gift" href="{{ nav }}?filter.v.price.gte=30&amp;filter.v.price.lte=60">
+          <div><span class="nh-gift__k">Los más regalados</span><div class="nh-gift__a nh-serif">30–60 €</div></div>
+          <p>Estuches de perfume con loción o miniatura de regalo.</p>
+          <span class="nh-arrow">Ver regalos {{ arrow }}</span>
+        </a>
+        <a class="nh-gift" href="{{ nav }}?filter.v.price.gte=60">
+          <div><span class="nh-gift__k">Para quedar genial</span><div class="nh-gift__a nh-serif">Más de 60 €</div></div>
+          <p>Grandes fragancias y sets de lujo para alguien especial.</p>
+          <span class="nh-arrow">Ver regalos {{ arrow }}</span>
+        </a>
+      </div>
+    </div>
+  </section>
+  {%- endif -%}
+
+  <div class="nh-wrap">
+    <div class="nh-split nh-arab">
+      <div class="nh-arab__txt">
+        <span class="nh-kicker" style="color:#E8C989">Perfumes árabes</span>
+        <h2 class="nh-h2 nh-serif">{{ s.arab_title }}</h2>
+        <p>{{ s.arab_text }}</p>
+        <a class="nh-btn nh-btn--line" href="/collections/perfumes-arabes">Descubrir perfumes árabes</a>
+      </div>
+      <div class="nh-arab__art">
+        {%- if s.arab_image != blank -%}
+          {{ s.arab_image | image_url: width: 900 | image_tag: loading: 'lazy', alt: '' }}
+        {%- else -%}
+          <svg width="110" height="220" viewBox="0 0 110 220" aria-hidden="true"><path d="M55 0l14 22H41z" fill="#E8C989"/><rect x="45" y="22" width="20" height="24" fill="#C9A35C"/><path d="M55 46c38 18 52 52 52 94 0 50-26 78-52 78S3 190 3 140c0-42 14-76 52-94z" fill="#6B2E3A" stroke="#E8C989" stroke-width="2"/></svg>
+          <svg width="90" height="180" viewBox="0 0 90 180" aria-hidden="true"><rect x="30" y="0" width="30" height="30" rx="15" fill="#E8C989"/><rect x="38" y="30" width="14" height="14" fill="#C9A35C"/><rect x="3" y="44" width="84" height="134" rx="10" fill="#1E1A16" stroke="#E8C989" stroke-width="2"/><path d="M25 90h40M25 100h40" stroke="#E8C989" stroke-width="1.5"/></svg>
+        {%- endif -%}
+      </div>
+    </div>
+  </div>
+
+  <section class="nh-band nh-band--azul">
+    <div class="nh-wrap">
+      <div class="nh-head" style="align-items:center;margin-bottom:26px">
+        <div style="display:flex;flex-direction:column;gap:12px;max-width:560px">
+          <img src="{{ sc_logo }}" alt="Nina Skin Care" style="height:78px;width:auto;align-self:flex-start" loading="lazy">
+          <p style="margin:0;font-size:15px;line-height:1.6;color:#33525C">{{ s.sc_text }}</p>
+        </div>
+        <a class="nh-btn" style="background:#2F6577;color:#fff" href="/pages/skin-care">Entrar en Nina Skin Care</a>
+      </div>
+      <div class="nh-sc">
+        <a href="/collections/skin-care-limpieza" style="background:#DDF1F7"><span>Paso 1</span><span class="nh-serif">Limpieza</span></a>
+        <a href="/collections/skin-care-serums" style="background:#F3E6DE"><span>Paso 2</span><span class="nh-serif">Sérums y ampollas</span></a>
+        <a href="/collections/skin-care-cremas" style="background:#DDF1F7"><span>Paso 3</span><span class="nh-serif">Cremas</span></a>
+        <a href="/collections/skin-care-solar" style="background:#F3E6DE"><span>Cada día</span><span class="nh-serif">Protección solar</span></a>
+      </div>
+    </div>
+  </section>
+
+  {%- assign brand_list = s.brands | split: ',' -%}
+  {%- if brand_list.size > 0 -%}
+  <div class="nh-wrap nh-sec" style="padding-top:64px">
+    <h2 class="nh-h2 nh-serif" style="text-align:center;margin-bottom:22px;font-size:36px">{{ s.brands_title }}</h2>
+    <div class="nh-brands">
+      {%- for b in brand_list -%}
+        {%- assign bn = b | strip -%}
+        <a class="nh-serif" href="{{ routes.collections_url }}/vendors?q={{ bn | url_encode }}">{{ bn }}</a>
+      {%- endfor -%}
+    </div>
+  </div>
+  {%- endif -%}
+
+  <div class="nh-wrap nh-sec" style="padding-top:64px">
+    <div class="nh-cashbox">
+      <div class="nh-center" style="margin-bottom:28px">
+        <h2 class="nh-h2 nh-serif">{{ s.cash_title }}</h2>
+        <p style="margin:0;font-size:15px;color:#4A4A4A;max-width:560px;line-height:1.6">{{ s.cash_text }}</p>
+      </div>
+      <div class="nh-steps">
+        <div class="nh-step"><b class="nh-serif">1</b><strong>Crea tu cuenta</strong><span>Gratis, en un minuto.</span></div>
+        <div class="nh-step"><b class="nh-serif">2</b><strong>Compra y acumula</strong><span>{{ s.cash_step2 }}</span></div>
+        <div class="nh-step"><b class="nh-serif">3</b><strong>Úsalo en tu próxima compra</strong><span>{{ s.cash_step3 }}</span></div>
+      </div>
+      <div style="text-align:center;padding-top:24px"><a class="nh-btn nh-btn--main" href="{{ routes.account_url }}">Crear mi cuenta</a></div>
+    </div>
+  </div>
+
+  <section class="nh-band nh-band--suave">
+    <div class="nh-wrap nh-split">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="nh-h2 nh-serif">{{ s.club_title }}</h2>
+        <p style="margin:0;font-size:15px;line-height:1.6;color:#4A4A4A">{{ s.club_text }}</p>
+      </div>
+      {%- form 'customer', id: 'nh-club' -%}
+        <input type="hidden" name="contact[tags]" value="newsletter, club-nina">
+        {%- if form.posted_successfully? -%}
+          <p class="nh-ok">¡Listo! Ya eres parte del Club Nina.</p>
+        {%- else -%}
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <label for="nh-club-mail" style="font-size:13px;font-weight:600">Tu correo electrónico</label>
+            <div class="nh-news">
+              <input id="nh-club-mail" type="email" name="contact[email]" required autocomplete="email" placeholder="nombre@correo.es">
+              <button class="nh-btn nh-btn--main" type="submit">Suscribirme</button>
+            </div>
+            {%- if form.errors -%}<span class="nh-note" style="color:#C92F60">Revisa el correo e inténtalo de nuevo.</span>{%- endif -%}
+            <span class="nh-note">Puedes darte de baja cuando quieras. Consulta la <a href="{{ shop.privacy_policy.url | default: '/policies/privacy-policy' }}" style="text-decoration:underline">política de privacidad</a>.</span>
+          </div>
+        {%- endif -%}
+      {%- endform -%}
+    </div>
+  </section>
+</div>
+
+{% schema %}
+{
+  "name": "Nina · Portada resto",
+  "tag": "section",
+  "class": "nina-home-resto",
+  "settings": [
+    { "type": "header", "content": "Regalos por presupuesto" },
+    { "type": "checkbox", "id": "show_gifts", "label": "Mostrar", "default": true },
+    { "type": "text", "id": "gifts_kicker", "label": "Antetítulo", "default": "Navidad 2026" },
+    { "type": "text", "id": "gifts_title", "label": "Título", "default": "Regalos según tu presupuesto" },
+    { "type": "header", "content": "Perfumes árabes" },
+    { "type": "image_picker", "id": "arab_image", "label": "Imagen" },
+    { "type": "text", "id": "arab_title", "label": "Título", "default": "Oud, ámbar y vainilla que duran todo el día" },
+    { "type": "textarea", "id": "arab_text", "label": "Texto", "default": "Lattafa, Al Haramain, Armaf, Maison Alhambra y más. Fragancias intensas a precios que sorprenden." },
+    { "type": "header", "content": "Nina Skin Care" },
+    { "type": "textarea", "id": "sc_text", "label": "Texto", "default": "Rutinas sencillas para una piel cuidada: limpieza, sérums, cremas y protección solar de marcas dermatológicas." },
+    { "type": "header", "content": "Marcas" },
+    { "type": "text", "id": "brands_title", "label": "Título", "default": "Tus marcas favoritas" },
+    { "type": "textarea", "id": "brands", "label": "Marcas (separadas por comas)", "default": "Lattafa, Paco Rabanne, Givenchy, Hermès, Jean Paul Gaultier, Tous, Carolina Herrera, Al Haramain, Issey Miyake, Dior" },
+    { "type": "header", "content": "NinaCash" },
+    { "type": "text", "id": "cash_title", "label": "Título", "default": "NinaCash: comprar te da dinero" },
+    { "type": "text", "id": "cash_text", "label": "Texto", "default": "Por cada compra te guardamos el 1 % del precio en tu cuenta Nina." },
+    { "type": "text", "id": "cash_step2", "label": "Paso 2", "default": "Un perfume de 50 € te da 0,50 € en NinaCash." },
+    { "type": "text", "id": "cash_step3", "label": "Paso 3", "default": "Te lo descontamos en tu siguiente pedido." },
+    { "type": "header", "content": "Club Nina" },
+    { "type": "text", "id": "club_title", "label": "Título", "default": "Únete al Club Nina" },
+    { "type": "text", "id": "club_text", "label": "Texto", "default": "Ofertas antes que nadie, novedades y avisos cuando vuelve lo que te gusta." }
+  ],
+  "presets": [{ "name": "Nina · Portada resto" }]
+}
+{% endschema %}

@@ -1,0 +1,132 @@
+{{ 'nina-home.css' | asset_url | stylesheet_tag }}
+{%- liquid
+  assign sc_logo = 'nina-skincare-logo-azul.svg' | asset_url
+-%}
+<div class="nh">
+  <div class="nh-wrap">
+    <div class="nh-hero">
+      <a class="nh-hero__main" href="{{ section.settings.link | default: '/collections/ideas-para-navidad' }}">
+        <div class="nh-hero__txt">
+          {%- if section.settings.kicker != blank -%}<span class="nh-kicker">{{ section.settings.kicker }}</span>{%- endif -%}
+          <h1 class="nh-hero__h1 nh-serif">{{ section.settings.title }}</h1>
+          {%- if section.settings.text != blank -%}<p class="nh-hero__p">{{ section.settings.text }}</p>{%- endif -%}
+          <div class="nh-hero__btns">
+            <span class="nh-btn nh-btn--main">{{ section.settings.button }}</span>
+            {%- if section.settings.button2 != blank -%}<span class="nh-btn nh-btn--line">{{ section.settings.button2 }}</span>{%- endif -%}
+          </div>
+        </div>
+        <div class="nh-hero__art">
+          {%- if section.settings.image != blank -%}
+            {{ section.settings.image | image_url: width: 1200 | image_tag: class: 'nh-cover', loading: 'eager', fetchpriority: 'high', alt: section.settings.title, sizes: '(min-width: 900px) 40vw, 100vw' }}
+          {%- else -%}
+            <svg width="92" height="190" viewBox="0 0 92 190" aria-hidden="true"><rect x="32" y="0" width="28" height="30" rx="4" fill="#2B2B2B"/><rect x="38" y="30" width="16" height="14" fill="#C9A35C"/><rect x="2" y="44" width="88" height="144" rx="18" fill="#fff" stroke="#F72E75" stroke-width="2"/><rect x="18" y="104" width="56" height="26" rx="3" fill="#FFCCD5"/></svg>
+            <svg width="130" height="250" viewBox="0 0 130 250" aria-hidden="true"><rect x="45" y="0" width="40" height="40" rx="6" fill="#C92F60"/><rect x="53" y="40" width="24" height="18" fill="#C9A35C"/><rect x="2" y="58" width="126" height="190" rx="26" fill="#F72E75"/><rect x="26" y="136" width="78" height="34" rx="4" fill="#fff"/></svg>
+            <svg width="150" height="120" viewBox="0 0 150 120" aria-hidden="true"><rect x="2" y="20" width="146" height="98" rx="8" fill="#fff" stroke="#C92F60" stroke-width="2"/><rect x="66" y="20" width="18" height="98" fill="#F72E75"/><path d="M75 20c-14-22-34-14-26 0M75 20c14-22 34-14 26 0" fill="none" stroke="#F72E75" stroke-width="6" stroke-linecap="round"/></svg>
+          {%- endif -%}
+        </div>
+      </a>
+      <div class="nh-side">
+        <a class="nh-mini nh-mini--skin" href="{{ section.settings.sc_link | default: '/pages/skin-care' }}">
+          <div>
+            <img src="{{ sc_logo }}" alt="Nina Skin Care" height="56" style="height:56px;width:auto;display:block" loading="lazy">
+            <h2 class="nh-serif" style="color:#1F3A43">{{ section.settings.sc_title }}</h2>
+            <span style="font-size:13px;color:#33525C">{{ section.settings.sc_text }}</span>
+          </div>
+          <span class="nh-arrow">{{ section.settings.sc_button }} <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </a>
+        <a class="nh-mini nh-mini--dark" href="{{ section.settings.b2_link | default: '/collections/ofertas-de-la-semana' }}">
+          <div>
+            <span class="nh-kicker" style="color:#FFCCD5">{{ section.settings.b2_kicker }}</span>
+            <h2 class="nh-serif">{{ section.settings.b2_title }}</h2>
+          </div>
+          <span class="nh-arrow">{{ section.settings.b2_button }} <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </a>
+      </div>
+    </div>
+
+    {%- if section.settings.show_trust -%}
+    <div class="nh-trust">
+      <div class="nh-trust__i"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C92F60" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="17.5" r="1.6"/><circle cx="17" cy="17.5" r="1.6"/></svg><div><strong>{{ section.settings.t1 }}</strong><span>{{ section.settings.t1s }}</span></div></div>
+      <div class="nh-trust__i"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C92F60" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg><div><strong>{{ section.settings.t2 }}</strong><span>{{ section.settings.t2s }}</span></div></div>
+      <div class="nh-trust__i"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C92F60" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg><div><strong>{{ section.settings.t3 }}</strong><span>{{ section.settings.t3s }}</span></div></div>
+      <div class="nh-trust__i"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C92F60" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M14.5 9.2c-.6-.8-1.5-1.2-2.6-1.2-1.6 0-2.7.9-2.7 2 0 2.8 5.6 1.3 5.6 4.1 0 1.2-1.2 2.1-2.8 2.1-1.2 0-2.2-.5-2.8-1.3M12 6.5v1.5M12 16v1.5"/></svg><div><strong>{{ section.settings.t4 }}</strong><span>{{ section.settings.t4s }}</span></div></div>
+    </div>
+    {%- endif -%}
+
+    {%- if section.blocks.size > 0 -%}
+    <div class="nh-sec">
+      <h2 class="nh-h2 nh-serif" style="text-align:center;margin-bottom:24px">{{ section.settings.cats_title }}</h2>
+      <div class="nh-cats">
+        {%- for block in section.blocks -%}
+          <a class="nh-cat" href="{{ block.settings.link }}" {{ block.shopify_attributes }}>
+            <span class="nh-cat__c" style="background:{{ block.settings.bg }}">
+              {%- if block.settings.image != blank -%}
+                {{ block.settings.image | image_url: width: 240 | image_tag: loading: 'lazy', alt: '' }}
+              {%- else -%}
+                <span class="nh-cat__ini nh-serif" style="color:{{ block.settings.fg }}">{{ block.settings.ini }}</span>
+              {%- endif -%}
+            </span>
+            <span class="nh-cat__n">{{ block.settings.label }}</span>
+          </a>
+        {%- endfor -%}
+      </div>
+    </div>
+    {%- endif -%}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Nina · Portada inicio",
+  "tag": "section",
+  "class": "nina-home-hero",
+  "settings": [
+    { "type": "header", "content": "Imagen principal" },
+    { "type": "image_picker", "id": "image", "label": "Foto de campaña" },
+    { "type": "text", "id": "kicker", "label": "Antetítulo", "default": "Ideas para Navidad" },
+    { "type": "text", "id": "title", "label": "Título", "default": "Regala un perfume que se recuerde" },
+    { "type": "textarea", "id": "text", "label": "Texto", "default": "Estuches y sets de tus marcas favoritas, rebajados y listos para envolver. Llegan en 24–72 h." },
+    { "type": "text", "id": "button", "label": "Botón principal", "default": "Ver ideas para Navidad" },
+    { "type": "text", "id": "button2", "label": "Botón secundario", "default": "Estuches y sets" },
+    { "type": "url", "id": "link", "label": "Enlace" },
+    { "type": "header", "content": "Minibanner 1: Nina Skin Care" },
+    { "type": "text", "id": "sc_title", "label": "Título", "default": "Tu rutina de piel, en un solo sitio" },
+    { "type": "text", "id": "sc_text", "label": "Texto", "default": "Limpieza, sérums, cremas y solar" },
+    { "type": "text", "id": "sc_button", "label": "Enlace (texto)", "default": "Entrar en Nina Skin Care" },
+    { "type": "url", "id": "sc_link", "label": "Enlace" },
+    { "type": "header", "content": "Minibanner 2" },
+    { "type": "text", "id": "b2_kicker", "label": "Antetítulo", "default": "Ofertas de la semana" },
+    { "type": "text", "id": "b2_title", "label": "Título", "default": "Rebajas nuevas cada semana" },
+    { "type": "text", "id": "b2_button", "label": "Enlace (texto)", "default": "Ver ofertas" },
+    { "type": "url", "id": "b2_link", "label": "Enlace" },
+    { "type": "header", "content": "Franja de confianza" },
+    { "type": "checkbox", "id": "show_trust", "label": "Mostrar", "default": true },
+    { "type": "text", "id": "t1", "label": "1 título", "default": "Envío gratis desde 39 €" },
+    { "type": "text", "id": "t1s", "label": "1 texto", "default": "Entrega en 24–72 h laborables" },
+    { "type": "text", "id": "t2", "label": "2 título", "default": "100 % originales" },
+    { "type": "text", "id": "t2s", "label": "2 texto", "default": "Caja precintada de fábrica" },
+    { "type": "text", "id": "t3", "label": "3 título", "default": "Pago seguro" },
+    { "type": "text", "id": "t3s", "label": "3 texto", "default": "PayPal o tarjeta" },
+    { "type": "text", "id": "t4", "label": "4 título", "default": "NinaCash" },
+    { "type": "text", "id": "t4s", "label": "4 texto", "default": "Acumulas en cada compra" },
+    { "type": "header", "content": "Categorías" },
+    { "type": "text", "id": "cats_title", "label": "Título", "default": "¿Qué te apetece hoy?" }
+  ],
+  "blocks": [
+    {
+      "type": "categoria",
+      "name": "Categoría",
+      "settings": [
+        { "type": "text", "id": "label", "label": "Nombre", "default": "Categoría" },
+        { "type": "url", "id": "link", "label": "Enlace" },
+        { "type": "image_picker", "id": "image", "label": "Imagen (opcional)" },
+        { "type": "text", "id": "ini", "label": "Letras si no hay imagen", "default": "N" },
+        { "type": "color", "id": "bg", "label": "Fondo", "default": "#FFCCD5" },
+        { "type": "color", "id": "fg", "label": "Color letras", "default": "#9E2149" }
+      ]
+    }
+  ],
+  "max_blocks": 12,
+  "presets": [{ "name": "Nina · Portada inicio" }]
+}
+{% endschema %}
