@@ -1,0 +1,57 @@
+{
+  "sections": {
+    "main": {
+      "type": "nina-coleccion",
+      "blocks": {
+        "promo_navidad": {
+          "type": "promo",
+          "settings": {
+            "posicion": 7,
+            "solo_familia": "todas",
+            "estilo": "acc",
+            "antetitulo": "Ideas para Navidad",
+            "titulo": "Regalos listos para envolver",
+            "texto": "Estuches y sets con todo lo que necesita: el regalo resuelto y más barato que por separado.",
+            "boton": "Ver ideas para Navidad",
+            "url": "shopify://collections/ideas-para-navidad"
+          }
+        },
+        "promo_skin": {
+          "type": "promo",
+          "settings": {
+            "posicion": 14,
+            "solo_familia": "perfume",
+            "estilo": "dark",
+            "antetitulo": "Nina Skin Care",
+            "titulo": "Tu piel también se merece un mimo",
+            "texto": "Sérums, cremas y protección solar de las mejores marcas.",
+            "boton": "Descubrir Skin Care",
+            "url": "shopify://collections/skin-care"
+          }
+        }
+      },
+      "block_order": [
+        "promo_navidad",
+        "promo_skin"
+      ],
+      "settings": {
+        "texto_hero": "Originales, con su caja precintada y en tu casa en 24 a 72 horas.",
+        "boton2_texto": "",
+        "boton2_url": "",
+        "mostrar_ofertas": true,
+        "ofertas_titulo": "Precios que bajan solo esta semana",
+        "mostrar_marcas": true,
+        "mostrar_ninacash": true,
+        "mostrar_confianza": true,
+        "guia_titulo": "",
+        "por_pagina": 24,
+        "min_pct": 5,
+        "umbral": 39,
+        "texto_envio": "Envío en 24 a 72 h"
+      }
+    }
+  },
+  "order": [
+    "main"
+  ]
+}

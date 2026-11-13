@@ -1,0 +1,665 @@
+{%- comment -%}
+  Nina Beauty · Página de colección (listado de productos).
+  Paleta rosa Nina + negro; en colecciones skin-care* usa la paleta azul de Nina Skin Care.
+{%- endcomment -%}
+{%- liquid
+  assign h = collection.handle
+  assign familia = 'perfume'
+  if h contains 'skin-care'
+    assign familia = 'skin'
+  elsif h contains 'maquillaje'
+    assign familia = 'maquillaje'
+  endif
+  if familia == 'skin'
+    assign c_acc = '#89D3E9'
+    assign c_dark = '#2B2B2B'
+    assign c_soft = '#E3F3F8'
+    assign c_hero = '#E3F3F8'
+    assign c_hero_ink = '#2B2B2B'
+    assign c_title_acc = '#2B2B2B'
+    assign c_price = '#2B2B2B'
+    assign kicker = 'Nina Skin Care'
+  else
+    assign c_acc = '#F72E75'
+    assign c_dark = '#111111'
+    assign c_soft = '#FFF4F6'
+    assign c_hero = '#111111'
+    assign c_hero_ink = '#ffffff'
+    assign c_title_acc = '#F72E75'
+    assign c_price = '#F72E75'
+    if familia == 'maquillaje'
+      assign kicker = 'Maquillaje'
+    else
+      assign kicker = 'Perfumería'
+    endif
+  endif
+  if familia == 'skin'
+    assign accesos = 'skin-care,skin-care-limpieza,skin-care-tonicos,skin-care-serums,skin-care-cremas,skin-care-ojos-labios,skin-care-mascarillas,skin-care-solar,skin-care-corporal,skin-care-hombre,skin-care-sets,skin-care-suplementos' | split: ','
+  elsif familia == 'maquillaje'
+    assign accesos = 'maquillaje,maquillaje-labios,maquillaje-ojos,maquillaje-rostro,maquillaje-unas,maquillaje-sets,maquillaje-accesorios' | split: ','
+  else
+    assign accesos = 'perfumes-mujer,perfumes-hombre,perfumes-unisex,perfumes-arabes,estuches,ofertas-de-la-semana,recien-llegados,ideas-para-navidad' | split: ','
+  endif
+  assign hay_filtros = false
+  for f in collection.filters
+    if f.active_values.size > 0
+      assign hay_filtros = true
+    endif
+    if f.type == 'price_range'
+      if f.min_value.value != blank or f.max_value.value != blank
+        assign hay_filtros = true
+      endif
+    endif
+  endfor
+  assign vendor_filter = collection.filters | where: 'param_name', 'filter.p.vendor' | first
+-%}
+
+<style>
+  .nbc{--nb-acc:{{ c_acc }};--nb-dark:{{ c_dark }};--nb-soft:{{ c_soft }};--nb-hero:{{ c_hero }};--nb-hero-ink:{{ c_hero_ink }};--nb-title-acc:{{ c_title_acc }};--nb-price:{{ c_price }};
+    --nb-line:#EEE6E8;--nb-muted:#6E6E6E;font-family:var(--font-body--family);color:#111;max-width:1360px;margin:0 auto;padding:12px 24px 64px}
+  .nbc *{box-sizing:border-box}
+  .nbc a{color:inherit}
+  .nbc h1,.nbc h2,.nbc .nbc-serif{font-family:var(--font-heading--family);font-weight:600}
+  .nbc-crumbs{font-size:12px;color:var(--nb-muted);padding:6px 0 12px}
+  .nbc-crumbs a{color:var(--nb-muted)}
+  .nbc-hero{display:flex;flex-wrap:wrap;background:var(--nb-hero);color:var(--nb-hero-ink);border-radius:20px;overflow:hidden;margin-bottom:24px}
+  .nbc-hero__txt{flex:1 1 480px;padding:40px 44px;display:flex;flex-direction:column;gap:12px;justify-content:center}
+  .nbc-kicker{margin:0;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--nb-acc)}
+  .nbc-hero h1{margin:0;font-size:clamp(38px,5vw,60px);line-height:1.02;color:var(--nb-hero-ink)}
+  .nbc-hero h1 span{color:var(--nb-title-acc);font-style:italic}
+  .nbc-hero p{margin:0;font-size:15px;line-height:1.6;max-width:540px}
+  .nbc-hero__meta{opacity:.75;font-size:13px !important}
+  .nbc-hero__btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+  .nbc-btn{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 22px;border-radius:999px;font-size:13px;font-weight:700;text-decoration:none;border:0;cursor:pointer;font-family:inherit;transition:background .2s,color .2s}
+  .nbc-btn--acc{background:var(--nb-acc);color:#111 !important}
+  .nbc-btn--ghost{background:transparent;color:var(--nb-hero-ink) !important;border:1.5px solid currentColor}
+  .nbc-btn--dark{background:var(--nb-dark);color:#fff !important}
+  .nbc-btn--dark:hover{background:var(--nb-acc);color:#111 !important}
+  .nbc-btn--line{background:#fff;color:#111 !important;border:1.5px solid #111}
+  .nbc-hero__img{flex:1 1 360px;min-height:280px;background:var(--nb-acc);position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .nbc-hero__img img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+  .nbc-mariposa{display:inline-block;background:currentColor;-webkit-mask:url('{{ 'nina-skincare-mariposa-azul.svg' | asset_url }}') center/contain no-repeat;mask:url('{{ 'nina-skincare-mariposa-azul.svg' | asset_url }}') center/contain no-repeat}
+  .nbc-hero__img .nbc-mariposa{width:140px;height:170px;color:#111;opacity:.9;animation:nbcfloat 4s ease-in-out infinite}
+  @keyframes nbcfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  .nbc-circles{display:flex;gap:18px;overflow-x:auto;padding:4px 2px 20px;margin:0;list-style:none}
+  .nbc-circles a{text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:92px;max-width:110px}
+  .nbc-circle{width:78px;height:78px;border-radius:999px;display:flex;align-items:center;justify-content:center;border:2px solid #fff;font-family:var(--font-heading--family);font-size:24px;font-weight:600}
+  .nbc-circles li:nth-child(odd) .nbc-circle{background:var(--nb-acc);color:#111;box-shadow:0 0 0 2px var(--nb-acc)}
+  .nbc-circles li:nth-child(even) .nbc-circle{background:var(--nb-dark);color:#fff;box-shadow:0 0 0 2px var(--nb-dark)}
+  .nbc-circle img{width:100%;height:100%;object-fit:cover;border-radius:999px}
+  .nbc-circle .nbc-mariposa{width:34px;height:40px}
+  .nbc-circles .is-current .nbc-circle{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--nb-dark)}
+  .nbc-circles span.nbc-lab{font-size:12px;font-weight:600;text-align:center;line-height:1.3}
+  .nbc-offer{background:var(--nb-dark);color:#fff;border-radius:20px;padding:22px 26px;display:flex;flex-wrap:wrap;align-items:center;gap:18px 28px;margin-bottom:26px}
+  .nbc-offer__t{flex:1 1 260px}
+  .nbc-offer__t p{margin:0}
+  .nbc-offer__t .nbc-serif{font-size:30px;line-height:1.1}
+  .nbc-clock{display:flex;gap:8px}
+  .nbc-clock div{background:var(--nb-acc);color:#111;border-radius:12px;width:62px;padding:8px 0;text-align:center}
+  .nbc-clock b{display:block;font-size:24px;line-height:1.1}
+  .nbc-clock small{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em}
+  .nbc-brands{margin-bottom:28px}
+  .nbc-brands__head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:12px}
+  .nbc-brands h2{margin:0;font-size:28px}
+  .nbc-brands__grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .nbc-brands__grid a{text-decoration:none;background:var(--nb-dark);color:#fff;border-radius:14px;min-height:74px;padding:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;transition:background .2s}
+  .nbc-brands__grid a:hover{background:var(--nb-acc);color:#111}
+  .nbc-brands__grid b{font-family:var(--font-heading--family);font-size:20px;font-weight:600;line-height:1.05}
+  .nbc-brands__grid small{font-size:11px;opacity:.8}
+  .nbc-bar{display:flex;flex-wrap:wrap;align-items:center;gap:12px;border-top:1px solid var(--nb-line);border-bottom:1px solid var(--nb-line);padding:12px 0;margin-bottom:24px}
+  .nbc-bar__count{margin:0;font-size:13px;font-weight:600}
+  .nbc-chips{display:flex;flex-wrap:wrap;gap:8px;flex:1 1 300px}
+  .nbc-chip{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 12px;border-radius:999px;background:var(--nb-dark);color:#fff !important;font-size:12px;font-weight:600;text-decoration:none}
+  .nbc-clear{font-size:12px;font-weight:700;text-decoration:underline;align-self:center}
+  .nbc-sort{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600}
+  .nbc-sort select{height:44px;border:1px solid #DDD3D6;border-radius:10px;padding:0 12px;font:inherit;font-size:13px;background:#fff;color:#111}
+  .nbc-open-filters{display:none}
+  .nbc-layout{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start}
+  .nbc-aside{flex:1 1 240px;max-width:270px}
+  .nbc-aside fieldset{border:0;border-bottom:1px solid var(--nb-line);margin:0;padding:16px 0 18px}
+  .nbc-aside legend{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:0;margin-bottom:10px;float:left;width:100%}
+  .nbc-opts{clear:both;display:flex;flex-direction:column;gap:2px;max-height:300px;overflow:auto}
+  .nbc-opts label{display:flex;align-items:center;gap:10px;min-height:34px;font-size:14px;cursor:pointer}
+  .nbc-opts label span{flex:1 1 auto}
+  .nbc-opts small{font-size:12px;color:var(--nb-muted)}
+  .nbc-opts input{accent-color:var(--nb-acc);width:18px;height:18px;margin:0}
+  .nbc-opts .is-disabled{opacity:.45}
+  .nbc-price{clear:both;display:flex;gap:8px;align-items:center}
+  .nbc-price input{width:100%;height:40px;border:1px solid #DDD3D6;border-radius:10px;padding:0 10px;font:inherit;font-size:13px}
+  .nbc-cash-box{margin-top:18px;background:var(--nb-acc);color:#111;border-radius:16px;padding:18px;display:flex;flex-direction:column;gap:6px}
+  .nbc-cash-box .nbc-mariposa{width:26px;height:32px;color:#111}
+  .nbc-cash-box p{margin:0;font-size:13px;line-height:1.5}
+  .nbc-cash-box .nbc-serif{font-size:22px}
+  .nbc-main{flex:999 1 640px;min-width:0}
+  .nbc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:32px 22px;list-style:none;margin:0;padding:0}
+  .nbc-card{display:flex;flex-direction:column;gap:8px;height:100%}
+  .nbc-card__media{position:relative;aspect-ratio:1/1;border:1px solid #F1E7EA;border-radius:16px;overflow:hidden;background:#fff;display:block}
+  .nbc-card__media img{width:100%;height:100%;object-fit:contain;padding:8%;transition:transform .35s ease}
+  .nbc-card:hover .nbc-card__media img{transform:scale(1.04)}
+  .nbc-badges{position:absolute;top:10px;left:10px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+  .nbc-badge{font-size:12px;font-weight:700;padding:4px 9px;border-radius:999px;background:var(--nb-acc);color:#111}
+  .nbc-badge--dark{background:var(--nb-dark);color:#fff;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+  .nbc-badge--soft{background:var(--nb-soft);color:#111;font-size:11px}
+  .nbc-card__soldout{position:absolute;inset:0;background:rgba(255,255,255,.55)}
+  .nbc-card__brand{margin:4px 0 0;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--nb-muted)}
+  .nbc-card__title{font-size:14px;font-weight:500;line-height:1.35;text-decoration:none;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:38px}
+  .nbc-sizes{display:flex;gap:6px;flex-wrap:wrap}
+  .nbc-sizes button{min-height:30px;min-width:52px;padding:0 10px;border-radius:999px;border:1px solid #DDD3D6;background:#fff;color:#111;font:inherit;font-size:12px;cursor:pointer}
+  .nbc-sizes button[aria-pressed=true]{background:var(--nb-dark);border-color:var(--nb-dark);color:#fff;font-weight:700}
+  .nbc-sizes button[data-available=false]{text-decoration:line-through;opacity:.55}
+  .nbc-prices{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .nbc-now{font-size:19px;font-weight:700}
+  .nbc-now.is-sale{color:var(--nb-price)}
+  .nbc-was{font-size:13px;color:var(--nb-muted);text-decoration:line-through}
+  .nbc-cash{margin:0;font-size:12px;display:flex;align-items:center;gap:6px}
+  .nbc-cash .nbc-mariposa{width:14px;height:16px;color:var(--nb-acc)}
+  .nbc-card form{margin-top:auto}
+  .nbc-card .nbc-btn{width:100%;min-height:44px}
+  .nbc-promo{border-radius:16px;padding:28px 24px;display:flex;flex-direction:column;justify-content:space-between;gap:16px;min-height:420px;height:100%;text-decoration:none;position:relative;overflow:hidden}
+  .nbc-promo--acc{background:var(--nb-acc);color:#111}
+  .nbc-promo--dark{background:var(--nb-dark);color:#fff}
+  .nbc-promo__k{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+  .nbc-promo--dark .nbc-promo__k{color:var(--nb-acc)}
+  .nbc-promo__t{font-family:var(--font-heading--family);font-size:36px;line-height:1.05;font-weight:600}
+  .nbc-promo__p{font-size:14px;line-height:1.5}
+  .nbc-promo .nbc-btn{align-self:flex-start}
+  .nbc-promo--acc .nbc-btn{background:#111;color:#fff !important}
+  .nbc-promo--dark .nbc-btn{background:var(--nb-acc);color:#111 !important}
+  .nbc-empty{text-align:center;padding:48px 16px;background:var(--nb-soft);border-radius:16px}
+  .nbc-empty .nbc-serif{font-size:28px;margin:0 0 8px}
+  .nbc-more{display:flex;flex-direction:column;align-items:center;gap:12px;padding:44px 0 8px}
+  .nbc-more p{margin:0;font-size:13px;color:var(--nb-muted)}
+  .nbc-progress{width:240px;height:4px;background:#F1E7EA;border-radius:999px;overflow:hidden}
+  .nbc-progress div{height:100%;background:var(--nb-acc);min-width:8px}
+  .nbc-pages{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+  .nbc-pages a,.nbc-pages span{min-width:40px;min-height:40px;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-size:13px;font-weight:600;text-decoration:none}
+  .nbc-pages .is-current{background:var(--nb-dark);color:#fff}
+  .nbc-trust{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:56px}
+  .nbc-trust div{background:var(--nb-dark);color:#fff;border-radius:16px;padding:20px;display:flex;gap:14px;align-items:flex-start}
+  .nbc-trust svg{flex:0 0 auto;stroke:var(--nb-acc)}
+  .nbc-trust p{margin:0;font-size:13px;line-height:1.5}
+  .nbc-trust b{display:block;font-size:14px;margin-bottom:4px}
+  .nbc-guide{margin-top:48px;display:flex;flex-wrap:wrap;gap:40px}
+  .nbc-guide__txt{flex:1 1 460px;font-size:14px;line-height:1.7}
+  .nbc-guide h2{margin:0 0 12px;font-size:32px}
+  .nbc-guide summary{cursor:pointer;font-weight:700;color:#C92F60;text-decoration:underline;list-style:none;padding:8px 0}
+  .nbc-guide__links{flex:1 1 320px;display:flex;flex-direction:column;gap:10px}
+  .nbc-guide__links p{margin:0;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+  .nbc-guide__links div{display:flex;flex-wrap:wrap;gap:8px}
+  .nbc-guide__links a{text-decoration:none;border:1px solid #DDD3D6;border-radius:999px;padding:9px 14px;font-size:13px}
+  .nbc-guide__links a:hover{border-color:var(--nb-acc)}
+  .nbc-toast{position:fixed;right:20px;bottom:20px;z-index:50;background:#111;color:#fff;border-radius:16px;padding:16px 18px;display:none;align-items:center;gap:14px;box-shadow:0 12px 30px rgba(0,0,0,.2);max-width:380px;font-size:13px;line-height:1.45}
+  .nbc-toast.is-open{display:flex}
+  .nbc-toast em{font-style:normal;color:var(--nb-acc);display:block}
+  .nbc-toast a{color:#fff;font-weight:700}
+  .nbc :focus-visible{outline:2px solid var(--nb-acc);outline-offset:2px}
+  @media (max-width: 860px){
+    .nbc{padding:8px 16px 48px}
+    .nbc-hero__txt{padding:28px 22px}
+    .nbc-hero__img{min-height:160px}
+    .nbc-open-filters{display:inline-flex}
+    .nbc-aside{display:none;max-width:none;flex-basis:100%}
+    .nbc-aside.is-open{display:block}
+    .nbc-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 12px}
+    .nbc-promo{min-height:300px;padding:20px 16px}
+    .nbc-promo__t{font-size:26px}
+    .nbc-sort{flex:1 1 100%}
+    .nbc-sort select{flex:1 1 auto}
+  }
+</style>
+
+<div class="nbc" data-familia="{{ familia }}">
+  <nav class="nbc-crumbs" aria-label="Migas de pan">
+    <a href="{{ routes.root_url }}">Inicio</a> <span aria-hidden="true">/</span>
+    <span style="color:#111;font-weight:600">{{ collection.title }}</span>
+  </nav>
+
+  {%- liquid
+    assign titulo = collection.title
+    assign ult = titulo | split: ' ' | last
+    assign resto = titulo | remove_last: ult | strip
+  -%}
+  <section class="nbc-hero">
+    <div class="nbc-hero__txt">
+      <p class="nbc-kicker">{{ kicker }}</p>
+      <h1>{% if resto != blank %}{{ resto }} <span>{{ ult }}</span>{% else %}{{ titulo }}{% endif %}</h1>
+      {%- if collection.description != blank -%}
+        <p>{{ collection.description | strip_html | truncatewords: 32 }}</p>
+      {%- elsif section.settings.texto_hero != blank -%}
+        <p>{{ section.settings.texto_hero }}</p>
+      {%- endif -%}
+      <div class="nbc-hero__btns">
+        {%- if section.settings.mostrar_ofertas and collection.handle != 'ofertas-de-la-semana' -%}
+          <a class="nbc-btn nbc-btn--acc" href="{{ routes.collections_url }}/ofertas-de-la-semana">Ver ofertas de la semana</a>
+        {%- endif -%}
+        {%- if section.settings.boton2_texto != blank and section.settings.boton2_url != blank -%}
+          <a class="nbc-btn nbc-btn--ghost" href="{{ section.settings.boton2_url }}">{{ section.settings.boton2_texto }}</a>
+        {%- endif -%}
+      </div>
+      <p class="nbc-hero__meta">{{ collection.products_count }} productos · 100 % originales · envío gratis desde {{ section.settings.umbral }} €</p>
+    </div>
+    <div class="nbc-hero__img">
+      {%- if collection.image -%}
+        {{ collection.image | image_url: width: 1200 | image_tag: loading: 'eager', alt: collection.title }}
+      {%- else -%}
+        <span class="nbc-mariposa" aria-hidden="true"></span>
+      {%- endif -%}
+    </div>
+  </section>
+
+  <ul class="nbc-circles" aria-label="Explora">
+    {%- for hh in accesos -%}
+      {%- assign cc = collections[hh] -%}
+      {%- if cc.id != blank -%}
+        {%- liquid
+          assign lab = cc.title | remove: 'Perfumes ' | remove: 'Nina ' | capitalize
+          if hh == 'skin-care' or hh == 'maquillaje'
+            assign lab = 'Ver todo'
+          endif
+        -%}
+        <li{% if hh == collection.handle %} class="is-current"{% endif %}>
+          <a href="{{ cc.url }}"{% if hh == collection.handle %} aria-current="page"{% endif %}>
+            <span class="nbc-circle" aria-hidden="true">{%- if cc.image -%}{{ cc.image | image_url: width: 160 | image_tag: loading: 'lazy', alt: '' }}{%- else -%}<span class="nbc-mariposa"></span>{%- endif -%}</span>
+            <span class="nbc-lab">{{ lab }}</span>
+          </a>
+        </li>
+      {%- endif -%}
+    {%- endfor -%}
+  </ul>
+
+  {%- if section.settings.mostrar_ofertas and collection.handle != 'ofertas-de-la-semana' and familia != 'skin' -%}
+    <section class="nbc-offer" aria-label="Ofertas de la semana">
+      <div class="nbc-offer__t">
+        <p class="nbc-kicker">Ofertas de la semana</p>
+        <p class="nbc-serif">{{ section.settings.ofertas_titulo }}</p>
+      </div>
+      <div class="nbc-clock" role="timer" aria-label="Tiempo que queda: termina el domingo a medianoche" data-nbc-clock>
+        <div><b data-d>0</b><small>días</small></div>
+        <div><b data-h>00</b><small>horas</small></div>
+        <div><b data-m>00</b><small>min</small></div>
+        <div><b data-s>00</b><small>seg</small></div>
+      </div>
+      <a class="nbc-btn" style="background:#fff;color:#111" href="{{ routes.collections_url }}/ofertas-de-la-semana">Ver las ofertas</a>
+    </section>
+  {%- endif -%}
+
+  {%- if section.settings.mostrar_marcas and vendor_filter and vendor_filter.active_values.size == 0 and vendor_filter.values.size > 2 -%}
+    {%- assign top = vendor_filter.values | sort: 'count' | reverse -%}
+    <section class="nbc-brands" aria-label="Marcas más buscadas">
+      <div class="nbc-brands__head">
+        <h2>Las marcas más buscadas</h2>
+      </div>
+      <div class="nbc-brands__grid">
+        {%- for v in top limit: 8 -%}
+          <a href="{{ v.url_to_add }}"><b>{{ v.label }}</b><small>{{ v.count }} productos</small></a>
+        {%- endfor -%}
+      </div>
+    </section>
+  {%- endif -%}
+
+  {%- paginate collection.products by section.settings.por_pagina -%}
+  <div class="nbc-bar" id="nbc-resultados">
+    <button type="button" class="nbc-btn nbc-btn--line nbc-open-filters" aria-expanded="false" aria-controls="nbc-filtros" data-nbc-open>Filtrar</button>
+    <p class="nbc-bar__count">{{ collection.products_count }} productos</p>
+    <div class="nbc-chips">
+      {%- for f in collection.filters -%}
+        {%- for v in f.active_values -%}
+          <a class="nbc-chip" href="{{ v.url_to_remove }}">{{ v.label }} <span aria-hidden="true">✕</span><span class="visually-hidden">Quitar filtro</span></a>
+        {%- endfor -%}
+        {%- if f.type == 'price_range' -%}
+          {%- if f.min_value.value != blank or f.max_value.value != blank -%}
+            <a class="nbc-chip" href="{{ f.url_to_remove }}">{{ f.min_value.value | default: 0 | money_without_trailing_zeros }} – {{ f.max_value.value | default: f.range_max | money_without_trailing_zeros }} <span aria-hidden="true">✕</span></a>
+          {%- endif -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {%- if hay_filtros -%}
+        <a class="nbc-clear" href="{{ collection.url }}?sort_by={{ collection.sort_by }}">Borrar todo</a>
+      {%- endif -%}
+    </div>
+    <label class="nbc-sort">Ordenar por
+      <select form="nbc-filtros" name="sort_by" data-nbc-autosubmit>
+        {%- assign orden = collection.sort_by | default: collection.default_sort_by -%}
+        {%- for o in collection.sort_options -%}
+          <option value="{{ o.value }}"{% if o.value == orden %} selected{% endif %}>{{ o.name }}</option>
+        {%- endfor -%}
+      </select>
+    </label>
+  </div>
+
+  <div class="nbc-layout">
+    <form class="nbc-aside" id="nbc-filtros" aria-label="Filtros" action="{{ collection.url }}" method="get">
+      {%- for f in collection.filters -%}
+        <fieldset>
+          <legend>{{ f.label }}</legend>
+          {%- case f.type -%}
+            {%- when 'price_range' -%}
+              <div class="nbc-price">
+                <input type="number" inputmode="numeric" name="{{ f.min_value.param_name }}" value="{{ f.min_value.value | money_without_currency | replace: ',', '.' | remove: '.00' }}" placeholder="0" min="0" aria-label="Precio mínimo en euros" data-nbc-price>
+                <span aria-hidden="true">–</span>
+                <input type="number" inputmode="numeric" name="{{ f.max_value.param_name }}" value="{{ f.max_value.value | money_without_currency | replace: ',', '.' | remove: '.00' }}" placeholder="{{ f.range_max | money_without_currency | replace: ',', '.' | remove: '.00' }}" min="0" aria-label="Precio máximo en euros" data-nbc-price>
+                <span>€</span>
+              </div>
+            {%- else -%}
+              <div class="nbc-opts">
+                {%- for v in f.values -%}
+                  <label{% if v.count == 0 and v.active == false %} class="is-disabled"{% endif %}>
+                    <input type="checkbox" name="{{ v.param_name }}" value="{{ v.value }}"{% if v.active %} checked{% endif %}{% if v.count == 0 and v.active == false %} disabled{% endif %} data-nbc-autosubmit>
+                    <span>{{ v.label }}</span>
+                    <small>{{ v.count }}</small>
+                  </label>
+                {%- endfor -%}
+              </div>
+          {%- endcase -%}
+        </fieldset>
+      {%- endfor -%}
+      <noscript><button class="nbc-btn nbc-btn--dark" type="submit" style="margin-top:12px">Aplicar filtros</button></noscript>
+      {%- if section.settings.mostrar_ninacash -%}
+        <div class="nbc-cash-box">
+          <span class="nbc-mariposa" aria-hidden="true"></span>
+          <p class="nbc-serif">NinaCash</p>
+          <p>Con cada compra acumulas el 1 % para tu próximo pedido.</p>
+        </div>
+      {%- endif -%}
+    </form>
+
+    <section class="nbc-main" aria-label="Productos">
+      {%- if collection.products.size == 0 -%}
+        <div class="nbc-empty">
+          <p class="nbc-serif">No hay productos con estos filtros</p>
+          <p style="margin:0 0 16px;font-size:14px">Prueba a quitar alguno o mira las ofertas de la semana.</p>
+          <a class="nbc-btn nbc-btn--dark" href="{{ collection.url }}">Borrar filtros</a>
+        </div>
+      {%- else -%}
+        <ul class="nbc-grid">
+          {%- for product in collection.products -%}
+            {%- if paginate.current_page == 1 and hay_filtros == false -%}
+              {%- for block in section.blocks -%}
+                {%- if block.type == 'promo' and block.settings.posicion == forloop.parentloop.index -%}
+                  {%- liquid
+                    assign mostrar_promo = true
+                    if block.settings.solo_familia != 'todas' and block.settings.solo_familia != familia
+                      assign mostrar_promo = false
+                    endif
+                    if block.settings.url == collection.url
+                      assign mostrar_promo = false
+                    endif
+                  -%}
+                  {%- if mostrar_promo -%}
+                    <li {{ block.shopify_attributes }}>
+                      <a class="nbc-promo nbc-promo--{{ block.settings.estilo }}" href="{{ block.settings.url | default: '#' }}">
+                        <span class="nbc-promo__k">{{ block.settings.antetitulo }}</span>
+                        <span class="nbc-promo__t">{{ block.settings.titulo }}</span>
+                        <span class="nbc-promo__p">{{ block.settings.texto }}</span>
+                        <span class="nbc-btn">{{ block.settings.boton }}</span>
+                      </a>
+                    </li>
+                  {%- endif -%}
+                {%- endif -%}
+              {%- endfor -%}
+            {%- endif -%}
+            {%- liquid
+              assign v0 = product.selected_or_first_available_variant
+              assign pct = 0
+              if v0.compare_at_price > v0.price
+                assign ahorro = v0.compare_at_price | minus: v0.price
+                assign pct = ahorro | times: 100 | divided_by: v0.compare_at_price
+              endif
+              assign cash = v0.price | divided_by: 100
+            -%}
+            <li>
+              <article class="nbc-card" data-nbc-card>
+                <a class="nbc-card__media" href="{{ product.url | within: collection }}" tabindex="-1" aria-hidden="true">
+                  {%- if product.featured_image -%}
+                    {{ product.featured_image | image_url: width: 600 | image_tag: loading: 'lazy', sizes: '(max-width: 860px) 50vw, 300px', alt: '' }}
+                  {%- else -%}
+                    {{ 'product-1' | placeholder_svg_tag }}
+                  {%- endif -%}
+                  <span class="nbc-badges">
+                    <span class="nbc-badge" data-nbc-pct{% if pct < section.settings.min_pct %} hidden{% endif %}>-{{ pct }} %</span>
+                    {%- if product.tags contains 'recien-llegado' -%}<span class="nbc-badge nbc-badge--dark">Nuevo</span>{%- endif -%}
+                    {%- if product.tags contains 'oferta-semana' -%}<span class="nbc-badge nbc-badge--soft">Oferta de la semana</span>{%- endif -%}
+                  </span>
+                  {%- unless product.available -%}<span class="nbc-card__soldout"></span>{%- endunless -%}
+                </a>
+                {%- if product.vendor != blank -%}<p class="nbc-card__brand">{{ product.vendor }}</p>{%- endif -%}
+                <a class="nbc-card__title" href="{{ product.url | within: collection }}">{{ product.title }}</a>
+                {%- unless product.has_only_default_variant -%}
+                  {%- if product.variants.size > 1 -%}
+                    <div class="nbc-sizes" role="group" aria-label="{{ product.options.first | default: 'Tamaño' }}">
+                      {%- for v in product.variants limit: 5 -%}
+                        <button type="button" aria-pressed="{% if v.id == v0.id %}true{% else %}false{% endif %}" data-id="{{ v.id }}" data-price="{{ v.price | money }}" data-compare="{% if v.compare_at_price > v.price %}{{ v.compare_at_price | money }}{% endif %}" data-pct="{% if v.compare_at_price > v.price %}{{ v.compare_at_price | minus: v.price | times: 100 | divided_by: v.compare_at_price }}{% else %}0{% endif %}" data-cash="{{ v.price | divided_by: 100 | money }}" data-available="{{ v.available }}">{{ v.title }}</button>
+                      {%- endfor -%}
+                    </div>
+                  {%- endif -%}
+                {%- endunless -%}
+                <div class="nbc-prices">
+                  <span class="nbc-now{% if pct >= section.settings.min_pct %} is-sale{% endif %}" data-nbc-now>{{ v0.price | money }}</span>
+                  <span class="nbc-was" data-nbc-was{% if pct < section.settings.min_pct %} hidden{% endif %}><span class="visually-hidden">Antes </span>{{ v0.compare_at_price | money }}</span>
+                </div>
+                {%- if section.settings.mostrar_ninacash -%}
+                  <p class="nbc-cash"><span class="nbc-mariposa" aria-hidden="true"></span>Acumulas <strong data-nbc-cash>{{ cash | money }}</strong> en NinaCash</p>
+                {%- endif -%}
+                {%- if product.available -%}
+                  <form action="{{ routes.cart_add_url }}" method="post" data-nbc-add>
+                    <input type="hidden" name="id" value="{{ v0.id }}" data-nbc-id>
+                    <input type="hidden" name="quantity" value="1">
+                    <button type="submit" class="nbc-btn nbc-btn--dark" data-nbc-btn data-name="{{ product.title | escape }}">Añadir a la cesta</button>
+                  </form>
+                {%- else -%}
+                  <a class="nbc-btn nbc-btn--line" href="{{ product.url }}">Agotado · Avísame</a>
+                {%- endif -%}
+              </article>
+            </li>
+          {%- endfor -%}
+        </ul>
+      {%- endif -%}
+
+      {%- if paginate.pages > 1 -%}
+        {%- liquid
+          assign vistos = paginate.current_offset | plus: collection.products.size
+          assign pct_vistos = vistos | times: 100 | divided_by: paginate.items
+        -%}
+        <nav class="nbc-more" aria-label="Paginación">
+          <p>Has visto {{ vistos }} de {{ paginate.items }} productos</p>
+          <div class="nbc-progress" aria-hidden="true"><div style="width:{{ pct_vistos }}%"></div></div>
+          {%- if paginate.next -%}
+            <a class="nbc-btn nbc-btn--line" href="{{ paginate.next.url }}#nbc-resultados">Ver más productos</a>
+          {%- endif -%}
+          <div class="nbc-pages">
+            {%- for part in paginate.parts -%}
+              {%- if part.is_link -%}
+                <a href="{{ part.url }}#nbc-resultados">{{ part.title }}</a>
+              {%- elsif part.title == paginate.current_page -%}
+                <span class="is-current" aria-current="page">{{ part.title }}</span>
+              {%- else -%}
+                <span>{{ part.title }}</span>
+              {%- endif -%}
+            {%- endfor -%}
+          </div>
+        </nav>
+      {%- endif -%}
+    </section>
+  </div>
+  {%- endpaginate -%}
+
+  {%- if section.settings.mostrar_confianza -%}
+    <section class="nbc-trust" aria-label="Por qué Nina">
+      <div><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg><p><b>100 % originales</b>Siempre con su caja precintada.</p></div>
+      <div><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/></svg><p><b>{{ section.settings.texto_envio }}</b>Gratis desde {{ section.settings.umbral }} € a península y Baleares.</p></div>
+      <div><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg><p><b>Pago seguro</b>Con PayPal o con tarjeta.</p></div>
+      <div><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/></svg><p><b>Devoluciones 14 días</b>Si no está abierto, lo devuelves.</p></div>
+    </section>
+  {%- endif -%}
+
+  {%- assign largo = collection.description | strip_html | size -%}
+  {%- if largo > 200 or section.settings.guia_titulo != blank -%}
+    <section class="nbc-guide" aria-label="Guía">
+      <div class="nbc-guide__txt">
+        {%- if section.settings.guia_titulo != blank -%}<h2>{{ section.settings.guia_titulo }}</h2>{%- endif -%}
+        {%- if largo > 200 -%}
+          <details>
+            <summary>Leer más sobre {{ collection.title | downcase }}</summary>
+            {{ collection.description }}
+          </details>
+        {%- endif -%}
+      </div>
+      <div class="nbc-guide__links">
+        <p>Te puede interesar</p>
+        <div>
+          {%- for hh in accesos -%}
+            {%- assign cc = collections[hh] -%}
+            {%- if cc.id != blank and hh != collection.handle -%}<a href="{{ cc.url }}">{{ cc.title }}</a>{%- endif -%}
+          {%- endfor -%}
+        </div>
+      </div>
+    </section>
+  {%- endif -%}
+
+  <div class="nbc-toast" role="status" aria-live="polite" data-nbc-toast>
+    <span style="flex:1 1 auto"><span data-nbc-toast-name></span><em data-nbc-toast-ship></em></span>
+    <a href="{{ routes.cart_url }}">Ver cesta</a>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var root = document.currentScript.previousElementSibling;
+    if (!root || !root.classList.contains('nbc')) return;
+    var umbral = {{ section.settings.umbral | times: 100 }};
+    var fmt = function (c) { return (c / 100).toFixed(2).replace('.', ',') + ' €'; };
+
+    var form = root.querySelector('#nbc-filtros');
+    root.querySelectorAll('[data-nbc-autosubmit]').forEach(function (el) {
+      el.addEventListener('change', function () { if (form) form.submit(); });
+    });
+    root.querySelectorAll('[data-nbc-price]').forEach(function (el) {
+      el.addEventListener('change', function () { if (form) form.submit(); });
+    });
+    var openBtn = root.querySelector('[data-nbc-open]');
+    if (openBtn && form) {
+      openBtn.addEventListener('click', function () {
+        var open = form.classList.toggle('is-open');
+        openBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        openBtn.textContent = open ? 'Ocultar filtros' : 'Filtrar';
+      });
+    }
+
+    root.querySelectorAll('[data-nbc-card]').forEach(function (card) {
+      card.querySelectorAll('.nbc-sizes button').forEach(function (b) {
+        b.addEventListener('click', function () {
+          card.querySelectorAll('.nbc-sizes button').forEach(function (o) { o.setAttribute('aria-pressed', o === b ? 'true' : 'false'); });
+          var pct = parseInt(b.dataset.pct || '0', 10);
+          var min = {{ section.settings.min_pct }};
+          var now = card.querySelector('[data-nbc-now]');
+          var was = card.querySelector('[data-nbc-was]');
+          var badge = card.querySelector('[data-nbc-pct]');
+          var cash = card.querySelector('[data-nbc-cash]');
+          var id = card.querySelector('[data-nbc-id]');
+          var btn = card.querySelector('[data-nbc-btn]');
+          if (now) { now.textContent = b.dataset.price; now.classList.toggle('is-sale', pct >= min); }
+          if (was) { was.hidden = pct < min; was.innerHTML = '<span class="visually-hidden">Antes </span>' + (b.dataset.compare || ''); }
+          if (badge) { badge.hidden = pct < min; badge.textContent = '-' + pct + ' %'; }
+          if (cash) cash.textContent = b.dataset.cash;
+          if (id) id.value = b.dataset.id;
+          if (btn) { var ok = b.dataset.available === 'true'; btn.disabled = !ok; btn.textContent = ok ? 'Añadir a la cesta' : 'Agotado en este tamaño'; }
+        });
+      });
+    });
+
+    var toast = root.querySelector('[data-nbc-toast]');
+    var timer;
+    root.querySelectorAll('[data-nbc-add]').forEach(function (f) {
+      f.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var btn = f.querySelector('[data-nbc-btn]');
+        var label = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Añadiendo…';
+        fetch('{{ routes.cart_add_url }}.js', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ items: [{ id: Number(f.querySelector('[data-nbc-id]').value), quantity: 1 }] }) })
+          .then(function (r) { if (!r.ok) throw new Error('add'); return fetch('{{ routes.cart_url }}.js'); })
+          .then(function (r) { return r.json(); })
+          .then(function (cart) {
+            btn.textContent = 'Añadido ✓';
+            var left = umbral - cart.total_price;
+            toast.querySelector('[data-nbc-toast-name]').textContent = 'Añadido: ' + btn.dataset.name;
+            toast.querySelector('[data-nbc-toast-ship]').textContent = left > 0 ? 'Te faltan ' + fmt(left) + ' para el envío gratis' : 'Tu pedido ya tiene envío gratis';
+            toast.classList.add('is-open');
+            document.querySelectorAll('.cart-bubble__text-count, [data-cart-count]').forEach(function (el) { el.textContent = cart.item_count; });
+            document.dispatchEvent(new CustomEvent('cart:update', { bubbles: true, detail: { resource: cart, sourceId: 'nina-coleccion', data: { itemCount: cart.item_count } } }));
+            clearTimeout(timer);
+            timer = setTimeout(function () { toast.classList.remove('is-open'); btn.textContent = label; btn.disabled = false; }, 4000);
+          })
+          .catch(function () { f.submit(); });
+      });
+    });
+
+    var clock = root.querySelector('[data-nbc-clock]');
+    if (clock) {
+      var tick = function () {
+        var now = new Date();
+        var end = new Date(now);
+        end.setDate(now.getDate() + ((7 - now.getDay()) % 7));
+        end.setHours(23, 59, 59, 999);
+        var ms = Math.max(0, end - now);
+        var two = function (n) { return (n < 10 ? '0' : '') + n; };
+        clock.querySelector('[data-d]').textContent = Math.floor(ms / 86400000);
+        clock.querySelector('[data-h]').textContent = two(Math.floor(ms / 3600000) % 24);
+        clock.querySelector('[data-m]').textContent = two(Math.floor(ms / 60000) % 60);
+        clock.querySelector('[data-s]').textContent = two(Math.floor(ms / 1000) % 60);
+      };
+      tick();
+      setInterval(tick, 1000);
+    }
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Nina · Colección",
+  "class": "nina-coleccion-section",
+  "enabled_on": { "templates": ["collection"] },
+  "settings": [
+    { "type": "header", "content": "Cabecera" },
+    { "type": "text", "id": "texto_hero", "label": "Texto si la colección no tiene descripción", "default": "Originales, con su caja precintada y en tu casa en 24 a 72 horas." },
+    { "type": "text", "id": "boton2_texto", "label": "Segundo botón: texto" },
+    { "type": "url", "id": "boton2_url", "label": "Segundo botón: enlace" },
+    { "type": "header", "content": "Bloques" },
+    { "type": "checkbox", "id": "mostrar_ofertas", "label": "Mostrar «Ofertas de la semana» con cuenta atrás", "default": true },
+    { "type": "text", "id": "ofertas_titulo", "label": "Título de la franja de ofertas", "default": "Precios que bajan solo esta semana" },
+    { "type": "checkbox", "id": "mostrar_marcas", "label": "Mostrar «Las marcas más buscadas»", "info": "Usa el filtro de marca de Search & Discovery", "default": true },
+    { "type": "checkbox", "id": "mostrar_ninacash", "label": "Mostrar NinaCash (1 %)", "default": true },
+    { "type": "checkbox", "id": "mostrar_confianza", "label": "Mostrar sellos de confianza", "default": true },
+    { "type": "text", "id": "guia_titulo", "label": "Título de la guía de abajo" },
+    { "type": "header", "content": "Productos" },
+    { "type": "range", "id": "por_pagina", "label": "Productos por página", "min": 12, "max": 48, "step": 4, "default": 24 },
+    { "type": "range", "id": "min_pct", "label": "Mostrar descuento desde (%)", "min": 1, "max": 30, "step": 1, "default": 5 },
+    { "type": "number", "id": "umbral", "label": "Envío gratis desde (€)", "default": 39 },
+    { "type": "text", "id": "texto_envio", "label": "Plazo de envío", "default": "Envío en 24 a 72 h" }
+  ],
+  "blocks": [
+    {
+      "type": "promo",
+      "name": "Tarjeta promocional",
+      "settings": [
+        { "type": "range", "id": "posicion", "label": "Aparece antes del producto nº", "min": 1, "max": 24, "step": 1, "default": 7 },
+        { "type": "select", "id": "solo_familia", "label": "Mostrar en", "options": [
+          { "value": "todas", "label": "Todas las colecciones" },
+          { "value": "perfume", "label": "Solo perfumes" },
+          { "value": "maquillaje", "label": "Solo maquillaje" },
+          { "value": "skin", "label": "Solo Skin Care" }
+        ], "default": "todas" },
+        { "type": "select", "id": "estilo", "label": "Color", "options": [
+          { "value": "acc", "label": "Rosa Nina" },
+          { "value": "dark", "label": "Negro" }
+        ], "default": "acc" },
+        { "type": "text", "id": "antetitulo", "label": "Antetítulo", "default": "Ideas para Navidad" },
+        { "type": "text", "id": "titulo", "label": "Título", "default": "Estuches listos para regalar" },
+        { "type": "textarea", "id": "texto", "label": "Texto", "default": "Perfume y su pareja en una caja: el regalo resuelto." },
+        { "type": "text", "id": "boton", "label": "Botón", "default": "Ver ideas" },
+        { "type": "url", "id": "url", "label": "Enlace" }
+      ]
+    }
+  ],
+  "presets": [{ "name": "Nina · Colección" }]
+}
+{% endschema %}
