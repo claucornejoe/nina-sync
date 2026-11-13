@@ -33,6 +33,9 @@ async function get(fn, params) {
     }
     const text = await res.text();
     if (res.status === 401) throw new Error('BTS rechaza el token (401): revisa BTS_TOKEN');
+    // BTS responde 404 «no products found» cuando ninguno de los SKU pedidos existe en su catálogo
+    // (p. ej. un lote de 25 productos que BTS ya no vende). No es un error: es una lista vacía.
+    if (res.status === 404 && /no products found/i.test(text)) return { products: [] };
     if (!res.ok) throw new Error(`BTS ${fn} respondió ${res.status}: ${text.slice(0, 300)}`);
     try {
       return JSON.parse(text);
