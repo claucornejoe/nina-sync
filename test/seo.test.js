@@ -53,6 +53,14 @@ test('qué le falta a un producto', () => {
   assert.equal(needs({ ...good, tags: [...good.tags, 'seo-manual'] }).any, false);
 });
 
+test('solo escribe descripciones en productos nuevos', () => {
+  process.env.OPENAI_API_KEY = 'sk-test';
+  assert.equal(needs({ ...good, createdAt: '2026-11-10T10:00:00Z' }).description, false);
+  assert.equal(needs({ ...good, createdAt: '2026-11-14T10:00:00Z' }).description, true);
+  assert.equal(needs({ ...good, createdAt: undefined }).description, false);
+  delete process.env.OPENAI_API_KEY;
+});
+
 test('la descripción no lleva precios, envíos ni la tienda', () => {
   const html = renderDescription(good, {
     intro: 'Un perfume floral oriental y seductor. ¡Envío gratis en 24 h! Compra ya al mejor precio en Nina Beauty.',
