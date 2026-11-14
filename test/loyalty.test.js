@@ -63,3 +63,9 @@ test('formulario de cupón por nivel', () => {
   assert.ok(parseCouponForm({ codigo: 'GLAM15', valor: '15' }).error);
   assert.ok(parseCouponForm({ codigo: 'GLAM15', valor: '95', niveles: '1' }).error);
 });
+
+test('por defecto se suma al pagar', () => {
+  assert.equal(r.IMMEDIATE, true);
+  assert.equal(r.creditDate(order({ processedAt: '2026-11-14T10:00:00Z' })).toISOString(), '2026-11-14T10:00:00.000Z');
+  assert.equal(r.creditDate(order(), false), null);
+});

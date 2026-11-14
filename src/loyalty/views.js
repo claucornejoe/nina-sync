@@ -83,7 +83,7 @@ export function ninacashPage({ active, state, hooks, totals, customers, coupons,
   const empty = (n, t) => `<tr><td colspan="${n}"><div class="empty"><img src="/static/mariposa.svg" alt="">${t}</div></td></tr>`;
 
   const body = `<div class="eyebrow">Fidelidad</div><h1>NinaCash y niveles</h1>
-<p class="muted" style="margin:10px 0 22px;max-width:680px">Cada compra pagada suma NinaCash (1 %, 1,5 % o 2 % según el nivel). Se queda pendiente y se suma al saldo de la clienta 14 días después de la entrega, como crédito en tienda de Shopify: lo ve en su cuenta y lo usa al pagar. El nivel sale de lo comprado en los últimos 12 meses.</p>
+<p class="muted" style="margin:10px 0 22px;max-width:680px">Cada compra pagada suma NinaCash (1 %, 1,5 % o 2 % según el nivel). Se suma al saldo de la clienta al momento de pagar, como crédito en tienda de Shopify, y se resta si el pedido se cancela o se devuelve: lo ve en su cuenta y lo usa al pagar. El nivel sale de lo comprado en los últimos 12 meses.</p>
 ${flash?.error ? `<div class="alert">${icon('alert')}<div>${esc(flash.error)}</div></div>` : ''}
 ${flash?.ok ? `<div class="card" style="background:var(--verde-bg);color:var(--verde);margin-bottom:14px">${esc(flash.ok)}</div>` : ''}
 ${statusCard({ active, state, hooks })}
