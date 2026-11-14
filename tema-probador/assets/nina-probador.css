@@ -110,8 +110,10 @@
 .np-cuenta { font-size: 13px; color: var(--np-gris); font-variant-numeric: tabular-nums; }
 .np-orden { font: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid var(--np-linea); border-radius: 8px; background: #fff; color: inherit; }
 
-.np-lista { display: flex; flex-direction: column; gap: 16px; max-height: 430px; overflow-y: auto; padding-right: 4px; }
-@media (max-width: 860px) { .np-lista { max-height: none; } }
+.np-lista { display: flex; flex-direction: column; gap: 16px; max-height: 380px; overflow-y: auto; overscroll-behavior: contain; padding: 4px 6px 4px 4px; scrollbar-width: thin; scrollbar-color: var(--np-petalo) transparent; }
+@media (max-width: 860px) { .np-lista { max-height: 300px; } }
+.np-lista:has(.np-grupo) { border: 1px solid var(--np-linea); border-radius: 14px; padding: 14px; }
+.np-pista { padding: 18px; text-align: center; background: var(--np-petalo-suave); border-radius: 14px; }
 .np-grupo-titulo { margin: 0 0 8px; font-family: var(--np-texto); font-size: 13px; font-weight: 500; line-height: 1.3; }
 .np-grupo-marca { display: block; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--np-gris); font-weight: 500; }
 .np-muestras { display: flex; flex-wrap: wrap; gap: 8px; }

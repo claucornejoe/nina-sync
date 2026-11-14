@@ -47,7 +47,7 @@ class Probador {
     this.tonos = [];
     this.tono = null;
     this.intensidad = 1;
-    this.marca = 'Todas';
+    this.marca = null; // ninguna marca elegida al principio: la lista empieza vacía
     this.busqueda = '';
     this.orden = 'vendidos';
     this.antes = false;
@@ -141,12 +141,13 @@ class Probador {
   pintarMarcas() {
     this.marcas.replaceChildren(...this.listaMarcas.map(m => el('button', {
       type: 'button', class: 'np-chip', 'aria-pressed': String(m === this.marca),
-      onclick: () => { this.marca = m; this.pintarMarcas(); this.pintarLista(); } }, m)));
+      onclick: () => { this.marca = this.marca === m ? null : m; this.pintarMarcas(); this.pintarLista(); } }, m)));
   }
 
   filtrados() {
     const q = sinAcentos(this.busqueda.trim());
-    let L = this.tonos.filter(t => (this.marca === 'Todas' || t.marca === this.marca) &&
+    if (!this.marca && !q) return [];
+    let L = this.tonos.filter(t => (!this.marca || this.marca === 'Todas' || t.marca === this.marca) &&
       (!q || q.split(/\s+/).every(p => sinAcentos(`${t.marca} ${t.producto} ${t.tono} ${NOMBRE_ACABADO[t.acabado]}`).includes(p))));
     if (this.orden === 'precio') L = [...L].sort((a, b) => a.precio - b.precio);
     else if (this.orden === 'color') L = [...L].sort((a, b) => tonoHue(a.hex) - tonoHue(b.hex));
@@ -155,6 +156,11 @@ class Probador {
 
   pintarLista() {
     const L = this.filtrados();
+    if (!this.marca && !this.busqueda.trim()) {
+      this.cuenta.textContent = `${this.tonos.length} tonos`;
+      this.lista.replaceChildren(el('p', { class: 'np-vacio np-pista' }, 'Elige una marca o busca un labial para ver sus tonos.'));
+      return;
+    }
     this.cuenta.textContent = `${L.length} ${L.length === 1 ? 'tono' : 'tonos'}`;
     if (!L.length) {
       this.lista.replaceChildren(el('p', { class: 'np-vacio' }, 'No hay tonos con esa búsqueda. Prueba con otra marca o color.'));
