@@ -151,13 +151,18 @@
   .nbc-now{font-size:19px;font-weight:700}
   .nbc-now.is-sale{color:var(--nb-price)}
   .nbc-was{font-size:13px;color:var(--nb-muted);text-decoration:line-through}
-  .nbc-cash{margin:0;font-size:12px;display:flex;align-items:center;gap:6px}
-  .nbc-cash .nbc-mariposa{width:14px;height:16px;color:var(--nb-acc)}
+  .nbc-cash{margin:0;font-size:12px;line-height:1.35;display:flex;align-items:flex-start;gap:6px}
+  .nbc-cash>span:last-child{flex:1 1 auto;min-width:0}
+  .nbc-cash .nbc-mariposa{flex:0 0 14px;width:14px;height:16px;color:var(--nb-acc)}
   .nbc-card form{margin-top:auto}
   .nbc-card .nbc-btn{width:100%;min-height:44px}
   .nbc-promo{border-radius:16px;padding:28px 24px;display:flex;flex-direction:column;justify-content:space-between;gap:16px;min-height:420px;height:100%;text-decoration:none;position:relative;overflow:hidden}
-  .nbc-promo--acc{background:var(--nb-acc);color:#111}
-  .nbc-promo--dark{background:var(--nb-dark);color:#fff}
+  .nbc a.nbc-promo--acc{background:var(--nb-acc);color:#111}
+  .nbc a.nbc-promo--dark{background:var(--nb-dark);color:#fff}
+  .nbc a.nbc-promo--skin{background:#E3F3F8;color:#2B2B2B;border:1px solid #CFE6EE}
+  .nbc-promo--skin .nbc-promo__k{color:#2B2B2B}
+  .nbc-promo__logo{display:block;width:170px;max-width:80%;height:auto}
+  .nbc-promo--skin .nbc-promo__deco{position:absolute;right:-18px;bottom:70px;width:120px;height:140px;background:#89D3E9;opacity:.35;-webkit-mask:url('{{ 'nina-skincare-mariposa-azul.svg' | asset_url }}') center/contain no-repeat;mask:url('{{ 'nina-skincare-mariposa-azul.svg' | asset_url }}') center/contain no-repeat}
   .nbc-promo__k{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
   .nbc-promo--dark .nbc-promo__k{color:var(--nb-acc)}
   .nbc-promo__t{font-family:var(--font-heading--family);font-size:36px;line-height:1.05;font-weight:600}
@@ -165,6 +170,8 @@
   .nbc-promo .nbc-btn{align-self:flex-start}
   .nbc-promo--acc .nbc-btn{background:#111;color:#fff !important}
   .nbc-promo--dark .nbc-btn{background:var(--nb-acc);color:#111 !important}
+  .nbc-promo--skin .nbc-btn{background:#89D3E9;color:#2B2B2B !important}
+  .nbc-promo .nbc-btn{text-align:center;line-height:1.25;padding-block:10px}
   .nbc-empty{text-align:center;padding:48px 16px;background:var(--nb-soft);border-radius:16px}
   .nbc-empty .nbc-serif{font-size:28px;margin:0 0 8px}
   .nbc-more{display:flex;flex-direction:column;align-items:center;gap:12px;padding:44px 0 8px}
@@ -387,7 +394,11 @@
                   {%- if mostrar_promo -%}
                     <li {{ block.shopify_attributes }}>
                       <a class="nbc-promo nbc-promo--{{ block.settings.estilo }}" href="{{ block.settings.url | default: '#' }}">
-                        <span class="nbc-promo__k">{{ block.settings.antetitulo }}</span>
+                        {%- if block.settings.estilo == 'skin' -%}
+                          <span class="nbc-promo__deco" aria-hidden="true"></span>
+                          <img class="nbc-promo__logo" src="{{ 'nina-skincare-logo-azul.svg' | asset_url }}" alt="Nina Skin Care" width="170" height="85" loading="lazy">
+                        {%- endif -%}
+                        {%- if block.settings.antetitulo != blank and block.settings.estilo != 'skin' -%}<span class="nbc-promo__k">{{ block.settings.antetitulo }}</span>{%- endif -%}
                         <span class="nbc-promo__t">{{ block.settings.titulo }}</span>
                         <span class="nbc-promo__p">{{ block.settings.texto }}</span>
                         <span class="nbc-btn">{{ block.settings.boton }}</span>
@@ -437,7 +448,7 @@
                   <span class="nbc-was" data-nbc-was{% if pct < section.settings.min_pct %} hidden{% endif %}><span class="visually-hidden">Antes </span>{{ v0.compare_at_price | money }}</span>
                 </div>
                 {%- if section.settings.mostrar_ninacash -%}
-                  <p class="nbc-cash"><span class="nbc-mariposa" aria-hidden="true"></span>Acumulas <strong data-nbc-cash>{{ cash | money }}</strong> en NinaCash</p>
+                  <p class="nbc-cash"><span class="nbc-mariposa" aria-hidden="true"></span><span>Acumulas <strong data-nbc-cash>{{ cash | money }}</strong> en NinaCash</span></p>
                 {%- endif -%}
                 {%- if product.available -%}
                   <form action="{{ routes.cart_add_url }}" method="post" data-nbc-add>
@@ -650,7 +661,8 @@
         ], "default": "todas" },
         { "type": "select", "id": "estilo", "label": "Color", "options": [
           { "value": "acc", "label": "Rosa Nina" },
-          { "value": "dark", "label": "Negro" }
+          { "value": "dark", "label": "Negro" },
+          { "value": "skin", "label": "Nina Skin Care (azul)" }
         ], "default": "acc" },
         { "type": "text", "id": "antetitulo", "label": "Antetítulo", "default": "Ideas para Navidad" },
         { "type": "text", "id": "titulo", "label": "Título", "default": "Estuches listos para regalar" },
