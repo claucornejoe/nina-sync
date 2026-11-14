@@ -47,3 +47,14 @@ npm test              # pruebas de la fórmula y de la planificación
 npm run sync -- --prueba   # una sincronización de prueba desde la terminal
 npm start             # panel web en el puerto 3000
 ```
+
+## NinaCash y niveles
+
+Página **NinaCash** del panel (`/ninacash`). Con avisos de Shopify (`orders/paid`, `orders/cancelled`, `orders/fulfilled`, `refunds/create`, `customers/create`) y un repaso diario:
+
+- **NinaCash**: cada pedido pagado con cuenta genera el 1 %, 1,5 % o 2 % (según el nivel con el que se compró) de los productos tras descuentos, sin envío ni la parte pagada con NinaCash. Queda **pendiente** y se suma 14 días después de la entrega como **crédito en tienda** de Shopify (caduca a los 12 meses). La clienta lo ve en su cuenta y, con la sesión iniciada, lo aplica al pagar en el checkout. Si devuelve o se cancela, se ajusta o se resta.
+- **Nivel** por compras de los últimos 12 meses: Sparkle 0 €, Glow 100 €, Glam 250 €, Butterfly 500 €. Etiqueta en la clienta (`nivel-sparkle`, `nivel-glow`, `nivel-glam`, `nivel-butterfly`) y segmentos «Nivel Nina …» para limitar descuentos.
+- **Metacampos para «Mi cuenta»** (espacio `nina` del cliente): `nivel` (1-4), `gasto_12m`, `ninacash`, `ninacash_pendiente`, `cupones` (JSON de códigos personales). En la tienda: `nina.cupones_semana` (JSON con `codigo`, `texto`, `caduca`, `niveles`, `nivel_min`).
+- **Cupones por nivel**: se crean en el panel eligiendo niveles; Shopify solo los acepta a clientas de esos segmentos. También se puede elegir el segmento al crear un descuento en el admin.
+- **Glam**: un código de envío gratis personal cada mes. **Butterfly**: envío gratis automático y la etiqueta `obsequio-butterfly` en su primer pedido del mes.
+- `NINACASH_ACTIVO=false` (por defecto) es modo prueba: calcula y apunta, pero no cambia nada en Shopify.
