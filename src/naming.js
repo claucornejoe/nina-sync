@@ -50,7 +50,7 @@ const NOUN = {
   Perfume: 'un perfume',
 };
 
-export function description(title, brand, gender, type, freeFrom = 39) {
+export function description(title, brand, gender, type, freeFrom = 49) {
   const envio = freeFrom ? `Envío gratis desde ${String(freeFrom).replace('.', ',')} € a la península y Baleares.` : 'Envío a la península y Baleares.';
   return (
     `<p><strong>${esc(title)}</strong> es ${NOUN[type] || 'un perfume'} ${PARA[gender] || ''} de ${esc(brand)}, 100 % original.</p>` +

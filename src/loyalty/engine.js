@@ -10,6 +10,7 @@
 //    metacampos de la clienta (nina.nivel, nina.gasto_12m, nina.ninacash, nina.ninacash_pendiente) para «Mi cuenta».
 //  - Glam: 1 código de envío gratis al mes (nina.cupones). Butterfly: envío gratis automático y obsequio mensual
 //    (el primer pedido del mes lleva la etiqueta «obsequio-butterfly»).
+import { config } from '../config.js';
 import * as rules from './rules.js';
 import * as store from './store.js';
 import * as sh from './shopify.js';
@@ -140,7 +141,7 @@ export async function refreshCustomer(customerId, name = null) {
 async function writeCustomerMetafields(customerId, { level, spent, balance, pending }) {
   const codes = (await store.activeMonthlyCodes(customerId)).map((m) => ({
     codigo: m.code,
-    texto: 'Envío gratis de tu nivel Glam (1 al mes, pedidos de menos de 39 €)',
+    texto: `Envío gratis de tu nivel Glam (1 al mes, pedidos de menos de ${config.rules.freeShippingFrom} €)`,
     caduca: new Date(m.ends_at).toISOString().slice(0, 10),
   }));
   await sh.setMetafields([
