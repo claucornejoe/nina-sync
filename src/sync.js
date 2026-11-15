@@ -5,6 +5,7 @@ import { planSync, planNewProducts } from './plan.js';
 import { createNewArrivals, expireNewArrivals } from './newArrivals.js';
 import * as db from './db.js';
 import { sendReport } from './mail.js';
+import { notifyRestocked } from './stockAlerts/notify.js';
 import * as progress from './progress.js';
 
 let running = null;
@@ -125,6 +126,8 @@ async function doSync(trigger, dryRun) {
     };
     await db.finishRun(runId, 'ok', summary);
     await sendReport(runId).catch((e) => console.error('No se pudo enviar el informe por correo:', e.message));
+    // «Avísame»: correo a quien esperaba un tamaño que vuelve a tener stock.
+    await notifyRestocked({ dryRun }).catch((e) => console.error('Avisos de stock:', e.message));
     return { runId, summary };
   } catch (e) {
     console.error('Sincronización fallida:', e);
