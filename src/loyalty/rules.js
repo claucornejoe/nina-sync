@@ -13,6 +13,9 @@ export const LEVELS = [
 export const LEVEL_TAGS = LEVELS.map((l) => `nivel-${l.key}`);
 export const tagFor = (n) => `nivel-${LEVELS[n - 1].key}`;
 
+// inmediato (Clau, 2026-11-14): se suma al pagar y se resta si se cancela o devuelve.
+// tras-devolucion: se suma 14 días después de la entrega.
+export const IMMEDIATE = (process.env.NINACASH_ABONO || 'inmediato') !== 'tras-devolucion';
 export const RETURN_DAYS = num('NINACASH_DIAS_DEVOLUCION', 14); // plazo de devolución tras la entrega
 export const TRANSIT_DAYS = num('NINACASH_DIAS_TRANSPORTE', 3); // si Shopify no sabe la fecha de entrega
 export const EXPIRY_DAYS = num('NINACASH_CADUCIDAD_DIAS', 365);
@@ -56,7 +59,13 @@ export function orderAmounts(order) {
 
 export const earnedFor = (eligible, rate) => Math.max(0, round2((Number(eligible) * Number(rate)) / 100));
 
-/** Cuándo se suma el NinaCash: 14 días después de la entrega (o del envío + 3 días si no hay fecha de entrega). */
+/** Cuándo se suma el NinaCash: al pagar (por defecto) o 14 días después de la entrega. */
+export function creditDate(order, immediate = IMMEDIATE) {
+  if (immediate) return new Date(order.processedAt || order.createdAt || Date.now());
+  return releaseDate(order);
+}
+
+/** Con abono tras devolución: 14 días después de la entrega (o del envío + 3 días si no hay fecha de entrega). */
 export function releaseDate(order) {
   const fs = order?.fulfillments || [];
   if (!fs.length) return null;

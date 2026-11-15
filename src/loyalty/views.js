@@ -12,6 +12,7 @@ const KIND = {
   'envio-glam': ['Envío gratis Glam', 'nuevo'],
   obsequio: ['Obsequio', 'oferta'],
   cupon: ['Cupón', 'nuevo'],
+  caduca: ['Aviso de caducidad', 'running'],
   error: ['Error', 'error'],
 };
 const chip = (k) => {
@@ -27,7 +28,7 @@ function statusCard({ active, state, hooks }) {
  ${row(active, active ? 'NinaCash activo' : 'Modo prueba', active ? 'Suma saldo, cambia etiquetas de nivel y crea los códigos en Shopify.' : 'Calcula y apunta todo aquí, pero no cambia nada en Shopify. Para activarlo: NINACASH_ACTIVO=true en Railway.')}
  ${row(hooks.estado === 'activos', 'Avisos de pedidos y cuentas nuevas', hooks.estado === 'activos' ? hooks.detalle : hooks.estado)}
  ${row(state.setup === 'listo', 'Segmentos por nivel y envío gratis Butterfly', state.setup)}
- ${row(!!state.lastRun, 'Último repaso', state.lastRun ? `${fmtDate(state.lastRun.at)} · ${state.lastRun.orders} pedidos, ${state.lastRun.customers} clientas${state.lastRun.newSparkle ? `, ${state.lastRun.newSparkle} cuentas nuevas a Sparkle` : ''}${state.lastRun.errors ? ` · ${state.lastRun.errors} errores` : ''}` : 'Cada día a las 5:30 (hora de Madrid)')}
+ ${row(!!state.lastRun, 'Último repaso', state.lastRun ? `${fmtDate(state.lastRun.at)} · ${state.lastRun.orders} pedidos, ${state.lastRun.customers} clientas${state.lastRun.newSparkle ? `, ${state.lastRun.newSparkle} cuentas nuevas a Sparkle` : ''}${state.lastRun.expiryMails ? `, ${state.lastRun.expiryMails} avisos de caducidad` : ''}${state.lastRun.errors ? ` · ${state.lastRun.errors} errores` : ''}` : 'Cada día a las 5:30 (hora de Madrid)')}
 </ul>
 <form method="post" action="/ninacash/repasar" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
  <button class="btn ghost" type="submit">${icon('sync', 18)} Repasar ahora</button>
@@ -83,7 +84,7 @@ export function ninacashPage({ active, state, hooks, totals, customers, coupons,
   const empty = (n, t) => `<tr><td colspan="${n}"><div class="empty"><img src="/static/mariposa.svg" alt="">${t}</div></td></tr>`;
 
   const body = `<div class="eyebrow">Fidelidad</div><h1>NinaCash y niveles</h1>
-<p class="muted" style="margin:10px 0 22px;max-width:680px">Cada compra pagada suma NinaCash (1 %, 1,5 % o 2 % según el nivel). Se queda pendiente y se suma al saldo de la clienta 14 días después de la entrega, como crédito en tienda de Shopify: lo ve en su cuenta y lo usa al pagar. El nivel sale de lo comprado en los últimos 12 meses.</p>
+<p class="muted" style="margin:10px 0 22px;max-width:680px">Cada compra pagada suma NinaCash (1 %, 1,5 % o 2 % según el nivel). Se suma al saldo de la clienta al momento de pagar, como crédito en tienda de Shopify, y se resta si el pedido se cancela o se devuelve: lo ve en su cuenta y lo usa al pagar. El nivel sale de lo comprado en los últimos 12 meses.</p>
 ${flash?.error ? `<div class="alert">${icon('alert')}<div>${esc(flash.error)}</div></div>` : ''}
 ${flash?.ok ? `<div class="card" style="background:var(--verde-bg);color:var(--verde);margin-bottom:14px">${esc(flash.ok)}</div>` : ''}
 ${statusCard({ active, state, hooks })}
