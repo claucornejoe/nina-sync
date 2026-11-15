@@ -1,23 +1,12 @@
 // Avisos de NinaCash a punto de caducar: correo 30 y 7 días antes + aviso en Mi cuenta y en el carrito.
-import nodemailer from 'nodemailer';
-import { config } from '../config.js';
+import { sendCustomerMail, mailReady } from '../mail.js';
 import { pool } from '../db.js';
 import { gql } from '../shopify.js';
 import { esc } from '../views.js';
 import * as store from './store.js';
 
-const FROM_ADDRESS = process.env.MAIL_FROM_ADDRESS || 'avisos@ninabeauty.es'; // Clau, 2026-11-15
-const FROM_NAME = process.env.MAIL_FROM_NAME || 'Nina Beauty';
 const SHOP_URL = (process.env.SHOP_URL || 'https://www.ninabeauty.es').replace(/\/$/, '');
-const STAGES = [30, 7]; // días antes
-
-export const mailReady = () => !!(config.mail.host && config.mail.user && config.mail.pass);
-let transport = null;
-async function send({ to, subject, html, text }) {
-  const m = config.mail;
-  if (!transport) transport = nodemailer.createTransport({ host: m.host, port: m.port, secure: m.port === 465, auth: { user: m.user, pass: m.pass } });
-  return transport.sendMail({ from: { name: FROM_NAME, address: FROM_ADDRESS }, replyTo: process.env.MAIL_REPLY_TO || FROM_ADDRESS, to, subject, html, text });
-}
+const send = sendCustomerMail; // remitente avisos@ninabeauty.es (MAIL_FROM), cuenta SMTP compartida
 
 export async function migrate() {
   await pool.query(`CREATE TABLE IF NOT EXISTS nc_reminders (

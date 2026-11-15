@@ -59,3 +59,12 @@ Página **NinaCash** del panel (`/ninacash`). Con avisos de Shopify (`orders/pai
 - **Glam**: un código de envío gratis personal cada mes. **Butterfly**: envío gratis automático y la etiqueta `obsequio-butterfly` en su primer pedido del mes.
 - `NINACASH_ACTIVO=false` (por defecto) es modo prueba: calcula y apunta, pero no cambia nada en Shopify.
 - **Caducidad**: cada saldo caduca a los 12 meses (lo quita Shopify). 30 y 7 días antes, Nina Sync envía un correo desde `avisos@ninabeauty.es` (si hay SMTP) y guarda `nina.ninacash_caduca` (`{importe, fecha}`) para el aviso de Mi cuenta y del carrito.
+
+## Avisos de stock («Agotado · Avísame»)
+
+Página `/avisos` del panel. Código en `src/stockAlerts/`.
+
+- **Formulario de la tienda → `POST /api/avisame`** (JSON `{ email, variant_id, consent: true }`). Solo acepta peticiones desde `STORE_ORIGINS`, comprueba que el tamaño existe y está agotado, y guarda la solicitud con el texto de consentimiento. Límite de 10 por hora por IP, 20 pendientes por correo y un campo trampa `website` contra robots.
+- **Al final de cada sincronización** (y con «Revisar ahora»), los tamaños pedidos que ya tienen stock reciben el correo «¡Ha vuelto!» (`email.js`). Con `ALERT_LOW_STOCK_MAX` unidades o menos dice «Han llegado pocas unidades»; si hay más, «La última vez se agotó».
+- **RGPD:** un solo correo por solicitud; al enviarlo se borra la dirección. Las solicitudes sin reposición en `ALERT_EXPIRE_DAYS` días también se borran. Desde el panel se pueden borrar todos los avisos de un correo.
+- Los correos salen desde **avisos@ninabeauty.es** (`MAIL_FROM`) por la cuenta SMTP de Google Workspace (`sendCustomerMail` en `src/mail.js`), que sirve también para otros correos a clientas. Sin SMTP, las solicitudes se guardan y esperan.

@@ -6,7 +6,7 @@ import { fmtDate, esc } from './views.js';
 /** Envía por correo el resumen de una sincronización (solo si hay SMTP configurado y hubo cambios o error). */
 export async function sendReport(runId) {
   const m = config.mail;
-  if (!m.host || !m.user || !m.pass || !m.to) return;
+  if (!mailReady() || !m.to) return;
   const data = await db.getRun(runId);
   if (!data) return;
   const { run, changes } = data;
@@ -29,6 +29,33 @@ ${offers.length ? `<h3>Ofertas</h3><ul>${offers.map((c) => `<li>${esc(c.product_
 ${url ? `<p><a href="${url}" style="background:#C92F60;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Ver el informe completo</a></p>` : ''}
 </div>`;
 
-  const t = nodemailer.createTransport({ host: m.host, port: m.port, secure: m.port === 465, auth: { user: m.user, pass: m.pass } });
-  await t.sendMail({ from: m.from, to: m.to, subject, html });
+  await transport().sendMail({ from: m.from, to: m.to, subject, html });
+}
+
+// ---- Correos a clientas (aviso de stock, NinaCash…) con la misma cuenta SMTP de Google Workspace ----
+let cached = null;
+function transport() {
+  const m = config.mail;
+  if (!cached) cached = nodemailer.createTransport({ host: m.host, port: m.port, secure: m.port === 465, auth: { user: m.user, pass: m.pass }, pool: true, maxConnections: 2 });
+  return cached;
+}
+
+/** true si hay SMTP configurado para enviar correos. */
+export const mailReady = () => !!(config.mail.host && config.mail.user && config.mail.pass);
+
+/**
+ * Envía un correo a una clienta desde «Nina Beauty <MAIL_FROM>» (por defecto avisos@ninabeauty.es).
+ * Las respuestas llegan a MAIL_REPLY_TO (por defecto, la misma dirección).
+ */
+export async function sendCustomerMail({ to, subject, html, text }) {
+  if (!mailReady()) throw new Error('Falta configurar el correo (SMTP_HOST, SMTP_USER y SMTP_PASS en Railway)');
+  const m = config.mail;
+  return transport().sendMail({
+    from: { name: m.fromName, address: m.fromAddress },
+    replyTo: m.replyTo || m.fromAddress,
+    to,
+    subject,
+    html,
+    text,
+  });
 }
