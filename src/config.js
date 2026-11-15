@@ -35,7 +35,7 @@ export const config = {
     margin: num('MARGIN_DIVISOR', 0.7),
     shipping: num('SHIPPING_COST', 6), // lo que cobra BTS por pedido
     shippingPrice: num('SHIPPING_PRICE', 4.95), // lo que paga el cliente por debajo del mínimo
-    freeShippingFrom: num('FREE_SHIPPING_FROM', 39), // envío gratis desde este importe
+    freeShippingFrom: num('FREE_SHIPPING_FROM', 49), // envío gratis desde este importe
     paypalFixed: num('PAYPAL_FIXED', 0.35),
     paypalNet: num('PAYPAL_NET', 0.911),
     minProfitAfterRounding: num('MIN_PROFIT_ROUNDING', 0.5),
