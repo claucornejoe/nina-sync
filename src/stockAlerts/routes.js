@@ -6,6 +6,7 @@ import { mailReady, sendCustomerMail } from '../mail.js';
 import * as store from './store.js';
 import { notifyRestocked, fetchVariants, emailFor, lastRun } from './notify.js';
 import { avisosPage } from './views.js';
+import { buildReport, detailsOf, reportCsv, matchPurchases } from './report.js';
 
 // Texto exacto que acepta la clienta en el formulario (se guarda con cada solicitud).
 export const CONSENT_TEXT = 'Acepto que Nina Beauty use mi correo solo para avisarme una vez cuando este producto vuelva a estar disponible.';
@@ -79,6 +80,7 @@ export async function mountStockAlerts(app, auth) {
         productTitle: v.product.title,
         variantTitle: /default title/i.test(v.title) ? '' : v.title,
         consent: CONSENT_TEXT,
+        ...detailsOf(v),
       });
       res.json({ ok: true });
     } catch (e) {
@@ -89,13 +91,20 @@ export async function mountStockAlerts(app, auth) {
 
   // ---- Panel ----
   app.get('/avisos', auth, safe(async (_req, res) => {
-    const [stats, pending, sent] = await Promise.all([store.stats(), store.pendingByVariant(), store.recentSent(30)]);
-    res.send(avisosPage({ stats, pending, sent, lastRun, mailOk: mailReady(), dryRun: config.dryRun, flash }));
+    const [report, sent] = await Promise.all([buildReport(), store.recentSent(30)]);
+    res.send(avisosPage({ ...report, sent, lastRun, mailOk: mailReady(), dryRun: config.dryRun, flash }));
     flash = null;
+  }));
+
+  app.get('/avisos.csv', auth, safe(async (_req, res) => {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="avisos-stock-${new Date().toISOString().slice(0, 10)}.csv"`);
+    res.send(reportCsv(await store.csvRows()));
   }));
 
   app.post('/avisos/revisar', auth, safe(async (_req, res) => {
     const out = await notifyRestocked({ dryRun: config.dryRun });
+    await matchPurchases({ force: true }).catch(() => {});
     flash = { ok: !/error|rechaz/i.test(out.note), text: out.note };
     res.redirect('/avisos');
   }));

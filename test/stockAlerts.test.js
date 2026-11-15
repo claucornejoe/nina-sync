@@ -60,3 +60,32 @@ test('correo de Nina Skin Care: azul, sin rosa', () => {
   assert.doesNotMatch(m.html, /#F72E75|#C92F60|#FFCCD5/i);
   assert.match(m.html, /#4F8496/);
 });
+
+import { categoryOf, btsReason } from '../src/stockAlerts/report.js';
+import { insights } from '../src/stockAlerts/views.js';
+
+test('informe: categoría por etiquetas', () => {
+  assert.equal(categoryOf(['skin-care', 'sc-serum']), 'Skin care');
+  assert.equal(categoryOf(['mq-labios']), 'Maquillaje');
+  assert.equal(categoryOf(['Mujer', 'Eau de Parfum']), 'Perfumes mujer');
+  assert.equal(categoryOf(['Hombre', 'Árabe']), 'Perfumes árabes');
+  assert.equal(categoryOf([], 'Perfume'), 'Perfume');
+});
+
+test('informe: por qué está agotado según BTS', () => {
+  const r = { minStock: 3, vat: 1.21, margin: 0.7, paypalFixed: 0.35, paypalNet: 0.911, shipping: 6, shippingPrice: 4.95, freeShippingFrom: 39, rounding: 'charm', minProfit: 2, minProfitAfterRounding: 0.5 };
+  assert.equal(btsReason(null, r).code, 'sin-bts');
+  assert.equal(btsReason({ stock: 0, cost: 20, rrp: 60 }, r).code, 'agotado');
+  assert.equal(btsReason({ stock: 2, cost: 20, rrp: 60 }, r).code, 'pocas');
+  assert.equal(btsReason({ stock: 9, cost: 50, rrp: 40 }, r).code, 'pierde');
+  assert.equal(btsReason({ stock: 9, cost: 20, rrp: 60 }, r).code, 'vuelve');
+});
+
+test('informe: frases útiles', () => {
+  const v = (o) => ({ product_title: 'Good Girl', variant_title: '80ml', n: 4, n7: 3, days: 12, reason: { code: 'pierde' }, ...o });
+  const tips = insights({ variants: [v(), v({ reason: { code: 'sin-bts' } })], vendors: [{ name: 'Carolina Herrera' }], reasons: { pierde: 4 }, out: { enviados: 10, compraron: 3 } });
+  assert.ok(tips.some((t) => /Good Girl/.test(t)));
+  assert.ok(tips.some((t) => /precio-manual/.test(t)));
+  assert.ok(tips.some((t) => /ya no lo vende/.test(t)));
+  assert.ok(tips.some((t) => /3 acaban en compra/.test(t)));
+});
