@@ -60,6 +60,9 @@ export const config = {
     to: process.env.REPORT_TO,
     from: process.env.REPORT_FROM || process.env.SMTP_USER,
     fromName: process.env.MAIL_FROM_NAME || 'Nina Beauty', // nombre que ve la clienta
+    // Dirección desde la que salen los correos a clientas (Clau: avisos@ninabeauty.es).
+    // Puede ser un buzón propio (entonces SMTP_USER = esta dirección) o un alias de SMTP_USER en Google Workspace.
+    fromAddress: process.env.MAIL_FROM || 'avisos@ninabeauty.es',
     replyTo: process.env.MAIL_REPLY_TO || '',
   },
 

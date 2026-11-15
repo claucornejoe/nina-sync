@@ -44,15 +44,15 @@ function transport() {
 export const mailReady = () => !!(config.mail.host && config.mail.user && config.mail.pass);
 
 /**
- * Envía un correo a una clienta desde «Nina Beauty <SMTP_USER>».
- * Las respuestas llegan a MAIL_REPLY_TO (por defecto, la misma cuenta).
+ * Envía un correo a una clienta desde «Nina Beauty <MAIL_FROM>» (por defecto avisos@ninabeauty.es).
+ * Las respuestas llegan a MAIL_REPLY_TO (por defecto, la misma dirección).
  */
 export async function sendCustomerMail({ to, subject, html, text }) {
   if (!mailReady()) throw new Error('Falta configurar el correo (SMTP_HOST, SMTP_USER y SMTP_PASS en Railway)');
   const m = config.mail;
   return transport().sendMail({
-    from: { name: m.fromName, address: m.user },
-    replyTo: m.replyTo || m.user,
+    from: { name: m.fromName, address: m.fromAddress },
+    replyTo: m.replyTo || m.fromAddress,
     to,
     subject,
     html,
