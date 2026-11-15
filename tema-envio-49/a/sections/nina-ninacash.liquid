@@ -1,0 +1,150 @@
+{% comment %} Nina: página de NinaCash y niveles (condiciones de uso). {% endcomment %}
+<style>
+  .nnc { --r: #F72E75; --p: #FFCCD5; --ps: #FFF3F6; --b: #C92F60; --t: #2B2B2B; --g: #6E6E6E; --l: #F1E3E7;
+         color: var(--t); font-family: Montserrat, var(--font-body--family), sans-serif; }
+  .nnc * { box-sizing: border-box; }
+  .nnc-serif { font-family: 'Cormorant Garamond', Cormorant, var(--font-heading--family), serif; font-weight: 500; }
+  .nnc-wrap { max-width: 960px; margin: 0 auto; padding: 0 16px; }
+  .nnc-mar { display: inline-block; width: 40px; height: 40px; background: var(--r); -webkit-mask: var(--mar) center / contain no-repeat; mask: var(--mar) center / contain no-repeat; }
+  .nnc-hero { background: var(--r); color: #fff; text-align: center; padding: 56px 16px 64px; }
+  .nnc-hero .nnc-mar { background: #fff; width: 56px; height: 56px; }
+  .nnc-hero h1 { color: #fff; font-size: clamp(36px, 6vw, 56px); line-height: 1.05; margin: 10px 0 12px; }
+  .nnc-hero p { max-width: 560px; margin: 0 auto; font-size: 16px; line-height: 1.6; opacity: .95; }
+  .nnc-sec { padding: 48px 0 0; }
+  .nnc-sec h2 { font-size: clamp(28px, 4vw, 38px); text-align: center; margin: 0 0 8px; }
+  .nnc-sec__intro { text-align: center; color: var(--g); font-size: 15px; margin: 0 auto 28px; max-width: 560px; line-height: 1.6; }
+  .nnc-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: -32px; }
+  .nnc-step { background: #fff; border-radius: 20px; padding: 24px 20px; text-align: center; box-shadow: 0 12px 32px rgba(201,47,96,.12); }
+  .nnc-step b { display: inline-flex; width: 36px; height: 36px; border-radius: 50%; background: var(--p); color: var(--b); align-items: center; justify-content: center;
+                font-family: 'Cormorant Garamond', serif; font-size: 22px; margin-bottom: 8px; }
+  .nnc-step h3 { font-size: 24px; margin: 0 0 6px; }
+  .nnc-step p { margin: 0; font-size: 14px; color: var(--g); line-height: 1.55; }
+  .nnc-levels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .nnc-level { background: #fff; border: 1px solid var(--l); border-top: 6px solid var(--c); border-radius: 20px; padding: 22px 18px; }
+  .nnc-level .nnc-mar { background: var(--c); width: 34px; height: 34px; }
+  .nnc-level h3 { font-size: 28px; margin: 6px 0 0; }
+  .nnc-level__desde { font-size: 12px; color: var(--g); letter-spacing: .06em; text-transform: uppercase; }
+  .nnc-level__cash { display: inline-block; margin: 12px 0; background: var(--ps); color: var(--b); font-weight: 600; font-size: 14px; padding: 6px 12px; border-radius: 999px; }
+  .nnc-level ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 13px; line-height: 1.45; }
+  .nnc-level li { padding-left: 20px; position: relative; }
+  .nnc-level li::before { content: '✓'; position: absolute; left: 0; color: var(--b); font-weight: 700; }
+  .nnc-faq { display: grid; gap: 10px; }
+  .nnc-faq details { background: #fff; border: 1px solid var(--l); border-radius: 16px; padding: 0 20px; }
+  .nnc-faq details[open] { background: var(--ps); border-color: var(--p); }
+  .nnc-faq summary { list-style: none; cursor: pointer; padding: 18px 28px 18px 0; position: relative; font-weight: 600; font-size: 15px; }
+  .nnc-faq summary::-webkit-details-marker { display: none; }
+  .nnc-faq summary::after { content: '+'; position: absolute; right: 0; top: 50%; transform: translateY(-50%); font-size: 22px; color: var(--r); font-weight: 400; }
+  .nnc-faq details[open] summary::after { content: '−'; }
+  .nnc-faq summary span { color: var(--r); font-family: 'Cormorant Garamond', serif; font-size: 20px; margin-right: 8px; }
+  .nnc-faq__body { padding: 0 0 18px; font-size: 14px; line-height: 1.7; color: #4A4A4A; }
+  .nnc-faq__body p { margin: 0 0 10px; } .nnc-faq__body ul { margin: 0 0 10px; padding-left: 18px; } .nnc-faq__body li { margin-bottom: 6px; }
+  .nnc-faq__body a { color: var(--b); text-decoration: underline; }
+  .nnc-cta { margin: 48px 0 64px; background: var(--p); border-radius: 24px; padding: 32px 24px; text-align: center; }
+  .nnc-cta h2 { font-size: 32px; margin: 0 0 6px; }
+  .nnc-cta p { margin: 0 0 18px; color: #5C3A46; font-size: 15px; }
+  .nnc-btn { display: inline-flex; background: var(--b); color: #fff !important; text-decoration: none; padding: 14px 30px; border-radius: 999px; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-weight: 500; }
+  .nnc-upd { text-align: center; font-size: 12px; color: var(--g); margin: -40px 0 48px; }
+  @media (max-width: 860px) { .nnc-levels { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 600px) {
+    .nnc-steps { grid-template-columns: 1fr; margin-top: -28px; } .nnc-levels { grid-template-columns: 1fr; }
+    .nnc-hero { padding: 40px 16px 56px; } .nnc-faq details { padding: 0 16px; }
+  }
+</style>
+
+<div class="nnc" style="--mar: url('{{ 'nina-skincare-mariposa-azul.svg' | asset_url }}')">
+  <section class="nnc-hero">
+    <i class="nnc-mar" aria-hidden="true"></i>
+    <h1 class="nnc-serif">NinaCash y niveles Nina</h1>
+    <p>Cada compra te da NinaCash para gastar en tu próximo capricho. Y cuanto más te mimas, más sube tu nivel y mejores son tus ventajas.</p>
+  </section>
+
+  <div class="nnc-wrap">
+    <div class="nnc-steps">
+      <div class="nnc-step"><b>1</b><h3 class="nnc-serif">Compra</h3><p>Entra con tu cuenta Nina antes de pagar. Es gratis y solo necesitas tu correo.</p></div>
+      <div class="nnc-step"><b>2</b><h3 class="nnc-serif">Acumula</h3><p>Ganas entre el 1 % y el 2 % de lo que compras en NinaCash, según tu nivel.</p></div>
+      <div class="nnc-step"><b>3</b><h3 class="nnc-serif">Disfruta</h3><p>Al pagar, aplica tu saldo con tu cuenta iniciada. 1 NinaCash = 1 €.</p></div>
+    </div>
+
+    <section class="nnc-sec">
+      <h2 class="nnc-serif">Tus niveles Nina</h2>
+      <p class="nnc-sec__intro">Tu nivel depende de lo que has comprado en los últimos 12 meses y se actualiza solo con cada pedido.</p>
+      <div class="nnc-levels">
+        <div class="nnc-level" style="--c: #FFB3C6"><i class="nnc-mar" aria-hidden="true"></i><h3 class="nnc-serif">Sparkle</h3><div class="nnc-level__desde">Desde 0 €</div><span class="nnc-level__cash">1 % en NinaCash</span>
+          <ul><li>Cupones con descuentos exclusivos cada semana</li></ul></div>
+        <div class="nnc-level" style="--c: #F72E75"><i class="nnc-mar" aria-hidden="true"></i><h3 class="nnc-serif">Glow</h3><div class="nnc-level__desde">Desde 100 €</div><span class="nnc-level__cash">1,5 % en NinaCash</span>
+          <ul><li>Cupones con descuentos exclusivos cada semana</li></ul></div>
+        <div class="nnc-level" style="--c: #C92F60"><i class="nnc-mar" aria-hidden="true"></i><h3 class="nnc-serif">Glam</h3><div class="nnc-level__desde">Desde 250 €</div><span class="nnc-level__cash">2 % en NinaCash</span>
+          <ul><li>Cupones con descuentos exclusivos cada semana</li><li>1 envío gratis al mes en pedidos de menos de 49 €</li></ul></div>
+        <div class="nnc-level" style="--c: #C9A24B"><i class="nnc-mar" aria-hidden="true"></i><h3 class="nnc-serif">Butterfly</h3><div class="nnc-level__desde">Desde 500 €</div><span class="nnc-level__cash">2 % en NinaCash</span>
+          <ul><li>Cupones con descuentos exclusivos cada semana</li><li>Envíos gratis siempre</li><li>1 obsequio al mes</li></ul></div>
+      </div>
+    </section>
+
+    <section class="nnc-sec">
+      <h2 class="nnc-serif">Condiciones de uso</h2>
+      <p class="nnc-sec__intro">Todo lo que necesitas saber, contado claro.</p>
+      <div class="nnc-faq">
+        <details open><summary><span>1</span>Quién puede participar</summary><div class="nnc-faq__body">
+          <p>El programa NinaCash y los niveles Nina son gratuitos. Puede participar cualquier persona mayor de 18 años que tenga una cuenta de cliente en ninabeauty.es y reciba sus pedidos en una zona a la que enviamos (península y Baleares).</p>
+          <p>Al crear tu cuenta formas parte del programa de forma automática. Cada cuenta es personal: una por persona.</p></div></details>
+        <details><summary><span>2</span>Cómo se acumula NinaCash</summary><div class="nnc-faq__body">
+          <ul><li><b>1 NinaCash = 1 €.</b> Tu saldo se muestra en euros en Mi cuenta.</li>
+            <li>Acumulas un porcentaje del importe de los productos de cada pedido: 1 % en Sparkle, 1,5 % en Glow y 2 % en Glam y Butterfly.</li>
+            <li>Se calcula sobre lo que pagas por los productos, IVA incluido y después de aplicar descuentos y cupones.</li>
+            <li>No acumulan NinaCash los gastos de envío, las tarjetas regalo ni la parte del pedido que pagues con NinaCash.</li>
+            <li>Solo acumulan las compras hechas con tu cuenta Nina iniciada.</li></ul></div></details>
+        <details><summary><span>3</span>Cuándo aparece en tu cuenta</summary><div class="nnc-faq__body">
+          <p>Tu NinaCash aparece en tu cuenta en cuanto haces el pedido. Si después el pedido se cancela o devuelves algún producto, el saldo se ajusta y se resta lo que generó esa parte.</p></div></details>
+        <details><summary><span>4</span>Cómo usar tu NinaCash</summary><div class="nnc-faq__body">
+          <ul><li>Úsalo en tus siguientes compras en ninabeauty.es: al pagar con tu cuenta Nina iniciada, te aparece la opción de aplicar tu saldo de NinaCash.</li>
+            <li>Puedes usarlo entero o solo una parte, y pagar el resto con los medios de pago habituales.</li>
+            <li>Se puede usar junto con los cupones de tu nivel, salvo que el cupón diga lo contrario.</li></ul></div></details>
+        <details><summary><span>5</span>Caducidad</summary><div class="nnc-faq__body">
+          <p>Cada saldo de NinaCash caduca a los 12 meses desde el día en que se suma a tu cuenta. Te avisaremos por correo antes de que caduque.</p></div></details>
+        <details><summary><span>6</span>Devoluciones y cancelaciones</summary><div class="nnc-faq__body">
+          <ul><li>Si devuelves un pedido, o parte de él, se resta el NinaCash que generaron esos productos.</li>
+            <li>Si pagaste parte del pedido con NinaCash, te lo devolvemos a tu saldo con su fecha de caducidad original. Si ya ha caducado, te damos 30 días más para usarlo.</li>
+            <li>Los pedidos cancelados no generan NinaCash ni cuentan para tu nivel.</li></ul></div></details>
+        <details><summary><span>7</span>Niveles Nina</summary><div class="nnc-faq__body">
+          <p>Tu nivel se calcula con lo que has gastado en productos en los últimos 12 meses, sin contar envíos, pedidos cancelados ni devoluciones:</p>
+          <ul><li><b>Sparkle:</b> desde 0 €.</li><li><b>Glow:</b> desde 100 €.</li><li><b>Glam:</b> desde 250 €.</li><li><b>Butterfly:</b> desde 500 €.</li></ul>
+          <p>Como la cuenta mira siempre los últimos 12 meses, tu nivel puede subir o bajar con el tiempo. El NinaCash que ya tienes no se pierde si bajas de nivel.</p></div></details>
+        <details><summary><span>8</span>Ventajas de cada nivel</summary><div class="nnc-faq__body">
+          <ul><li><b>Cupones semanales (todos los niveles):</b> te los enviamos por correo y los verás en «Mis cupones disponibles» de Mi cuenta. Cada cupón indica su descuento, los productos en los que vale y su fecha de caducidad. No se pueden combinar dos cupones en el mismo pedido.</li>
+            <li><b>Envío gratis mensual (Glam):</b> 1 por mes natural para pedidos de menos de 49 €. Desde 49 € el envío ya es gratis para todas. Si no lo usas, no pasa al mes siguiente.</li>
+            <li><b>Envíos gratis siempre (Butterfly):</b> en todos tus pedidos, sin importe mínimo.</li>
+            <li><b>Obsequio mensual (Butterfly):</b> una muestra o un producto en tamaño mini que elegimos nosotras, y que va con uno de tus pedidos de ese mes. Depende de la disponibilidad, no se acumula si ese mes no haces pedido y no se puede cambiar por dinero.</li></ul></div></details>
+        <details><summary><span>9</span>Uso correcto del programa</summary><div class="nnc-faq__body">
+          <p>NinaCash es personal: no se puede transferir a otra persona, vender ni cambiar por dinero. Si detectamos un uso fraudulento o abusivo (por ejemplo, varias cuentas de la misma persona o compras para reventa), podremos anular el NinaCash y las ventajas obtenidas de esa forma y, en casos graves, dar de baja la cuenta del programa. Antes te lo explicaremos por correo para que puedas darnos tu versión.</p></div></details>
+        <details><summary><span>10</span>Darte de baja</summary><div class="nnc-faq__body">
+          <p>Puedes salir del programa cuando quieras escribiéndonos desde la página de Ayuda. Al darte de baja se pierde el saldo de NinaCash que tengas.</p></div></details>
+        <details><summary><span>11</span>Tus datos personales</summary><div class="nnc-faq__body">
+          <p>Para gestionar NinaCash y tu nivel usamos los datos de tu cuenta y de tus pedidos. Lo hacemos para cumplir lo que te ofrece el programa, según el Reglamento General de Protección de Datos (RGPD) y la Ley Orgánica 3/2018 de Protección de Datos. Solo te enviaremos comunicaciones comerciales si nos has dado tu permiso, y puedes retirarlo cuando quieras.</p>
+          <p>Puedes ejercer tus derechos de acceso, rectificación, supresión, oposición, limitación y portabilidad como se explica en nuestra <a href="{{ shop.privacy_policy.url | default: '/policies/privacy-policy' }}">política de privacidad</a>.</p></div></details>
+        <details><summary><span>12</span>Cambios en el programa</summary><div class="nnc-faq__body">
+          <p>Podemos mejorar, cambiar o terminar el programa NinaCash y los niveles. Si un cambio te perjudica o si cerramos el programa, te avisaremos por correo y en esta página con al menos 30 días de antelación. El saldo que ya tengas se respetará hasta su fecha de caducidad.</p></div></details>
+        <details><summary><span>13</span>Ley aplicable</summary><div class="nnc-faq__body">
+          <p>Estas condiciones se rigen por la ley española. Si eres consumidora, puedes reclamar ante los juzgados de tu domicilio. Antes, escríbenos desde la página de Ayuda y lo intentamos resolver juntas. También puedes acudir a los servicios de consumo de tu comunidad autónoma.</p></div></details>
+      </div>
+    </section>
+
+    <div class="nnc-cta">
+      <i class="nnc-mar" aria-hidden="true"></i>
+      <h2 class="nnc-serif">Mira tu nivel y tu NinaCash</h2>
+      <p>Todo está en tu cuenta Nina.</p>
+      <a class="nnc-btn" href="{{ pages['mi-cuenta'].url | default: routes.account_url }}">Ir a Mi cuenta</a>
+    </div>
+    <p class="nnc-upd">Última actualización: {{ section.settings.actualizado }}</p>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Nina NinaCash",
+  "tag": "section",
+  "settings": [
+    { "type": "text", "id": "actualizado", "label": "Fecha de última actualización", "default": "14 de noviembre de 2026" }
+  ],
+  "presets": [{ "name": "Nina NinaCash" }]
+}
+{% endschema %}

@@ -1,0 +1,100 @@
+{%- liquid
+  assign v = closest.product.selected_or_first_available_variant
+  assign umbral = block.settings.umbral | times: 100
+  assign en_cesta = false
+  for item in cart.items
+    if item.variant_id == v.id
+      assign en_cesta = true
+    endif
+  endfor
+  assign base = cart.total_price
+  unless en_cesta
+    assign base = base | plus: v.price
+  endunless
+  assign falta = umbral | minus: base
+  if umbral > 0
+    assign progreso = base | times: 100 | divided_by: umbral
+  else
+    assign progreso = 100
+  endif
+  if progreso > 100
+    assign progreso = 100
+  endif
+-%}
+<div class="nina-envio" data-nina-section="{{ section.id }}" {{ block.shopify_attributes }}>
+  <div class="nina-envio__caja" data-nina-live="envio-{{ block.id }}">
+    <p class="nina-envio__texto">
+      {%- if falta > 0 -%}
+        Te faltan <strong>{{ falta | money }}</strong> para el envío gratis
+      {%- elsif en_cesta or cart.item_count > 0 -%}
+        <strong>¡Tu pedido tiene envío gratis!</strong>
+      {%- else -%}
+        <strong>¡Con este perfume tienes envío gratis!</strong>
+      {%- endif -%}
+    </p>
+    <div class="nina-envio__barra" role="progressbar" aria-label="Progreso hacia el envío gratis" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ progreso }}">
+      <span style="width: {{ progreso }}%"></span>
+    </div>
+  </div>
+  {%- if block.settings.texto_entrega != blank -%}
+    <p class="nina-envio__entrega">
+      <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg>
+      <span>{{ block.settings.texto_entrega }}</span>
+    </p>
+  {%- endif -%}
+</div>
+<script type="module" src="{{ 'nina-ficha.js' | asset_url }}"></script>
+
+{% stylesheet %}
+  .nina-envio { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+  .nina-envio__caja {
+    background: #FFF5F7;
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .nina-envio__texto { margin: 0 0 10px; font-size: 0.875rem; }
+  .nina-envio__texto strong { font-weight: 600; }
+  .nina-envio__barra {
+    height: 8px;
+    border-radius: 4px;
+    background: #FFD9E2;
+    overflow: hidden;
+  }
+  .nina-envio__barra span {
+    display: block;
+    height: 100%;
+    background: #C92F60;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+  .nina-envio__entrega {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+  }
+  .nina-envio__entrega svg { color: #6E6E6E; flex-shrink: 0; }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Nina · Envío gratis",
+  "tag": null,
+  "settings": [
+    {
+      "type": "number",
+      "id": "umbral",
+      "label": "Envío gratis desde (€)",
+      "default": 49
+    },
+    {
+      "type": "text",
+      "id": "texto_entrega",
+      "label": "Plazo de entrega",
+      "info": "Por ejemplo: Entrega en 24-72 h laborables. Si lo dejas vacío no se muestra."
+    }
+  ],
+  "presets": [{ "name": "Nina · Envío gratis", "category": "Nina" }]
+}
+{% endschema %}

@@ -1,0 +1,693 @@
+{% comment %}
+  Nina Mi cuenta: espacio de la clienta con el diseño de Nina Beauty.
+  La tienda usa las cuentas de cliente de Shopify: el inicio de sesión (código por correo),
+  la edición de datos y el detalle de cada pedido siguen en las páginas de Shopify.
+  En el editor de temas se puede ver con datos de ejemplo (ajuste «Vista de ejemplo»).
+{% endcomment %}
+{%- liquid
+  assign demo = false
+  if request.design_mode and section.settings.editor_view == 'cuenta' and customer == blank
+    assign demo = true
+  endif
+  assign ofertas = collections['ofertas-de-la-semana']
+  assign nuevos = collections['recien-llegados']
+-%}
+
+<style>
+  .nmc { --nmc-rosa: #F72E75; --nmc-petalo: #FFCCD5; --nmc-petalo-suave: #FFF3F6; --nmc-boton: #C92F60;
+         --nmc-texto: #2B2B2B; --nmc-gris: #6E6E6E; --nmc-linea: #F1E3E7;
+         color: var(--nmc-texto); font-family: Montserrat, var(--font-body--family), sans-serif; }
+  .nmc * { box-sizing: border-box; }
+  .nmc a { color: inherit; text-decoration: none; }
+  .nmc-serif { font-family: 'Cormorant Garamond', Cormorant, var(--font-heading--family), serif; font-weight: 500; }
+  .nmc-wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+
+  .nmc-hero { background: linear-gradient(180deg, var(--nmc-petalo-suave) 0%, #fff 100%); padding: 48px 0 36px; }
+  .nmc-hero__in { display: flex; align-items: center; gap: 20px; }
+  .nmc-hero__mar { width: 64px; height: 64px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center;
+                   box-shadow: 0 6px 18px rgba(247,46,117,.12); flex: none; }
+  .nmc-mar { display: inline-block; width: 40px; height: 40px; background: var(--nmc-rosa); -webkit-mask: var(--nmc-mar-url) center / contain no-repeat; mask: var(--nmc-mar-url) center / contain no-repeat; }
+  .nmc-mar--48 { width: 48px; height: 48px; margin-bottom: 8px; }
+  .nmc-hero h1 { font-size: clamp(30px, 5vw, 46px); line-height: 1.05; margin: 0 0 6px; }
+  .nmc-hero h1 em { color: var(--nmc-rosa); font-style: italic; }
+  .nmc-hero p { margin: 0; color: var(--nmc-gris); font-size: 15px; }
+
+  .nmc-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: var(--nmc-boton); color: #fff !important;
+             padding: 13px 28px; border-radius: 999px; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-weight: 500;
+             border: 0; cursor: pointer; transition: background .2s; }
+  .nmc-btn:hover { background: #A9244F; }
+  .nmc-btn--claro { background: #fff; color: var(--nmc-boton) !important; border: 1px solid var(--nmc-petalo); }
+  .nmc-btn--claro:hover { background: var(--nmc-petalo-suave); }
+  .nmc-link { color: var(--nmc-boton) !important; font-size: 13px; font-weight: 500; border-bottom: 1px solid currentColor; }
+
+  .nmc-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; padding: 8px 0 56px; align-items: start; }
+  .nmc-card { background: #fff; border: 1px solid var(--nmc-linea); border-radius: 20px; padding: 24px; }
+  .nmc-card + .nmc-card { margin-top: 24px; }
+  .nmc-card__head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+  .nmc-card h2 { font-size: 26px; margin: 0; }
+
+  .nmc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+  .nmc-stat { background: var(--nmc-petalo-suave); border-radius: 16px; padding: 16px; text-align: center; }
+  .nmc-stat b { display: block; font-family: 'Cormorant Garamond', Cormorant, serif; font-size: 30px; font-weight: 600; color: var(--nmc-rosa); line-height: 1.1; }
+  .nmc-stat span { font-size: 12px; color: var(--nmc-gris); letter-spacing: .04em; }
+
+  .nmc-order { display: flex; gap: 16px; align-items: center; padding: 16px 0; border-top: 1px solid var(--nmc-linea); }
+  .nmc-order:first-of-type { border-top: 0; padding-top: 0; }
+  .nmc-order__imgs { display: flex; flex: none; }
+  .nmc-order__img { width: 56px; height: 56px; border-radius: 12px; border: 2px solid #fff; background: var(--nmc-petalo-suave); overflow: hidden;
+                    display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 1px var(--nmc-linea); }
+  .nmc-order__img + .nmc-order__img { margin-left: -14px; }
+  .nmc-order__img img { width: 100%; height: 100%; object-fit: contain; }
+  .nmc-order__img--mas { font-size: 12px; color: var(--nmc-boton); font-weight: 600; }
+  .nmc-order__info { flex: 1; min-width: 0; }
+  .nmc-order__top { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; }
+  .nmc-order__num { font-weight: 600; font-size: 15px; }
+  .nmc-order__date { font-size: 13px; color: var(--nmc-gris); }
+  .nmc-order__total { font-weight: 600; font-size: 15px; white-space: nowrap; }
+  .nmc-pill { display: inline-block; font-size: 11px; padding: 4px 10px; border-radius: 999px; letter-spacing: .03em; background: var(--nmc-petalo); color: var(--nmc-boton); font-weight: 500; }
+  .nmc-pill--ok { background: #E7F5EC; color: #2E7D4F; }
+  .nmc-pill--gris { background: #F1F1F1; color: var(--nmc-gris); }
+  .nmc-order__go { flex: none; color: var(--nmc-boton); }
+
+  .nmc-level { background: var(--nmc-petalo); border-color: var(--nmc-petalo); }
+  .nmc-level__top { display: flex; align-items: center; gap: 16px; }
+  .nmc-level__mar { width: 64px; height: 64px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center;
+                    box-shadow: 0 0 0 3px var(--nivel), 0 8px 20px rgba(0,0,0,.06); flex: none; }
+  .nmc-level__kicker { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: #5C3A46; }
+  .nmc-level h2 { font-size: 30px; margin: 2px 0 0; }
+  .nmc-level__cash { margin-left: auto; text-align: right; }
+  .nmc-level__cash b { display: block; font-family: 'Cormorant Garamond', Cormorant, serif; font-size: 30px; font-weight: 600; color: var(--nmc-boton); line-height: 1; }
+  .nmc-level__cash span { font-size: 12px; color: #5C3A46; }
+  .nmc-level__bar { height: 10px; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1px var(--nmc-linea); margin: 20px 0 10px; overflow: hidden; }
+  .nmc-level__bar span { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--nmc-petalo), var(--nivel)); min-width: 10px; }
+  .nmc-level__txt { font-size: 14px; color: #5C3A46; margin: 0 0 18px; line-height: 1.6; }
+  .nmc-level__txt b { color: var(--nmc-texto); }
+  .nmc-levels { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .nmc-levels li { text-align: center; padding: 10px 4px; border-radius: 14px; background: #fff; border: 1px solid var(--nmc-linea); opacity: .55; }
+  .nmc-levels li.is-hecho { opacity: .85; }
+  .nmc-levels li.is-actual { opacity: 1; border-color: var(--nivel); box-shadow: 0 6px 16px rgba(201,47,96,.12); }
+  .nmc-levels span { display: block; font-size: 12px; font-weight: 600; margin-top: 4px; }
+  .nmc-levels small { display: block; font-size: 11px; color: var(--nmc-gris); }
+  .nmc-caduca { margin: 14px 0 0; padding: 10px 14px; border-radius: 14px; background: #F72E75; color: #fff; font-size: 13px; line-height: 1.45; }
+  .nmc-caduca b { font-weight: 700; }
+  .nmc-level__more { margin: 18px 0 0; text-align: center; }
+  .nmc-level .nmc-link { color: var(--nmc-texto) !important; }
+  .nmc-info { position: relative; display: inline-flex; vertical-align: middle; }
+  .nmc-info__btn { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--nivel, var(--nmc-rosa)); background: #fff; color: var(--nivel, var(--nmc-rosa));
+                   font: italic 700 12px/1 Georgia, serif; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+  .nmc-info__tip { position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); width: max-content; max-width: 220px;
+                   background: var(--nmc-texto); color: #fff; font: 500 12px/1.45 Montserrat, sans-serif; letter-spacing: 0; text-transform: none; text-align: center;
+                   padding: 10px 14px; border-radius: 14px; box-shadow: 0 8px 22px rgba(0,0,0,.18); opacity: 0; visibility: hidden; transition: opacity .15s; z-index: 5; pointer-events: none; }
+  .nmc-info__tip::after { content: ''; position: absolute; top: 100%; left: 50%; margin-left: -6px; border: 6px solid transparent; border-top-color: var(--nmc-texto); }
+  .nmc-info__tip { text-align: left; width: 220px; max-width: 70vw; }
+  .nmc-tip-li { display: block; position: relative; padding-left: 14px; margin: 2px 0; font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: #fff; opacity: 1; }
+  .nmc-tip-li::before { content: ''; position: absolute; left: 0; top: .55em; width: 6px; height: 6px; border-radius: 50%; background: var(--nmc-petalo); }
+  .nmc-info:hover .nmc-info__tip, .nmc-info.is-open .nmc-info__tip { opacity: 1; visibility: visible; }
+  .nmc-level h2 { display: flex; align-items: center; gap: 8px; }
+  .nmc-levels .nmc-info { margin-top: 4px; }
+  .nmc-levels li { position: relative; }
+  .nmc-levels .nmc-info__tip { width: 190px; }
+  .nmc-levels li:nth-child(odd) .nmc-info__tip { left: -40px; transform: none; }
+  .nmc-levels li:nth-child(odd) .nmc-info__tip::after { left: 50px; }
+  .nmc-levels li:nth-child(even) .nmc-info__tip { left: auto; right: -40px; transform: none; }
+  .nmc-levels li:nth-child(even) .nmc-info__tip::after { left: auto; right: 44px; }
+  .nmc-empty { text-align: center; padding: 20px 8px 8px; color: var(--nmc-gris); }
+  .nmc-empty p { margin: 0 0 16px; }
+
+  .nmc-coupons { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 10px; }
+  .nmc-coupon { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1.5px dashed var(--nmc-rosa); border-radius: 14px; background: var(--nmc-petalo-suave); }
+  .nmc-coupon div { flex: 1; min-width: 0; }
+  .nmc-coupon b { display: block; font-size: 15px; letter-spacing: .08em; color: var(--nmc-boton); }
+  .nmc-coupon span { display: block; font-size: 13px; }
+  .nmc-coupon small { display: block; font-size: 11px; color: var(--nmc-gris); margin-top: 2px; }
+  .nmc-coupon__copy { flex: none; background: var(--nmc-boton); color: #fff; border: 0; border-radius: 999px; padding: 8px 14px; font: 500 12px Montserrat, sans-serif; cursor: pointer; }
+  .nmc-favs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .nmc-fav { position: relative; display: block; border: 1px solid var(--nmc-linea); border-radius: 16px; padding: 10px; background: #fff; }
+  .nmc-fav img { width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 10px; background: var(--nmc-petalo-suave); display: block; }
+  .nmc-fav__t { font-size: 13px; line-height: 1.35; margin: 8px 0 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .nmc-fav__p { font-weight: 600; font-size: 14px; color: var(--nmc-boton); }
+  .nmc-fav .nina-fav { top: 14px; right: 14px; width: 32px; height: 32px; }
+  .nmc-favs__heart svg { width: 40px; height: 40px; color: var(--nmc-rosa); }
+  @media (max-width: 560px) { .nmc-favs { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
+  .nmc-addr { font-style: normal; font-size: 14px; line-height: 1.7; color: var(--nmc-texto); margin: 0 0 16px; }
+  .nmc-addr__name { font-weight: 600; }
+  .nmc-muted { color: var(--nmc-gris); font-size: 14px; margin: 0 0 16px; }
+
+  .nmc-menu { list-style: none; margin: 0; padding: 0; }
+  .nmc-menu li + li { border-top: 1px solid var(--nmc-linea); }
+  .nmc-menu a { display: flex; align-items: center; gap: 12px; padding: 13px 2px; font-size: 14px; transition: color .2s; }
+  .nmc-menu a:hover { color: var(--nmc-boton); }
+  .nmc-menu svg { width: 20px; height: 20px; color: var(--nmc-rosa); flex: none; }
+  .nmc-menu .nmc-menu__arrow { margin-left: auto; color: #C9B3BA; width: 16px; height: 16px; }
+
+  .nmc-promo { background: var(--nmc-rosa); color: #fff; border-radius: 20px; padding: 24px; text-align: center; }
+  .nmc-promo h3 { font-size: 26px; margin: 0 0 6px; color: #fff; }
+  .nmc-promo p { margin: 0 0 16px; font-size: 14px; opacity: .92; }
+  .nmc-promo .nmc-btn { background: #fff; color: var(--nmc-boton) !important; }
+
+  /* Sin sesión: iniciar sesión / crear cuenta */
+  .nmc-auth { background: linear-gradient(180deg, var(--nmc-petalo-suave) 0%, #fff 70%); padding: 48px 16px 64px; }
+  .nmc-auth__in { max-width: 980px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; border-radius: 28px; overflow: hidden;
+                  background: #fff; box-shadow: 0 18px 50px rgba(201,47,96,.12); }
+  .nmc-auth__side { background: var(--nmc-rosa); color: #fff; padding: 44px 40px; display: flex; flex-direction: column; justify-content: center; }
+  .nmc-auth__side h2 { color: #fff; font-size: clamp(30px, 4vw, 40px); line-height: 1.1; margin: 14px 0 10px; }
+  .nmc-auth__side p { margin: 0 0 26px; font-size: 15px; line-height: 1.6; opacity: .95; }
+  .nmc-mar--blanca { background: #fff; width: 52px; height: 52px; }
+  .nmc-auth__perks { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .nmc-auth__perks li { display: flex; gap: 12px; align-items: center; font-size: 14px; line-height: 1.4; }
+  .nmc-auth__perks svg { width: 34px; height: 34px; padding: 7px; border-radius: 50%; background: rgba(255,255,255,.18); color: #fff; flex: none; }
+  .nmc-auth__box { padding: 36px 40px 40px; }
+  .nmc-tabs { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--nmc-linea); margin-bottom: 28px; }
+  .nmc-tab { background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px; padding: 12px 6px; cursor: pointer;
+             font: 500 13px/1 Montserrat, var(--font-body--family), sans-serif; letter-spacing: .08em; text-transform: uppercase; color: var(--nmc-gris); }
+  .nmc-tab.is-active { color: var(--nmc-texto); border-bottom-color: var(--nmc-rosa); }
+  .nmc-form h1 { font-size: 34px; margin: 0 0 6px; }
+  .nmc-form__intro { color: var(--nmc-gris); font-size: 14px; line-height: 1.6; margin: 0 0 22px; }
+  .nmc-field { display: block; margin-bottom: 14px; }
+  .nmc-field span { display: block; font-size: 12px; font-weight: 500; letter-spacing: .04em; margin-bottom: 6px; }
+  .nmc-field input { width: 100%; height: 50px; border: 1px solid #E3D3D8; border-radius: 12px; padding: 0 16px; font: 15px Montserrat, var(--font-body--family), sans-serif;
+                     color: var(--nmc-texto); background: #fff; outline: none; transition: border-color .2s, box-shadow .2s; }
+  .nmc-field input:focus { border-color: var(--nmc-rosa); box-shadow: 0 0 0 3px rgba(247,46,117,.15); }
+  .nmc-error { color: #C62828; font-size: 13px; margin: -6px 0 12px; }
+  .nmc-check { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.5; color: var(--nmc-gris); margin: 4px 0 20px; cursor: pointer; }
+  .nmc-check input { width: 18px; height: 18px; accent-color: var(--nmc-boton); margin-top: 1px; flex: none; }
+  .nmc-btn--full { width: 100%; height: 52px; padding: 0 20px; margin-top: 6px; }
+  .nmc-btn:disabled { opacity: .7; cursor: wait; }
+  .nmc-form__alt { text-align: center; font-size: 14px; color: var(--nmc-gris); margin: 18px 0 0; }
+  .nmc-form__legal { font-size: 12px; color: var(--nmc-gris); text-align: center; margin: 12px 0 0; }
+  .nmc-form__legal a { text-decoration: underline !important; }
+  .nmc-linkbtn { background: none; border: 0; padding: 0; cursor: pointer; color: var(--nmc-boton); font: inherit; font-weight: 600; text-decoration: underline; }
+  .nmc-demo { background: #FFF8E1; color: #6B5300; font-size: 12px; text-align: center; padding: 8px 16px; }
+
+  @media (max-width: 860px) {
+    .nmc-grid, .nmc-auth__in { grid-template-columns: 1fr; }
+    .nmc-auth__side { order: 2; padding: 32px 24px; }
+  }
+  @media (max-width: 560px) {
+    .nmc-hero { padding: 32px 0 24px; }
+    .nmc-hero__mar { width: 52px; height: 52px; } .nmc-hero__mar .nmc-mar { width: 32px; height: 32px; }
+    .nmc-card { padding: 20px; } .nmc-auth { padding: 24px 12px 40px; } .nmc-auth__box { padding: 26px 20px 30px; }
+    .nmc-stats { gap: 8px; } .nmc-stat { padding: 12px 6px; } .nmc-stat b { font-size: 24px; }
+    .nmc-order { flex-wrap: wrap; } .nmc-order__imgs { order: 3; width: 100%; }
+    .nmc-order__go { display: none; }
+    .nmc-level__top { flex-wrap: wrap; } .nmc-level__cash { margin-left: 0; width: 100%; text-align: left; display: flex; align-items: baseline; gap: 8px; }
+    .nmc-level h2 { font-size: 26px; }
+    .nmc-levels { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+
+{%- capture icon_arrow -%}<svg class="nmc-menu__arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>{%- endcapture -%}
+{%- capture icon_box -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>{%- endcapture -%}
+{%- capture icon_user -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c.6-4 3.8-6.5 8-6.5s7.4 2.5 8 6.5"/></svg>{%- endcapture -%}
+{%- capture icon_pin -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>{%- endcapture -%}
+{%- capture icon_tag -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12V3h9l9 9-9 9-9-9z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>{%- endcapture -%}
+{%- capture icon_star -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 15.4 7.2 17.9l.9-5.4L4.2 8.7l5.4-.8z"/></svg>{%- endcapture -%}
+{%- capture icon_drop -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg>{%- endcapture -%}
+{%- capture icon_help -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6"/><path d="M12 17h.01"/></svg>{%- endcapture -%}
+{%- capture icon_out -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 4h4v16h-4"/><path d="M10 8l-4 4 4 4"/><path d="M6 12h10"/></svg>{%- endcapture -%}
+{%- capture icon_truck -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="17.5" r="1.6"/><circle cx="17.5" cy="17.5" r="1.6"/></svg>{%- endcapture -%}
+{%- capture icon_heart -%}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg>{%- endcapture -%}
+
+<div class="nmc" style="--nmc-mar-url: url('{{ 'nina-skincare-mariposa-azul.svg' | asset_url }}')">
+  {%- if demo -%}<div class="nmc-demo">Vista de ejemplo: solo se ve en el editor. Tus clientas verán sus propios datos.</div>{%- endif -%}
+
+  {%- if customer or demo -%}
+    {%- liquid
+      if demo
+        assign first_name = 'María'
+        assign orders_count = 3
+        assign spent = 23490
+        assign spent_year = 18990
+      else
+        assign first_name = customer.first_name
+        if first_name == blank
+          assign first_name = customer.email | split: '@' | first | split: '.' | first | split: '_' | first | capitalize
+        endif
+        assign orders_count = customer.orders_count
+        assign spent = customer.total_spent
+        # Nivel: lo comprado en los últimos 12 meses (pedidos no cancelados)
+        assign hace_un_ano = 'now' | date: '%s' | minus: 31536000
+        assign spent_year = 0
+        for o in customer.orders limit: 50
+          assign o_time = o.created_at | date: '%s' | plus: 0
+          if o_time >= hace_un_ano and o.cancelled == false
+            assign spent_year = spent_year | plus: o.total_price
+          endif
+        endfor
+      endif
+
+      assign spent_eur = spent | divided_by: 100
+      assign year_eur = spent_year | divided_by: 100
+      # Datos de Nina Sync (si existen): gasto de los últimos 12 meses y nivel
+      if customer.metafields.nina.gasto_12m != blank
+        assign year_eur = customer.metafields.nina.gasto_12m.value | floor
+      endif
+      assign n2 = section.settings.nivel_2_desde
+      assign n3 = section.settings.nivel_3_desde
+      assign n4 = section.settings.nivel_4_desde
+      assign nivel = 1
+      if year_eur >= n2
+        assign nivel = 2
+      endif
+      if year_eur >= n3
+        assign nivel = 3
+      endif
+      if year_eur >= n4
+        assign nivel = 4
+      endif
+      if customer.metafields.nina.nivel != blank
+        assign nivel = customer.metafields.nina.nivel.value | plus: 0
+      endif
+      assign k = 'nivel_' | append: nivel | append: '_nombre'
+      assign nivel_nombre = section.settings[k]
+      assign k = 'nivel_' | append: nivel | append: '_color'
+      assign nivel_color = section.settings[k]
+      assign sig = nivel | plus: 1
+      assign k = 'nivel_' | append: sig | append: '_nombre'
+      assign siguiente_nombre = section.settings[k]
+      assign k = 'nivel_' | append: sig | append: '_desde'
+      assign siguiente_desde = section.settings[k]
+      # NinaCash: si existe el metacampo del cliente nina.ninacash (saldo en euros), se usa;
+      # si no, una estimación con el % de NinaCash de su nivel sobre lo comprado.
+      assign k_pct = 'nivel_' | append: nivel | append: '_ninacash'
+      assign nc_rate = section.settings[k_pct] | default: 1
+      assign nc_rate_txt = nc_rate | append: '' | replace: '.', ','
+      assign ninacash = spent | times: nc_rate | divided_by: 100 | round
+      if customer.metafields.nina.ninacash != blank
+        assign ninacash = customer.metafields.nina.ninacash.value | times: 100 | round
+      endif
+      assign pendiente = 0
+      if customer.metafields.nina.ninacash_pendiente != blank
+        assign pendiente = customer.metafields.nina.ninacash_pendiente.value | times: 100 | round
+      endif
+      assign ninacash_txt = ninacash | money_without_currency | append: ' €'
+      # Saldo que caduca en los próximos 30 días (Nina Sync: nina.ninacash_caduca = {importe, fecha})
+      assign cad = 0
+      assign cad_fecha = ''
+      assign cad_mf = customer.metafields.nina.ninacash_caduca.value
+      if cad_mf.importe != blank and cad_mf.fecha != blank
+        assign cad = cad_mf.importe | times: 100 | round
+        assign cad_fecha = cad_mf.fecha | date: '%d/%m'
+      endif
+
+      if nivel < 4
+        assign falta = siguiente_desde | minus: year_eur
+        assign pct = year_eur | times: 100 | divided_by: siguiente_desde
+        if pct > 100
+          assign pct = 100
+        endif
+      else
+        assign pct = 100
+      endif
+    -%}
+
+    <section class="nmc-hero">
+      <div class="nmc-wrap nmc-hero__in">
+        <span class="nmc-hero__mar"><i class="nmc-mar" aria-hidden="true" style="background: {{ nivel_color }}"></i></span>
+        <div>
+          <h1 class="nmc-serif">Hola{% if first_name != blank %}, <em>{{ first_name }}</em>{% endif %}</h1>
+          <p>{{ section.settings.welcome }}</p>
+        </div>
+      </div>
+    </section>
+
+    <script>
+      document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.nmc-info__btn');
+        document.querySelectorAll('.nmc-info.is-open').forEach(function (el) { if (!btn || el !== btn.parentNode) el.classList.remove('is-open'); });
+        if (btn) btn.parentNode.classList.toggle('is-open');
+        var cp = e.target.closest('.nmc-coupon__copy');
+        if (cp && navigator.clipboard) { navigator.clipboard.writeText(cp.dataset.code); cp.textContent = '¡Copiado!'; setTimeout(function () { cp.textContent = 'Copiar'; }, 1800); }
+      });
+      (function () {
+        var cache = {};
+        function money(c) { return (c / 100).toFixed(2).replace('.', ',') + ' €'; }
+        function render() {
+          var box = document.querySelector('[data-nmc-favs]'), empty = document.querySelector('[data-nmc-favs-empty]');
+          if (!box || !window.NinaFavs) return;
+          var list = window.NinaFavs.read();
+          empty.hidden = list.length > 0;
+          Promise.all(list.map(function (h) {
+            if (cache[h]) return cache[h];
+            return cache[h] = fetch('/products/' + encodeURIComponent(h) + '.js').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+          })).then(function (items) {
+            box.innerHTML = '';
+            items.forEach(function (p, i) {
+              if (!p) return;
+              var a = document.createElement('a'); a.className = 'nmc-fav'; a.href = p.url;
+              var img = p.featured_image ? p.featured_image + (p.featured_image.indexOf('?') > -1 ? '&' : '?') + 'width=300' : '';
+              a.innerHTML = (img ? '<img src="' + img + '" alt="" loading="lazy">' : '') + '<div class="nmc-fav__t"></div><div class="nmc-fav__p">' + money(p.price) + '</div>';
+              a.querySelector('.nmc-fav__t').textContent = p.title;
+              var b = document.createElement('button'); b.type = 'button'; b.className = 'nina-fav is-fav'; b.dataset.handle = list[i]; b.setAttribute('aria-label', 'Quitar de Mis favoritos');
+              b.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg>';
+              a.appendChild(b); box.appendChild(a);
+            });
+          });
+        }
+        document.addEventListener('nina:favs', render);
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render); else render();
+      })();
+    </script>
+
+    <div class="nmc-wrap">
+      <div class="nmc-grid">
+        <div>
+          <div class="nmc-card nmc-level" style="--nivel: {{ nivel_color }}">
+            <div class="nmc-level__top">
+              <span class="nmc-level__mar"><i class="nmc-mar" aria-hidden="true" style="background: {{ nivel_color }}; width: 46px; height: 46px;"></i></span>
+              <div>
+                <span class="nmc-level__kicker">Tu nivel Nina · últimos 12 meses</span>
+                {%- assign k_v = 'nivel_' | append: nivel | append: '_ventaja' -%}
+                <h2 class="nmc-serif">{{ nivel_nombre }}{% if section.settings[k_v] != blank %}<span class="nmc-info"><button type="button" class="nmc-info__btn" aria-label="Ventajas de {{ nivel_nombre }}">i</button><span class="nmc-info__tip" role="tooltip">{% assign vs = section.settings[k_v] | split: ';' %}{% for v in vs %}<span class="nmc-tip-li">{{ v | strip }}</span>{% endfor %}</span></span>{% endif %}</h2>
+              </div>
+              <div class="nmc-level__cash"><b>{{ ninacash_txt }}</b><span>en NinaCash{% if pendiente > 0 %} · {{ pendiente | money_without_currency }} € pendientes{% endif %}</span></div>
+            </div>
+            <div class="nmc-level__bar"><span style="width: {{ pct }}%"></span></div>
+            <p class="nmc-level__txt">
+              {%- if nivel < 4 -%}
+                Te faltan <b>{{ falta }} €</b> en compras este año para ser <b>{{ siguiente_nombre }}</b>.
+              {%- else -%}
+                Has llegado al nivel más alto. ¡Gracias por ser parte de Nina!
+              {%- endif %}
+              Con cada compra acumulas el {{ nc_rate_txt }} % en NinaCash{% if ninacash > 0 %} y puedes usarlo al pagar con tu cuenta iniciada{% endif %}.
+            </p>
+            {%- if cad > 0 -%}
+            <p class="nmc-caduca"><b>{{ cad | money_without_currency }} € de tu NinaCash caducan el {{ cad_fecha }}.</b> ¡Úsalos antes!</p>
+            {%- endif -%}
+            <ol class="nmc-levels">
+              {%- for i in (1..4) -%}
+                {%- liquid
+                  assign k_nombre = 'nivel_' | append: i | append: '_nombre'
+                  assign k_color = 'nivel_' | append: i | append: '_color'
+                  assign k_desde = 'nivel_' | append: i | append: '_desde'
+                  assign k_vent = 'nivel_' | append: i | append: '_ventaja'
+                -%}
+                <li class="{% if i == nivel %}is-actual{% elsif i < nivel %}is-hecho{% endif %}">
+                  <i class="nmc-mar" aria-hidden="true" style="background: {{ section.settings[k_color] }}; width: 26px; height: 26px;"></i>
+                  <span>{{ section.settings[k_nombre] }}</span>
+                  <small>{% if i == 1 %}desde 0 €{% else %}desde {{ section.settings[k_desde] }} €{% endif %}</small>
+                  {%- if section.settings[k_vent] != blank -%}<span class="nmc-info" style="--nivel: {{ section.settings[k_color] }}"><button type="button" class="nmc-info__btn" aria-label="Ventajas de {{ section.settings[k_nombre] }}">i</button><span class="nmc-info__tip" role="tooltip">{% assign vs = section.settings[k_vent] | split: ';' %}{% for v in vs %}<span class="nmc-tip-li">{{ v | strip }}</span>{% endfor %}</span></span>{%- endif -%}
+                </li>
+              {%- endfor -%}
+            </ol>
+            <p class="nmc-level__more"><a class="nmc-link" href="{{ section.settings.ninacash_url | default: '/pages/ninacash' }}">Condiciones de NinaCash y niveles</a></p>
+          </div>
+
+          <div class="nmc-card">
+            <div class="nmc-stats">
+              <div class="nmc-stat"><b>{{ orders_count }}</b><span>{% if orders_count == 1 %}pedido{% else %}pedidos{% endif %}</span></div>
+              <div class="nmc-stat"><b>{{ spent_eur }} €</b><span>en belleza</span></div>
+              <div class="nmc-stat"><b>0 €</b><span>en envíos</span></div>
+            </div>
+
+            <div class="nmc-card__head">
+              <h2 class="nmc-serif">Mis pedidos</h2>
+              <a class="nmc-link" href="{{ routes.account_url }}">Ver todos</a>
+            </div>
+
+            {%- if demo -%}
+              {%- assign demo_products = collections.all.products -%}
+              {%- for i in (1..3) -%}
+                {%- assign dp = demo_products[forloop.index0] -%}
+                <div class="nmc-order">
+                  <div class="nmc-order__imgs">
+                    <span class="nmc-order__img">{% if dp.featured_image %}<img src="{{ dp.featured_image | image_url: width: 120 }}" alt="" width="56" height="56" loading="lazy">{% endif %}</span>
+                  </div>
+                  <div class="nmc-order__info">
+                    <div class="nmc-order__top">
+                      <span class="nmc-order__num">#100{{ 4 | minus: i }}</span>
+                      {%- case i -%}
+                        {%- when 1 -%}<span class="nmc-pill">En camino</span>
+                        {%- when 2 -%}<span class="nmc-pill nmc-pill--ok">Entregado</span>
+                        {%- else -%}<span class="nmc-pill nmc-pill--ok">Entregado</span>
+                      {%- endcase -%}
+                    </div>
+                    <div class="nmc-order__date">{{ dp.title | default: 'Perfume de ejemplo' | truncate: 48 }}</div>
+                  </div>
+                  <span class="nmc-order__total">{{ dp.price | default: 4495 | money }}</span>
+                </div>
+              {%- endfor -%}
+            {%- elsif customer.orders.size > 0 -%}
+              {%- for order in customer.orders limit: section.settings.orders_limit -%}
+                <a class="nmc-order" href="{{ order.customer_url }}">
+                  <div class="nmc-order__imgs">
+                    {%- for li in order.line_items limit: 3 -%}
+                      <span class="nmc-order__img">{% if li.image %}<img src="{{ li.image | image_url: width: 120 }}" alt="{{ li.title | escape }}" width="56" height="56" loading="lazy">{% endif %}</span>
+                    {%- endfor -%}
+                    {%- if order.line_items.size > 3 -%}<span class="nmc-order__img nmc-order__img--mas">+{{ order.line_items.size | minus: 3 }}</span>{%- endif -%}
+                  </div>
+                  <div class="nmc-order__info">
+                    <div class="nmc-order__top">
+                      <span class="nmc-order__num">{{ order.name }}</span>
+                      {%- if order.cancelled -%}
+                        <span class="nmc-pill nmc-pill--gris">Cancelado</span>
+                      {%- elsif order.fulfillment_status == 'fulfilled' -%}
+                        <span class="nmc-pill nmc-pill--ok">Enviado</span>
+                      {%- elsif order.fulfillment_status == 'partial' -%}
+                        <span class="nmc-pill">Enviado en parte</span>
+                      {%- else -%}
+                        <span class="nmc-pill">Preparando</span>
+                      {%- endif -%}
+                    </div>
+                    <div class="nmc-order__date">{{ order.created_at | date: '%d/%m/%Y' }} · {{ order.item_count }} {% if order.item_count == 1 %}artículo{% else %}artículos{% endif %}</div>
+                  </div>
+                  <span class="nmc-order__total">{{ order.total_price | money }}</span>
+                  <span class="nmc-order__go">{{ icon_arrow }}</span>
+                </a>
+              {%- endfor -%}
+            {%- else -%}
+              <div class="nmc-empty">
+                <i class="nmc-mar nmc-mar--48" aria-hidden="true"></i>
+                <p>Todavía no tienes pedidos. Tu primer capricho te está esperando.</p>
+                <a class="nmc-btn" href="{{ routes.account_url }}">Seguimiento de pedidos</a>
+              </div>
+            {%- endif -%}
+          </div>
+
+          <div class="nmc-card" id="mis-favoritos">
+            <div class="nmc-card__head"><h2 class="nmc-serif">Mis favoritos</h2></div>
+            <div class="nmc-favs" data-nmc-favs></div>
+            <div class="nmc-empty" data-nmc-favs-empty hidden>
+              <span class="nmc-favs__heart">{{ icon_heart }}</span>
+              <p>Aún no tienes favoritos. Toca el corazón de cualquier producto y lo guardamos aquí para ti.</p>
+              <a class="nmc-btn" href="{{ routes.all_products_collection_url }}">Descubrir productos</a>
+            </div>
+          </div>
+
+          {%- if section.settings.show_promo and ofertas != blank -%}
+            <div class="nmc-card nmc-promo">
+              <h3 class="nmc-serif">{{ section.settings.promo_heading }}</h3>
+              <p>{{ section.settings.promo_text }}</p>
+              <a class="nmc-btn" href="{{ ofertas.url }}">Ver ofertas</a>
+            </div>
+          {%- endif -%}
+        </div>
+
+        <aside>
+          <div class="nmc-card">
+            <div class="nmc-card__head"><h2 class="nmc-serif">Mis cupones disponibles</h2></div>
+            {%- comment -%}
+              Cupones: los de la clienta (metacampo de cliente nina.cupones) y los de la semana para todas
+              (metacampo de tienda nina.cupones_semana). Formato de cada uno: {"codigo","texto","caduca","niveles":[1-4],"nivel_min"}.
+              Los rellenará Nina Sync; nivel_min (1-4) es opcional.
+            {%- endcomment -%}
+            {%- liquid
+              assign hoy = 'now' | date: '%Y-%m-%d'
+              assign hay_cupon = false
+              if demo
+                assign hay_cupon = true
+              endif
+            -%}
+            <ul class="nmc-coupons">
+              {%- if demo -%}
+                <li class="nmc-coupon"><div><b>NINA10</b><span>10 % en perfumes de mujer</span><small>Válido hasta el 21/11</small></div><button type="button" class="nmc-coupon__copy" data-code="NINA10">Copiar</button></li>
+              {%- else -%}
+                {%- for lista in (1..2) -%}
+                  {%- if lista == 1 -%}{%- assign cupones = customer.metafields.nina.cupones.value -%}{%- else -%}{%- assign cupones = shop.metafields.nina.cupones_semana.value -%}{%- endif -%}
+                  {%- for c in cupones -%}
+                    {%- liquid
+                      assign c_ok = true
+                      if c.niveles != blank
+                        assign c_ok = false
+                        for nv in c.niveles
+                          assign nvi = nv | plus: 0
+                          if nvi == nivel
+                            assign c_ok = true
+                          endif
+                        endfor
+                      elsif c.nivel_min != blank
+                        assign c_min = c.nivel_min | plus: 0
+                        if c_min > nivel
+                          assign c_ok = false
+                        endif
+                      endif
+                    -%}
+                    {%- if c.codigo != blank and c_ok -%}
+                      {%- if c.caduca == blank or c.caduca >= hoy -%}
+                        {%- assign hay_cupon = true -%}
+                        <li class="nmc-coupon"><div><b>{{ c.codigo }}</b><span>{{ c.texto }}</span>{% if c.caduca != blank %}<small>Válido hasta el {{ c.caduca | date: '%d/%m' }}</small>{% endif %}</div><button type="button" class="nmc-coupon__copy" data-code="{{ c.codigo | escape }}">Copiar</button></li>
+                      {%- endif -%}
+                    {%- endif -%}
+                  {%- endfor -%}
+                {%- endfor -%}
+              {%- endif -%}
+            </ul>
+            {%- unless hay_cupon -%}
+              <p class="nmc-muted">Ahora mismo no tienes cupones. Cada semana te dejamos aquí descuentos exclusivos para ti.</p>
+            {%- endunless -%}
+            {%- if ofertas != blank -%}<a class="nmc-link" href="{{ ofertas.url }}">Ver ofertas de la semana</a>{%- endif -%}
+          </div>
+
+          <div class="nmc-card">
+            <ul class="nmc-menu">
+              <li><a href="{{ routes.account_url }}">{{ icon_box }}Mis pedidos{{ icon_arrow }}</a></li>
+              <li><a href="{{ routes.account_addresses_url }}">{{ icon_user }}Mis datos y direcciones{{ icon_arrow }}</a></li>
+              <li><a href="#mis-favoritos">{{ icon_heart }}Mis favoritos{{ icon_arrow }}</a></li>
+              {%- if nuevos != blank -%}<li><a href="{{ nuevos.url }}">{{ icon_star }}Recién llegados{{ icon_arrow }}</a></li>{%- endif -%}
+              <li><a href="/pages/skin-care">{{ icon_drop }}Nina Skin Care{{ icon_arrow }}</a></li>
+              <li><a href="/pages/contact">{{ icon_help }}Ayuda{{ icon_arrow }}</a></li>
+              {%- unless demo -%}<li><a href="{{ routes.account_logout_url }}">{{ icon_out }}Cerrar sesión{{ icon_arrow }}</a></li>{%- endunless -%}
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+  {%- else -%}
+    {%- liquid
+      assign login_base = routes.storefront_login_url | default: routes.account_login_url
+      if login_base contains '?'
+        assign login_sep = '&'
+      else
+        assign login_sep = '?'
+      endif
+    -%}
+    <section class="nmc-auth">
+      <div class="nmc-auth__in">
+        <div class="nmc-auth__side">
+          <i class="nmc-mar nmc-mar--blanca" aria-hidden="true"></i>
+          <h2 class="nmc-serif">{{ section.settings.side_heading }}</h2>
+          <p>{{ section.settings.side_text }}</p>
+          <ul class="nmc-auth__perks">
+            <li>{{ icon_truck }}<span><b>Envío gratis</b> en todos tus pedidos</span></li>
+            <li>{{ icon_tag }}<span><b>Ofertas de la semana</b> antes que nadie</span></li>
+            <li>{{ icon_box }}<span><b>Sigue tus pedidos</b> paso a paso</span></li>
+            <li>{{ icon_pin }}<span><b>Compra en segundos</b> con tu dirección guardada</span></li>
+          </ul>
+        </div>
+
+        <div class="nmc-auth__box" data-nmc-auth data-login="{{ login_base }}" data-sep="{{ login_sep }}">
+          <div class="nmc-tabs" role="tablist">
+            <button type="button" class="nmc-tab is-active" role="tab" aria-selected="true" data-tab="login">Iniciar sesión</button>
+            <button type="button" class="nmc-tab" role="tab" aria-selected="false" data-tab="registro">Crear cuenta</button>
+          </div>
+
+          <form class="nmc-form" data-panel="login" novalidate>
+            <h1 class="nmc-serif">Hola de nuevo</h1>
+            <p class="nmc-form__intro">Escribe tu correo y te enviamos un código de 6 cifras para entrar. Sin contraseñas.</p>
+            <label class="nmc-field"><span>Correo electrónico</span>
+              <input type="email" name="email" autocomplete="email" required placeholder="tu@correo.com"></label>
+            <p class="nmc-error" hidden>Escribe un correo válido.</p>
+            <button type="submit" class="nmc-btn nmc-btn--full">Continuar</button>
+            <p class="nmc-form__alt">¿Aún no tienes cuenta? <button type="button" class="nmc-linkbtn" data-go="registro">Créala aquí</button></p>
+          </form>
+
+          <form class="nmc-form" data-panel="registro" novalidate hidden>
+            <h1 class="nmc-serif">Únete a Nina</h1>
+            <p class="nmc-form__intro">Crea tu cuenta en un momento. Te enviaremos un código a tu correo para confirmarla.</p>
+            <label class="nmc-field"><span>Nombre</span>
+              <input type="text" name="first_name" autocomplete="given-name" placeholder="Tu nombre"></label>
+            <label class="nmc-field"><span>Correo electrónico</span>
+              <input type="email" name="email" autocomplete="email" required placeholder="tu@correo.com"></label>
+            <p class="nmc-error" hidden>Escribe un correo válido.</p>
+            <label class="nmc-check"><input type="checkbox" name="newsletter" checked>
+              <span>Quiero recibir ofertas y novedades de Nina Beauty por correo. Puedo darme de baja cuando quiera.</span></label>
+            <button type="submit" class="nmc-btn nmc-btn--full">Crear mi cuenta</button>
+            <p class="nmc-form__legal">Al crear tu cuenta aceptas nuestra <a href="{{ shop.privacy_policy.url | default: '/policies/privacy-policy' }}">política de privacidad</a>.</p>
+            <p class="nmc-form__alt">¿Ya tienes cuenta? <button type="button" class="nmc-linkbtn" data-go="login">Inicia sesión</button></p>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <script>
+      (function () {
+        var box = document.querySelector('[data-nmc-auth]');
+        if (!box) return;
+        var tabs = box.querySelectorAll('.nmc-tab');
+        function show(name) {
+          tabs.forEach(function (t) { var on = t.dataset.tab === name; t.classList.toggle('is-active', on); t.setAttribute('aria-selected', on); });
+          box.querySelectorAll('[data-panel]').forEach(function (p) { p.hidden = p.dataset.panel !== name; });
+        }
+        tabs.forEach(function (t) { t.addEventListener('click', function () { show(t.dataset.tab); }); });
+        box.querySelectorAll('[data-go]').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.go); }); });
+        if (location.hash === '#crear-cuenta') show('registro');
+
+        function goLogin(email) {
+          window.location.href = box.dataset.login + box.dataset.sep + 'login_hint=' + encodeURIComponent(email) + '&login_hint_mode=submit';
+        }
+        box.querySelectorAll('form').forEach(function (form) {
+          form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var email = form.email.value.trim();
+            var err = form.querySelector('.nmc-error');
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { err.hidden = false; form.email.focus(); return; }
+            err.hidden = true;
+            var btn = form.querySelector('[type=submit]'); btn.disabled = true; btn.textContent = 'Un momento…';
+            if (form.dataset.panel === 'registro' && form.newsletter.checked) {
+              var fd = new FormData();
+              fd.append('form_type', 'customer'); fd.append('utf8', '✓');
+              fd.append('contact[email]', email);
+              fd.append('contact[tags]', 'newsletter,registro-nina');
+              if (form.first_name.value.trim()) fd.append('contact[first_name]', form.first_name.value.trim());
+              fetch('/contact#contact_form', { method: 'POST', body: fd, credentials: 'same-origin' })
+                .catch(function () {}).then(function () { goLogin(email); });
+            } else {
+              goLogin(email);
+            }
+          });
+        });
+      })();
+    </script>
+  {%- endif -%}
+</div>
+
+{% schema %}
+{
+  "name": "Nina Mi cuenta",
+  "tag": "section",
+  "settings": [
+    { "type": "select", "id": "editor_view", "label": "Qué ver en el editor", "info": "Solo afecta al editor. Tus clientas ven el inicio de sesión o su cuenta según hayan entrado o no.", "options": [ { "value": "login", "label": "Inicio de sesión / crear cuenta" }, { "value": "cuenta", "label": "Cuenta con sesión iniciada (datos de ejemplo)" } ], "default": "login" },
+    { "type": "text", "id": "side_heading", "label": "Título del panel rosa", "default": "Tu rincón de belleza" },
+    { "type": "textarea", "id": "side_text", "label": "Texto del panel rosa", "default": "Con tu cuenta Nina tienes todo a mano: tus pedidos, tus datos y las mejores ofertas en perfumes." },
+    { "type": "text", "id": "welcome", "label": "Texto de bienvenida", "default": "Este es tu rincón de belleza: tus pedidos, tus datos y tus favoritos." },
+    { "type": "header", "content": "Niveles Nina (compras últimos 12 meses)" },
+    { "type": "text", "id": "nivel_1_nombre", "label": "Nivel 1: nombre", "default": "Sparkle" },
+    { "type": "color", "id": "nivel_1_color", "label": "Nivel 1: color de la mariposa", "default": "#FFB3C6" },
+    { "type": "text", "id": "nivel_1_ventaja", "label": "Nivel 1: ventajas (nube de la i)", "info": "Separa cada ventaja con punto y coma (;)", "default": "Cupones con descuentos exclusivos cada semana; 1 % en NinaCash" },
+    { "type": "number", "id": "nivel_1_ninacash", "label": "Nivel 1: % de NinaCash", "default": 1 },
+    { "type": "text", "id": "nivel_2_nombre", "label": "Nivel 2: nombre", "default": "Glow" },
+    { "type": "number", "id": "nivel_2_desde", "label": "Nivel 2: desde (€ comprados)", "default": 100 },
+    { "type": "color", "id": "nivel_2_color", "label": "Nivel 2: color de la mariposa", "default": "#F72E75" },
+    { "type": "text", "id": "nivel_2_ventaja", "label": "Nivel 2: ventaja (nube de la i)", "default": "Cupones con descuentos exclusivos cada semana; 1,5 % en NinaCash" },
+    { "type": "number", "id": "nivel_2_ninacash", "label": "Nivel 2: % de NinaCash", "default": 1.5 },
+    { "type": "text", "id": "nivel_3_nombre", "label": "Nivel 3: nombre", "default": "Glam" },
+    { "type": "number", "id": "nivel_3_desde", "label": "Nivel 3: desde (€ comprados)", "default": 250 },
+    { "type": "color", "id": "nivel_3_color", "label": "Nivel 3: color de la mariposa", "default": "#C92F60" },
+    { "type": "text", "id": "nivel_3_ventaja", "label": "Nivel 3: ventaja (nube de la i)", "default": "Cupones con descuentos exclusivos cada semana; 2 % en NinaCash; 1 envío gratis al mes en pedidos de menos de 49 €" },
+    { "type": "number", "id": "nivel_3_ninacash", "label": "Nivel 3: % de NinaCash", "default": 2 },
+    { "type": "text", "id": "nivel_4_nombre", "label": "Nivel 4: nombre", "default": "Butterfly" },
+    { "type": "number", "id": "nivel_4_desde", "label": "Nivel 4: desde (€ comprados)", "default": 500 },
+    { "type": "color", "id": "nivel_4_color", "label": "Nivel 4: color de la mariposa", "default": "#C9A24B" },
+    { "type": "text", "id": "nivel_4_ventaja", "label": "Nivel 4: ventaja (nube de la i)", "default": "Cupones con descuentos exclusivos cada semana; 2 % en NinaCash; Envíos gratis siempre; 1 obsequio al mes (muestra o mini)" },
+    { "type": "number", "id": "nivel_4_ninacash", "label": "Nivel 4: % de NinaCash", "default": 2 },
+    { "type": "url", "id": "ninacash_url", "label": "Enlace a las condiciones de NinaCash" },
+    { "type": "header", "content": "Pedidos y ofertas" },
+    { "type": "range", "id": "orders_limit", "label": "Pedidos a mostrar", "min": 2, "max": 10, "step": 1, "default": 5 },
+    { "type": "checkbox", "id": "show_promo", "label": "Mostrar recuadro de ofertas", "default": true },
+    { "type": "text", "id": "promo_heading", "label": "Título de ofertas", "default": "Ofertas de la semana" },
+    { "type": "text", "id": "promo_text", "label": "Texto de ofertas", "default": "Perfumes con precio especial solo durante 7 días." }
+  ],
+  "presets": [{ "name": "Nina Mi cuenta" }]
+}
+{% endschema %}

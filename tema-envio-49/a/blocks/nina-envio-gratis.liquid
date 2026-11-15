@@ -1,0 +1,142 @@
+{%- liquid
+  assign v = closest.product.selected_or_first_available_variant
+  assign umbral = block.settings.umbral | times: 100
+  assign en_cesta = false
+  for item in cart.items
+    if item.variant_id == v.id
+      assign en_cesta = true
+    endif
+  endfor
+  assign base = cart.total_price
+  unless en_cesta
+    assign base = base | plus: v.price
+  endunless
+  assign falta = umbral | minus: base
+  if umbral > 0
+    assign progreso = base | times: 100 | divided_by: umbral
+  else
+    assign progreso = 100
+  endif
+  if progreso > 100
+    assign progreso = 100
+  endif
+  assign dmin = block.settings.dias_min | default: 0
+  assign dmax = block.settings.dias_max | default: 0
+  if dmax < dmin
+    assign dmax = dmin
+  endif
+-%}
+<div class="nina-envio" data-nina-section="{{ section.id }}" {{ block.shopify_attributes }}>
+  {%- if dmax > 0 -%}
+    <p
+      class="nina-envio__fila"
+      data-nina-entrega
+      data-min="{{ dmin }}"
+      data-max="{{ dmax }}"
+      data-corte="{{ block.settings.hora_corte | default: 14 }}"
+    >
+      <span class="nina-envio__icono" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></span>
+      <span><strong>pídelo hoy y recíbelo</strong> <span data-nina-entrega-texto>en {{ dmin }}{% if dmax > dmin %}-{{ dmax }}{% endif %} días laborables</span></span>
+    </p>
+  {%- elsif block.settings.texto_entrega != blank -%}
+    <p class="nina-envio__fila">
+      <span class="nina-envio__icono" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg></span>
+      <span>{{ block.settings.texto_entrega }}</span>
+    </p>
+  {%- endif -%}
+  <div class="nina-envio__fila nina-envio__fila--barra" data-nina-live="envio-{{ block.id }}">
+    <span class="nina-envio__icono" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg></span>
+    <span class="nina-envio__cuerpo">
+      <span class="nina-envio__texto">
+        {%- if falta > 0 -%}
+          te faltan <strong>{{ falta | money }}</strong> para el envío gratis
+        {%- elsif en_cesta or cart.item_count > 0 -%}
+          <strong>¡tu pedido tiene envío gratis!</strong>
+        {%- else -%}
+          <strong>¡con este perfume tienes envío gratis!</strong>
+        {%- endif -%}
+      </span>
+      <span class="nina-envio__barra" role="progressbar" aria-label="Progreso hacia el envío gratis" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ progreso }}">
+        <span style="width: {{ progreso }}%"></span>
+      </span>
+    </span>
+  </div>
+</div>
+<script type="module" src="{{ 'nina-ficha.js' | asset_url }}"></script>
+
+{% stylesheet %}
+  .nina-envio { width: 100%; display: flex; flex-direction: column; gap: 12px; font-size: 0.875rem; }
+  .nina-envio__fila { margin: 0; display: flex; align-items: center; gap: 12px; }
+  .nina-envio__fila--barra { align-items: flex-start; }
+  .nina-envio__fila strong { font-weight: 600; }
+  .nina-envio__icono {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #FFF0F3;
+    color: #C92F60;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .nina-envio__cuerpo { flex: 1 1 auto; display: flex; flex-direction: column; gap: 8px; padding-top: 7px; }
+  .nina-envio__barra {
+    display: block;
+    height: 4px;
+    border-radius: 2px;
+    background: #F3E2E7;
+    overflow: hidden;
+  }
+  .nina-envio__barra span {
+    display: block;
+    height: 100%;
+    background: #C92F60;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Nina · Envío gratis",
+  "tag": null,
+  "settings": [
+    {
+      "type": "number",
+      "id": "umbral",
+      "label": "Envío gratis desde (€)",
+      "default": 49
+    },
+    {
+      "type": "header",
+      "content": "Fecha de entrega"
+    },
+    {
+      "type": "number",
+      "id": "dias_min",
+      "label": "Días laborables mínimos",
+      "info": "Si rellenas mínimo y máximo, sale «pídelo hoy y recíbelo entre el … y el …» con las fechas."
+    },
+    {
+      "type": "number",
+      "id": "dias_max",
+      "label": "Días laborables máximos"
+    },
+    {
+      "type": "number",
+      "id": "hora_corte",
+      "label": "Hora límite del día (hora de España)",
+      "info": "Los pedidos después de esta hora cuentan desde el día siguiente.",
+      "default": 14
+    },
+    {
+      "type": "text",
+      "id": "texto_entrega",
+      "label": "Texto fijo de entrega (si no usas días)",
+      "info": "Por ejemplo: Entrega en 24-72 h laborables. Si lo dejas vacío no se muestra."
+    }
+  ],
+  "presets": [{ "name": "Nina · Envío gratis", "category": "Nina" }]
+}
+{% endschema %}

@@ -1,0 +1,321 @@
+{%- liquid
+  assign p = closest.product
+  assign v = p.selected_or_first_available_variant
+  assign desc = p.description
+  assign intro = desc
+  assign lista = ''
+  if desc contains '<ul>'
+    assign trozos = desc | split: '<ul>'
+    assign intro = trozos.first
+    assign lista = desc | remove_first: intro
+  endif
+
+  assign tipo = ''
+  assign para = ''
+  assign familia = ''
+  assign salida = ''
+  assign corazon = ''
+  assign fondo = ''
+  assign tamanos = ''
+  assign extras = ''
+  assign modo_desc = ''
+
+  assign items = lista | split: '<li>'
+  for it in items
+    assign trozo = it | split: '</li>' | first
+    if trozo contains '</strong>'
+      assign etiqueta = trozo | split: '</strong>' | first | strip_html | strip | remove: ':' | strip | downcase
+      assign valor = trozo | split: '</strong>' | last | strip_html | strip
+      case etiqueta
+        when 'tipo'
+          assign tipo = valor
+        when 'para'
+          assign para = valor
+        when 'familia olfativa'
+          assign familia = valor
+        when 'notas de salida'
+          assign salida = valor
+        when 'notas de corazón', 'notas de corazon'
+          assign corazon = valor
+        when 'notas de fondo'
+          assign fondo = valor
+        when 'tamaños', 'tamaño', 'tonos', 'formatos'
+          assign tamanos = valor
+        when 'modo de uso', 'modo de empleo', 'cómo usarlo', 'como usarlo'
+          assign modo_desc = valor
+      endcase
+    else
+      assign extra = trozo | strip_html | strip
+      if extra != blank
+        assign extras = extras | append: '<li>' | append: extra | append: '</li>'
+      endif
+    endif
+  endfor
+
+  for t in p.tags
+    case t
+      when 'Eau de Parfum', 'Eau de Toilette', 'Eau de Cologne', 'Colonia', 'Parfum', 'Extrait de Parfum', 'Estuche', 'Body Mist', 'Elixir'
+        if tipo == blank
+          assign tipo = t
+        endif
+      when 'Mujer', 'Hombre', 'Unisex'
+        if para == blank
+          assign para = t
+        endif
+    endcase
+  endfor
+
+  # Nina Skin Care: etiqueta skin-care o sc-*; las sc-* dan la categoría (colección skin-care-*)
+  assign es_skin = false
+  if p.tags contains 'skin-care'
+    assign es_skin = true
+  endif
+  assign cats = ''
+  for t in p.tags
+    assign pre = t | slice: 0, 3
+    if pre == 'sc-'
+      assign es_skin = true
+      assign h = t | replace_first: 'sc-', 'skin-care-'
+      assign c = collections[h]
+      if c != blank
+        if cats != blank
+          assign cats = cats | append: ', '
+        endif
+        assign cats = cats | append: '<a href="' | append: c.url | append: '">' | append: c.title | append: '</a>'
+      endif
+    endif
+  endfor
+
+  assign tamano = ''
+  if p.has_only_default_variant
+    assign tamano = tamanos
+  else
+    assign tamano = v.title | replace: 'ml', ' ml' | replace: '  ml', ' ml'
+  endif
+
+  assign hay_notas = false
+  if salida != blank or corazon != blank or fondo != blank
+    assign hay_notas = true
+  endif
+
+  # Descripción: si el producto no tiene texto, se enseñan sus datos (marca, categoría, tamaño)
+  assign intro_txt = intro | strip_html | strip
+  assign hay_desc = false
+  if intro_txt != blank or extras != blank
+    assign hay_desc = true
+  endif
+
+  # Modo de uso: el de la descripción; si no, el de skin care o el de perfumes
+  assign modo = ''
+  if modo_desc != blank
+    assign modo = '<p>' | append: modo_desc | append: '</p>'
+  elsif es_skin
+    assign modo = block.settings.modo_uso_skin
+  elsif tipo != blank or hay_notas
+    assign modo = block.settings.modo_uso
+  endif
+
+  # Pista bajo «notas olfativas»: la primera nota de cada nivel
+  assign pista_notas = ''
+  assign niveles = salida | append: '§' | append: corazon | append: '§' | append: fondo | split: '§'
+  for n in niveles
+    assign primera = n | replace: ' y ', ',' | split: ',' | first | strip | downcase
+    if primera != blank
+      if pista_notas != blank
+        assign pista_notas = pista_notas | append: ', '
+      endif
+      assign pista_notas = pista_notas | append: primera
+    endif
+  endfor
+  if pista_notas != blank
+    assign pista_notas = pista_notas | append: '…'
+  endif
+-%}
+
+<div class="nina-detalles" {{ block.shopify_attributes }}>
+  {%- if block.settings.mostrar_datos -%}
+    <dl class="nina-detalles__datos" data-nina-live="datos-{{ block.id }}">
+      {%- if p.vendor != blank -%}<dt>Marca</dt><dd>{{ p.vendor }}</dd>{%- endif -%}
+      {%- if tipo != blank -%}<dt>Tipo</dt><dd>{{ tipo }}</dd>{%- endif -%}
+      {%- if para != blank -%}<dt>Para</dt><dd>{{ para | capitalize }}</dd>{%- endif -%}
+      {%- if familia != blank -%}<dt>Familia olfativa</dt><dd>{{ familia | capitalize }}</dd>{%- endif -%}
+      {%- if tamano != blank -%}<dt>Tamaño</dt><dd>{{ tamano }}</dd>{%- endif -%}
+    </dl>
+  {%- endif -%}
+
+  <div class="nina-detalles__acordeon">
+    {%- if hay_desc or p.vendor != blank or tamano != blank or cats != blank -%}
+      <details class="nina-detalles__fila"{% if block.settings.abrir_descripcion %} open{% endif %}>
+        <summary><span class="nina-detalles__titulo">descripción</span></summary>
+        <div class="nina-detalles__cuerpo rte">
+          {%- if hay_desc -%}
+            {{ intro }}
+            {%- if extras != blank -%}<ul class="nina-detalles__extra">{{ extras }}</ul>{%- endif -%}
+          {%- else -%}
+            <dl class="nina-detalles__notas">
+              {%- if p.vendor != blank -%}<div><dt>Marca</dt><dd><a href="{{ p.vendor | url_for_vendor }}">{{ p.vendor }}</a></dd></div>{%- endif -%}
+              {%- if cats != blank -%}
+                <div><dt>Categoría</dt><dd>{{ cats }}</dd></div>
+              {%- elsif p.type != blank -%}
+                <div><dt>Tipo</dt><dd>{{ p.type }}</dd></div>
+              {%- endif -%}
+              {%- if tamano != blank -%}<div><dt>Tamaño</dt><dd>{{ tamano }}</dd></div>{%- endif -%}
+            </dl>
+          {%- endif -%}
+        </div>
+      </details>
+    {%- endif -%}
+
+    {%- if hay_notas -%}
+      <details class="nina-detalles__fila"{% if block.settings.abrir_notas %} open{% endif %}>
+        <summary>
+          <span class="nina-detalles__titulo">notas olfativas</span>
+          {%- if pista_notas != blank -%}<span class="nina-detalles__pista">{{ pista_notas }}</span>{%- endif -%}
+        </summary>
+        <div class="nina-detalles__cuerpo">
+          <dl class="nina-detalles__notas">
+            {%- if familia != blank -%}<div><dt>Familia</dt><dd>{{ familia | capitalize }}</dd></div>{%- endif -%}
+            {%- if salida != blank -%}<div><dt>Salida</dt><dd>{{ salida | capitalize }}</dd></div>{%- endif -%}
+            {%- if corazon != blank -%}<div><dt>Corazón</dt><dd>{{ corazon | capitalize }}</dd></div>{%- endif -%}
+            {%- if fondo != blank -%}<div><dt>Fondo</dt><dd>{{ fondo | capitalize }}</dd></div>{%- endif -%}
+          </dl>
+        </div>
+      </details>
+    {%- endif -%}
+
+    {%- if modo != blank -%}
+      <details class="nina-detalles__fila">
+        <summary><span class="nina-detalles__titulo">modo de uso</span></summary>
+        <div class="nina-detalles__cuerpo rte">{{ modo }}</div>
+      </details>
+    {%- endif -%}
+
+    {%- if block.settings.envios != blank -%}
+      <details class="nina-detalles__fila">
+        <summary>
+          <span class="nina-detalles__titulo">envíos y devoluciones</span>
+          {%- if block.settings.resumen_envios != blank -%}<span class="nina-detalles__pista">{{ block.settings.resumen_envios }}</span>{%- endif -%}
+        </summary>
+        <div class="nina-detalles__cuerpo rte">{{ block.settings.envios }}</div>
+      </details>
+    {%- endif -%}
+  </div>
+</div>
+
+{% stylesheet %}
+  .nina-detalles { width: 100%; display: flex; flex-direction: column; gap: 20px; }
+  .nina-detalles__datos {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 8px 20px;
+    margin: 0;
+    font-size: 0.875rem;
+  }
+  .nina-detalles__datos dt { color: #6E6E6E; }
+  .nina-detalles__datos dd { margin: 0; }
+  .nina-detalles__acordeon { border-top: 1px solid #EBDDE1; }
+  .nina-detalles__fila { border-bottom: 1px solid #EBDDE1; }
+  .nina-detalles__fila summary {
+    list-style: none;
+    cursor: pointer;
+    min-height: 58px;
+    padding: 10px 32px 10px 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    text-align: start;
+    gap: 2px;
+    color: #C92F60;
+  }
+  .nina-detalles__fila summary::-webkit-details-marker { display: none; }
+  .nina-detalles__titulo { font-size: 1.25rem; font-weight: 600; line-height: 1.25; }
+  .nina-detalles__pista { font-size: 0.75rem; color: #6E6E6E; font-weight: 400; }
+  .nina-detalles__fila[open] .nina-detalles__pista { display: none; }
+  .nina-detalles__fila summary::after {
+    content: '+';
+    position: absolute;
+    inset-inline-end: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: #C92F60;
+    line-height: 1;
+  }
+  .nina-detalles__fila[open] summary::after { content: '−'; }
+  .nina-detalles__cuerpo { padding: 0 0 20px; font-size: 0.9375rem; line-height: 1.65; }
+  .nina-detalles__cuerpo p { margin: 0 0 0.75em; }
+  .nina-detalles__cuerpo p:last-child { margin-bottom: 0; }
+  .nina-detalles__extra { margin: 0.75em 0 0; padding-inline-start: 1.2em; }
+  .nina-detalles__extra li::marker { color: #C92F60; }
+  .nina-detalles__notas { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+  .nina-detalles__notas div { display: grid; grid-template-columns: 90px 1fr; gap: 12px; }
+  .nina-detalles__notas dt {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #C92F60;
+    padding-top: 3px;
+  }
+  .nina-detalles__notas dd { margin: 0; }
+
+  /* Ficha compacta en escritorio: foto de unos 460 px con miniaturas y textos al lado, todo centrado */
+  @media screen and (min-width: 990px) {
+    .product-information__grid.product-information--media-left:not(.product-information__grid--half):has(.nina-detalles) {
+      grid-template-columns: minmax(0, 484px) minmax(0, 500px);
+      justify-content: center;
+    }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Nina · Detalles",
+  "tag": null,
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Lee la descripción del producto: el primer párrafo va en «descripción» y las líneas Tipo, Para, Familia olfativa y Notas de salida, corazón y fondo se muestran ordenadas."
+    },
+    {
+      "type": "paragraph",
+      "content": "Con este bloque en la ficha, en ordenador la foto se ve a unos 460 px y los textos al lado, todo centrado."
+    },
+    { "type": "checkbox", "id": "mostrar_datos", "label": "Mostrar datos rápidos", "default": false },
+    { "type": "checkbox", "id": "abrir_descripcion", "label": "Descripción abierta al entrar", "default": true },
+    { "type": "checkbox", "id": "abrir_notas", "label": "Notas olfativas abiertas al entrar", "default": false },
+    {
+      "type": "paragraph",
+      "content": "Si el producto no tiene descripción, en «descripción» salen su marca, su categoría y su tamaño. El modo de uso sale de la descripción (línea «Modo de uso:») o, si no la tiene, de estos textos."
+    },
+    {
+      "type": "richtext",
+      "id": "modo_uso",
+      "label": "Modo de uso (perfumes)",
+      "default": "<p>Aplica el perfume sobre la piel limpia, a unos 15 cm, en muñecas, cuello y detrás de las orejas. No frotes: así dura más.</p>"
+    },
+    {
+      "type": "richtext",
+      "id": "modo_uso_skin",
+      "label": "Modo de uso (Nina Skin Care)",
+      "default": "<p>Sigue las indicaciones del envase. Si tienes la piel sensible, pruébalo antes en una zona pequeña.</p>"
+    },
+    {
+      "type": "text",
+      "id": "resumen_envios",
+      "label": "Resumen de envíos (se ve con el desplegable cerrado)",
+      "default": "gratis desde 49 € · 14 días para devolverlo"
+    },
+    {
+      "type": "richtext",
+      "id": "envios",
+      "label": "Envíos y devoluciones",
+      "default": "<p>Envío gratis en pedidos desde 49 €. Por debajo, 4,95 €.</p><p>Enviamos a península y Baleares.</p><p>Tienes 14 días para devolverlo.</p>"
+    }
+  ],
+  "presets": [{ "name": "Nina · Detalles", "category": "Nina" }]
+}
+{% endschema %}
