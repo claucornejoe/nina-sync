@@ -53,6 +53,7 @@ class Probador {
     this.antes = false;
     this.fuente = null; // video o imagen
     this.landmarks = null;
+    this.productos = new Map(); // handle -> datos de Shopify (stock real)
     this.montar();
     this.cargarTonos();
   }
@@ -173,15 +174,19 @@ class Probador {
       if (!grupos.has(k)) grupos.set(k, []);
       grupos.get(k).push(t);
     }
+    this.consultarStock([...new Set(L.map(t => t.handle).filter(Boolean))]);
     const frag = [];
-    for (const [, ts] of grupos) {
+    for (const [, tsOrden] of grupos) {
+      // Los tonos agotados van al final del producto, tachados
+      const ts = [...tsOrden].sort((a, b) => (a.disponible === false) - (b.disponible === false));
       const p = ts[0];
       frag.push(el('section', { class: 'np-grupo' },
         el('h3', { class: 'np-grupo-titulo' }, el('span', { class: 'np-grupo-marca' }, p.marca), ' ', p.producto),
         el('div', { class: 'np-muestras' }, ts.map(t => el('button', {
-          type: 'button', class: 'np-muestra', style: `--tono:${t.hex}`,
-          'aria-pressed': String(this.tono === t), title: `${t.tono} · ${euros(t.precio)}`,
-          'aria-label': `${t.marca} ${t.producto}, tono ${t.tono}`,
+          type: 'button', class: 'np-muestra' + (t.disponible === false ? ' np-agotado' : ''), style: `--tono:${t.hex}`,
+          'aria-pressed': String(this.tono === t),
+          title: t.disponible === false ? `${t.tono} · Agotado` : `${t.tono} · ${euros(t.precio)}`,
+          'aria-label': `${t.marca} ${t.producto}, tono ${t.tono}${t.disponible === false ? ', agotado' : ''}`,
           onclick: () => this.elegir(t) }, el('span', { class: 'np-sr' }, t.tono))))));
     }
     this.lista.replaceChildren(...frag);
@@ -200,27 +205,54 @@ class Probador {
     this.ficha.hidden = !t;
     if (!t) return;
     const url = t.handle ? `/products/${t.handle}` : null;
-    this.btnCesta = el('button', { type: 'button', class: 'np-btn np-btn-primario', onclick: () => this.alCarrito(t) }, `Añadir a la cesta · ${euros(t.precio)}`);
+    const agotado = t.disponible === false;
+    this.btnCesta = el('button', { type: 'button', class: 'np-btn np-btn-primario', disabled: agotado, onclick: () => this.alCarrito(t) },
+      agotado ? (t.enTienda === false ? 'Próximamente' : 'Agotado') : `Añadir a la cesta · ${euros(t.precio)}`);
     this.ficha.replaceChildren(
       el('div', { class: 'np-ficha-cab' },
         el('span', { class: 'np-ficha-muestra', style: `--tono:${t.hex}` }),
         el('div', {},
           el('p', { class: 'np-ficha-marca' }, t.marca),
           el('p', { class: 'np-ficha-prod' }, t.producto),
-          el('p', { class: 'np-ficha-tono' }, `${t.tono} · ${NOMBRE_ACABADO[t.acabado]}`))),
+          el('p', { class: 'np-ficha-tono' }, `${t.tono} · ${NOMBRE_ACABADO[t.acabado]}`),
+          agotado ? el('p', { class: 'np-ficha-agotado' }, t.enTienda === false ? 'Todavía no está en la tienda. Puedes probártelo igualmente.' : 'Sin stock ahora mismo. Puedes probártelo igualmente.') : null)),
       el('label', { class: 'np-int', for: this.rango.id }, 'Intensidad', this.rango),
       el('div', { class: 'np-ficha-botones' },
         this.cfg.carrito ? this.btnCesta : null,
-        url ? el('a', { class: 'np-btn np-btn-secundario', href: url }, 'Ver producto') : null),
+        url && t.enTienda !== false ? el('a', { class: 'np-btn np-btn-secundario', href: url }, 'Ver producto') : null),
       el('p', { class: 'np-nota' }, 'El color en pantalla es orientativo y puede variar con la luz y tu pantalla.'));
+  }
+
+  /* ---------- Stock real de Shopify ---------- */
+  producto(handle) {
+    if (!this.productos.has(handle)) {
+      this.productos.set(handle, fetch(`/products/${handle}.js`, { headers: { Accept: 'application/json' } })
+        .then(r => r.ok ? r.json() : null).catch(() => undefined));
+    }
+    return this.productos.get(handle);
+  }
+
+  consultarStock(handles) {
+    const nuevos = handles.filter(h => !this.productos.has(h));
+    if (!nuevos.length) return;
+    Promise.all(nuevos.map(h => this.producto(h).then(p => {
+      if (p === undefined) return; // sin conexión: no marcamos nada
+      for (const t of this.tonos) {
+        if (t.handle !== h) continue;
+        const v = p && varianteDe(p, t);
+        t.enTienda = !!v;
+        t.disponible = !!(v && v.available);
+      }
+    }))).then(() => { this.pintarLista(); if (this.tono) this.pintarFicha(); });
   }
 
   async alCarrito(t) {
     const b = this.btnCesta;
     b.disabled = true; b.textContent = 'Añadiendo…';
     try {
-      const p = await (await fetch(`/products/${t.handle}.js`)).json();
-      const v = p.variants.find(v => v.sku === t.ean || v.barcode === t.ean) || p.variants[0];
+      const p = await this.producto(t.handle);
+      if (!p) throw new Error('cesta');
+      const v = varianteDe(p, t);
       if (!v || !v.available) throw new Error('agotado');
       const r = await fetch('/cart/add.js', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: [{ id: v.id, quantity: 1 }] }) });
       if (!r.ok) throw new Error('cesta');
@@ -406,6 +438,12 @@ class Probador {
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
   }
+}
+
+// Variante del tono: por SKU o código de barras (EAN); si el producto solo tiene una, esa
+function varianteDe(p, t) {
+  const vs = p.variants || [];
+  return vs.find(v => v.sku === t.ean || v.barcode === t.ean) || (vs.length === 1 ? vs[0] : null);
 }
 
 function tonoHue(hex) {

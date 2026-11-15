@@ -124,6 +124,12 @@
 }
 .np-muestra:hover { transform: scale(1.08); }
 .np-muestra[aria-pressed="true"] { outline: 2px solid var(--np-grafito); }
+.np-muestra.np-agotado { position: relative; opacity: .55; box-shadow: none; }
+.np-muestra.np-agotado::after {
+  content: ""; position: absolute; left: 50%; top: -3px; bottom: -3px; width: 2px; margin-left: -1px;
+  background: var(--np-grafito); transform: rotate(45deg); border-radius: 1px; box-shadow: 0 0 0 1px #fff;
+}
+.np-ficha-agotado { font-size: 12px; color: var(--np-frambuesa); font-weight: 500; }
 .np-vacio { margin: 0; color: var(--np-gris); font-size: 14px; }
 
 .np-ficha { border-top: 1px solid var(--np-linea); padding-top: 14px; display: flex; flex-direction: column; gap: 12px; }
