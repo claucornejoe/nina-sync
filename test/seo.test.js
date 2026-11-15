@@ -58,6 +58,13 @@ test('solo escribe descripciones en productos nuevos', () => {
   assert.equal(needs({ ...good, createdAt: '2026-11-10T10:00:00Z' }).description, false);
   assert.equal(needs({ ...good, createdAt: '2026-11-14T10:00:00Z' }).description, true);
   assert.equal(needs({ ...good, createdAt: undefined }).description, false);
+  const sc = { ...good, title: 'Shiseido Men Face Cleanser', tags: ['skin-care', 'sc-limpieza'], descriptionHtml: '', createdAt: '2026-11-12T10:00:00Z' };
+  assert.equal(needs(sc).description, false);
+  process.env.SEO_DESCRIBIR_EXISTENTES = 'skin-care';
+  assert.equal(needs(sc).description, true);
+  assert.equal(needs({ ...sc, descriptionHtml: '<p>Texto propio</p>' }).description, false);
+  assert.equal(needs({ ...good, createdAt: '2026-11-10T10:00:00Z' }).description, false);
+  delete process.env.SEO_DESCRIBIR_EXISTENTES;
   delete process.env.OPENAI_API_KEY;
 });
 
@@ -172,4 +179,11 @@ test('quita líneas repetidas sin negrita', async () => {
   const html = '<p>Hola.</p>\n<ul>\n<li><strong>Tipo:</strong> Eau de Parfum</li>\n<li>tipo: eau de parfum</li>\n<li>para: mujer</li>\n<li>tamaños: 30 ml</li>\n<li>Frasco de vidrio facetado (imagen comercial ampliamente usada)</li>\n<li>Incluye loción corporal de 100 ml</li>\n</ul>';
   assert.equal(stripRedundant(html), '<p>Hola.</p>\n<ul>\n<li><strong>Tipo:</strong> Eau de Parfum</li>\n<li>Incluye loción corporal de 100 ml</li>\n</ul>');
   assert.equal(usefulDetail('Concentración: eau de parfum'), false);
+});
+
+test('cosmética: modo de uso en su propia línea; perfumes sin él', () => {
+  const sc = { ...good, title: 'Shiseido Men Face Cleanser', productType: 'Cuidado de la piel', tags: ['skin-care'], variants: [{ id: 'v', title: '125ml', sku: '', barcodes: [] }] };
+  const html = renderDescription(sc, { intro: 'Espuma limpiadora facial para hombre.', modo_de_uso: 'Aplicar mañana y noche sobre el rostro húmedo y aclarar.', seguro: true });
+  assert.match(html, /<li><strong>Modo de uso:<\/strong> Aplicar mañana y noche sobre el rostro húmedo y aclarar\.<\/li>/);
+  assert.doesNotMatch(renderDescription(good, { intro: 'Floral.', modo_de_uso: 'Pulverizar.', seguro: true }), /Modo de uso/);
 });

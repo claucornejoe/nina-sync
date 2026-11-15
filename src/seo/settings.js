@@ -15,6 +15,9 @@ export const seo = {
   maxPerDay: num('SEO_MAX_PER_DAY', 1500),
   // Solo se escriben descripciones con IA en productos creados desde esta fecha (los nuevos).
   // Las fichas que ya existían no se tocan. Se cambia con SEO_DESCRIPCIONES_DESDE (p. ej. 2026-11-13).
+  // Excepción: productos YA existentes SIN descripción (vacía) con alguna de estas etiquetas también se describen.
+  // Ej.: SEO_DESCRIBIR_EXISTENTES=skin-care. Vacío = solo productos nuevos.
+  describeExisting: () => (process.env.SEO_DESCRIBIR_EXISTENTES || '').split(',').map((t) => t.trim().toLowerCase()).filter(Boolean),
   descSince: () => new Date(process.env.SEO_DESCRIPCIONES_DESDE || '2026-11-13T19:00:00Z'),
   concurrency: num('SEO_CONCURRENCY', 3),
   // Productos con esta etiqueta no se tocan (ni categoría ni descripción).

@@ -17,7 +17,11 @@ const imgFailed = new Map();
 export function isNew(p) {
   const since = seo.descSince();
   if (Number.isNaN(since.getTime())) return true;
-  return !!p.createdAt && new Date(p.createdAt) >= since;
+  if (p.createdAt && new Date(p.createdAt) >= since) return true;
+  // Existentes sin descripción con una etiqueta de SEO_DESCRIBIR_EXISTENTES (p. ej. skin-care).
+  const extra = seo.describeExisting();
+  const empty = !String(p.descriptionHtml || '').replace(/<[^>]+>/g, '').trim();
+  return empty && extra.length > 0 && (p.tags || []).some((t) => extra.includes(t.toLowerCase()));
 }
 
 /** Qué le falta a un producto. */
