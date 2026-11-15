@@ -69,3 +69,24 @@ test('por defecto se suma al pagar', () => {
   assert.equal(r.creditDate(order({ processedAt: '2026-11-14T10:00:00Z' })).toISOString(), '2026-11-14T10:00:00.000Z');
   assert.equal(r.creditDate(order(), false), null);
 });
+
+import { groupExpiring, stageFor, reminderEmail } from '../src/loyalty/expiry.js';
+test('avisos de caducidad: agrupa por día lo que queda y elige el aviso', () => {
+  const now = new Date('2026-11-15T12:00:00Z');
+  const tx = [
+    { expiresAt: '2026-11-20T10:00:00Z', remainingAmount: { amount: '1.20' } },
+    { expiresAt: '2026-11-20T18:00:00Z', remainingAmount: { amount: '0.80' } },
+    { expiresAt: '2026-12-10T10:00:00Z', remainingAmount: { amount: '3.00' } },
+    { expiresAt: '2026-11-18T10:00:00Z', remainingAmount: { amount: '0' } },
+    { expiresAt: '2027-03-01T10:00:00Z', remainingAmount: { amount: '5' } },
+    {},
+  ];
+  const g = groupExpiring(tx, now);
+  assert.deepEqual(g.map((x) => [x.day, x.amount]), [['2026-11-20', 2], ['2026-12-10', 3]]);
+  assert.equal(stageFor(g[0].days), 7);
+  assert.equal(stageFor(g[1].days), 30);
+  assert.equal(stageFor(40), null);
+  const m = reminderEmail({ name: 'Ana', amount: 2, day: '2026-11-20', stage: 7 });
+  assert.match(m.subject, /2,00 €/);
+  assert.match(m.html, /20 de noviembre/);
+});

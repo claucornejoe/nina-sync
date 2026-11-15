@@ -12,6 +12,7 @@ const KIND = {
   'envio-glam': ['Envío gratis Glam', 'nuevo'],
   obsequio: ['Obsequio', 'oferta'],
   cupon: ['Cupón', 'nuevo'],
+  caduca: ['Aviso de caducidad', 'running'],
   error: ['Error', 'error'],
 };
 const chip = (k) => {
@@ -27,7 +28,7 @@ function statusCard({ active, state, hooks }) {
  ${row(active, active ? 'NinaCash activo' : 'Modo prueba', active ? 'Suma saldo, cambia etiquetas de nivel y crea los códigos en Shopify.' : 'Calcula y apunta todo aquí, pero no cambia nada en Shopify. Para activarlo: NINACASH_ACTIVO=true en Railway.')}
  ${row(hooks.estado === 'activos', 'Avisos de pedidos y cuentas nuevas', hooks.estado === 'activos' ? hooks.detalle : hooks.estado)}
  ${row(state.setup === 'listo', 'Segmentos por nivel y envío gratis Butterfly', state.setup)}
- ${row(!!state.lastRun, 'Último repaso', state.lastRun ? `${fmtDate(state.lastRun.at)} · ${state.lastRun.orders} pedidos, ${state.lastRun.customers} clientas${state.lastRun.newSparkle ? `, ${state.lastRun.newSparkle} cuentas nuevas a Sparkle` : ''}${state.lastRun.errors ? ` · ${state.lastRun.errors} errores` : ''}` : 'Cada día a las 5:30 (hora de Madrid)')}
+ ${row(!!state.lastRun, 'Último repaso', state.lastRun ? `${fmtDate(state.lastRun.at)} · ${state.lastRun.orders} pedidos, ${state.lastRun.customers} clientas${state.lastRun.newSparkle ? `, ${state.lastRun.newSparkle} cuentas nuevas a Sparkle` : ''}${state.lastRun.expiryMails ? `, ${state.lastRun.expiryMails} avisos de caducidad` : ''}${state.lastRun.errors ? ` · ${state.lastRun.errors} errores` : ''}` : 'Cada día a las 5:30 (hora de Madrid)')}
 </ul>
 <form method="post" action="/ninacash/repasar" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
  <button class="btn ghost" type="submit">${icon('sync', 18)} Repasar ahora</button>

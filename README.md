@@ -58,3 +58,4 @@ Página **NinaCash** del panel (`/ninacash`). Con avisos de Shopify (`orders/pai
 - **Cupones por nivel**: se crean en el panel eligiendo niveles; Shopify solo los acepta a clientas de esos segmentos. También se puede elegir el segmento al crear un descuento en el admin.
 - **Glam**: un código de envío gratis personal cada mes. **Butterfly**: envío gratis automático y la etiqueta `obsequio-butterfly` en su primer pedido del mes.
 - `NINACASH_ACTIVO=false` (por defecto) es modo prueba: calcula y apunta, pero no cambia nada en Shopify.
+- **Caducidad**: cada saldo caduca a los 12 meses (lo quita Shopify). 30 y 7 días antes, Nina Sync envía un correo desde `avisos@ninabeauty.es` (si hay SMTP) y guarda `nina.ninacash_caduca` (`{importe, fecha}`) para el aviso de Mi cuenta y del carrito.

@@ -13,6 +13,7 @@
 import * as rules from './rules.js';
 import * as store from './store.js';
 import * as sh from './shopify.js';
+import { checkExpiring } from './expiry.js';
 
 export const active = () => process.env.NINACASH_ACTIVO === 'true';
 const GIFT_TAG = process.env.NINACASH_OBSEQUIO_TAG || 'obsequio-butterfly';
@@ -182,6 +183,7 @@ export async function setup() {
     def('gasto_12m', 'Compras últimos 12 meses', 'number_decimal', 'Euros comprados en los últimos 12 meses (lo pone Nina Sync)'),
     def('ninacash', 'Saldo NinaCash', 'number_decimal', 'Saldo disponible en euros (crédito en tienda)'),
     def('ninacash_pendiente', 'NinaCash pendiente', 'number_decimal', 'Se suma 14 días después de la entrega'),
+    def('ninacash_caduca', 'NinaCash que caduca pronto', 'json', '{importe, fecha} del saldo que caduca en los próximos 30 días'),
     def('cupones', 'Cupones personales', 'json', 'Códigos personales activos [{codigo, texto, caduca}]'),
     { key: 'cupones_semana', name: 'Cupones de la semana por nivel', type: 'json', ownerType: 'SHOP', description: '[{codigo, texto, caduca, niveles:[1-4], nivel_min}]' },
   ]);
@@ -236,6 +238,13 @@ export async function dailyRun({ backfill = false } = {}) {
       }
     }
     await publishWeeklyCoupons();
+    try {
+      const x = await checkExpiring({ active: active(), setMetafields: sh.setMetafields, log: store.log });
+      r.expiryMails = x.sent;
+    } catch (e) {
+      r.errors++;
+      await logErr(e);
+    }
   } finally {
     state.busy = false;
     state.lastRun = { at: new Date(), ...r };
