@@ -9,6 +9,7 @@ import { runSync, isRunning } from './sync.js';
 import * as views from './views.js';
 import * as progress from './progress.js';
 import { mountSeo } from './seo/routes.js';
+import { mountLoyalty } from './loyalty/routes.js';
 
 if (!config.panelPassword) throw new Error('Falta PANEL_PASSWORD');
 await db.migrate();
@@ -82,6 +83,7 @@ app.get('/sync/:id', auth, async (req, res) => {
 
 app.get('/ofertas', auth, async (_req, res) => res.send(views.offersPage(await db.activeOffers())));
 await mountSeo(app, auth); // Google y descripciones (categoría + descripción con IA)
+await mountLoyalty(app, auth); // NinaCash, niveles y cupones por nivel
 app.get('/recien-llegados', auth, async (_req, res) => res.send(views.newArrivalsPage(await db.activeNewArrivals())));
 
 // ---- Automática cada 4 horas ----

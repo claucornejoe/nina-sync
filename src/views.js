@@ -59,6 +59,7 @@ const I = {
   layers: '<path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/>',
   back: '<path d="M15 5l-7 7 7 7"/>',
   download: '<path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/>',
+  heart: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/>',
 };
 export const icon = (n, size = 20) =>
   `<svg class="ic" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n]}</svg>`;
@@ -185,6 +186,7 @@ ${refresh ? '<meta http-equiv="refresh" content="15">' : ''}
   ${link('/ofertas', 'ofertas', 'tag', 'Ofertas')}
   ${link('/recien-llegados', 'nuevos', 'spark', 'Recién llegados')}
   ${link('/seo', 'seo', 'layers', 'Google y descripciones')}
+  ${link('/ninacash', 'ninacash', 'heart', 'NinaCash')}
   ${link('/salir', 'salir', 'out', 'Salir')}
  </nav>
  <div class="foot"><img src="/static/mariposa.svg" alt="">Stock y precios con BTS</div>
