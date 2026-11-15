@@ -54,3 +54,9 @@ test('formulario: correo, casilla y variante', () => {
   assert.ok(parseAlertRequest({ email: 'ana@gmail.com', consent: 'on', variant_id: 'abc' }).error);
   assert.ok(parseAlertRequest({ email: 'ana@gmail.com', consent: 'on', variant_id: '1', website: 'x' }).silent, 'campo trampa');
 });
+
+test('correo de Nina Skin Care: azul, sin rosa', () => {
+  const m = renderStockEmail({ ...base, skinCare: true });
+  assert.doesNotMatch(m.html, /#F72E75|#C92F60|#FFCCD5/i);
+  assert.match(m.html, /#4F8496/);
+});

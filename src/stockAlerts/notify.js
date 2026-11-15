@@ -11,7 +11,7 @@ const VARIANTS_Q = `query($ids: [ID!]!) {
     ... on ProductVariant {
       id title price compareAtPrice inventoryQuantity
       image { url }
-      product { id title vendor handle status featuredMedia { preview { image { url } } } }
+      product { id title vendor handle status tags featuredMedia { preview { image { url } } } }
     }
   }
 }`;
@@ -31,6 +31,7 @@ export function emailFor(v, r = config.stockAlerts) {
   const img = v.image?.url || v.product.featuredMedia?.preview?.image?.url || '';
   const sized = img ? img + (img.includes('?') ? '&' : '?') + 'width=400' : '';
   const base = (config.publicUrl || '').replace(/\/$/, '');
+  const skinCare = (v.product.tags || []).some((t) => t === 'skin-care' || t.startsWith('sc-'));
   return renderStockEmail({
     productTitle: v.product.title,
     vendor: v.product.vendor,
@@ -40,7 +41,8 @@ export function emailFor(v, r = config.stockAlerts) {
     imageUrl: sized,
     url: productLink(`${r.storeUrl}/products/${v.product.handle}`, v.id),
     lowStock: v.inventoryQuantity <= r.lowStockMax,
-    logoUrl: `${base}/static/logo-correo.png`,
+    skinCare,
+    logoUrl: `${base}/static/${skinCare ? 'logo-correo-skincare.png' : 'logo-correo.png'}`,
   });
 }
 

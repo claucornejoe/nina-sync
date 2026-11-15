@@ -2,7 +2,11 @@
 // HTML de correo: tablas y estilos en línea para que se vea bien en Gmail, Outlook y el móvil.
 import { esc } from '../views.js';
 
-const C = { rosa: '#F72E75', frambuesa: '#C92F60', petalo: '#FFCCD5', petalo2: '#FFF1F4', grafito: '#2B2B2B', gris: '#6E6E6E', linea: '#F1E4E8' };
+// Nina Beauty en rosa; Nina Skin Care siempre en azul (regla de Clau: nunca rosa en skin care).
+const PALETAS = {
+  beauty: { rosa: '#F72E75', frambuesa: '#C92F60', petalo: '#FFCCD5', petalo2: '#FFF1F4', grafito: '#2B2B2B', gris: '#6E6E6E', linea: '#F1E4E8' },
+  skincare: { rosa: '#89D3E9', frambuesa: '#4F8496', petalo: '#D7EEF5', petalo2: '#EEF8FB', grafito: '#2B2B2B', gris: '#6E6E6E', linea: '#CFE3EA' },
+};
 const SERIF = "'Cormorant Garamond',Georgia,'Times New Roman',serif";
 const SANS = "Montserrat,Helvetica,Arial,sans-serif";
 const eur = (n) => `${Number(n).toFixed(2).replace('.', ',')} €`;
@@ -28,8 +32,10 @@ export function productLink(url, variantId) {
  * @param {string} p.url           enlace a la ficha (ya con variante)
  * @param {boolean} p.lowStock     true si han llegado pocas unidades
  * @param {string} p.logoUrl       PNG del logo (los correos no muestran SVG)
+ * @param {boolean} [p.skinCare]   producto de Nina Skin Care: colores azules y su logo (logoUrl debe ser el de skin care)
  */
 export function renderStockEmail(p) {
+  const C = p.skinCare ? PALETAS.skincare : PALETAS.beauty;
   const size = p.variantTitle && !/default title/i.test(p.variantTitle) ? p.variantTitle : '';
   // «Carolina Herrera Good Girl…» con la marca encima: se quita la marca del nombre para no repetirla.
   const short = p.vendor && p.productTitle.toLowerCase().startsWith(p.vendor.toLowerCase() + ' ') ? p.productTitle.slice(p.vendor.length + 1) : p.productTitle;
@@ -61,7 +67,7 @@ export function renderStockEmail(p) {
     <tr><td align="center" style="padding:8px 22px 22px;font-family:${SANS}">
      ${p.vendor ? `<p style="margin:0 0 4px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:${C.gris}">${esc(p.vendor)}</p>` : ''}
      <p style="margin:0;font-family:${SERIF};font-size:22px;font-weight:600;line-height:1.25;color:${C.grafito}">${esc(name)}</p>
-     <p style="margin:8px 0 0;font-size:17px;font-weight:600;color:${sale ? C.rosa : C.grafito}">${eur(p.price)}${
+     <p style="margin:8px 0 0;font-size:17px;font-weight:600;color:${sale ? C.frambuesa : C.grafito}">${eur(p.price)}${
        sale ? ` <span style="font-weight:400;font-size:14px;color:${C.gris};text-decoration:line-through">${eur(p.compareAt)}</span>` : ''
      }</p>
      <p style="margin:14px 0 0"><span style="display:inline-block;background:${C.petalo};color:${C.frambuesa};font-size:12px;font-weight:600;padding:7px 14px;border-radius:999px">${esc(note)}</span></p>
@@ -76,7 +82,7 @@ export function renderStockEmail(p) {
   <tr><td class="nb-pad" align="center" style="padding:18px 40px 30px;font-family:${SANS};font-size:12px;line-height:1.6;color:${C.gris}">
    Te escribimos una sola vez porque lo pediste en la tienda. Después de este correo borramos tu dirección de la lista de avisos.
   </td></tr>
-  <tr><td align="center" style="background:${C.rosa};padding:16px 24px;font-family:${SANS};font-size:12px;color:#ffffff">
+  <tr><td align="center" style="background:${p.skinCare ? C.frambuesa : C.rosa};padding:16px 24px;font-family:${SANS};font-size:12px;color:#ffffff">
    <a href="https://www.ninabeauty.es" style="color:#ffffff;text-decoration:none;font-weight:600">ninabeauty.es</a> · ¿Dudas? Responde a este correo
   </td></tr>
  </table>
