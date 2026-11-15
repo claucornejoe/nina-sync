@@ -1,0 +1,162 @@
+{%- comment -%} Barra de búsqueda Nina: siempre visible bajo la cabecera, con sugerencias al escribir {%- endcomment -%}
+<style>
+  .nbq{background:#fff;border-bottom:1px solid #F2E3E8;font-family:Montserrat,var(--font-body--family),sans-serif;color:#2B2B2B}
+  .nbq *{box-sizing:border-box}
+  .nbq .visually-hidden{position:absolute !important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .nbq__in{max-width:760px;margin:0 auto;padding:10px 16px 12px;position:relative}
+  .nbq__form{display:flex;align-items:center;gap:8px;background:#FFF5F7;border:1px solid #F2D6DE;border-radius:999px;padding:0 6px 0 16px;transition:border-color .2s,box-shadow .2s}
+  .nbq__form:focus-within{border-color:#C92F60;box-shadow:0 0 0 3px rgba(201,47,96,.15)}
+  .nbq__form svg{flex:none}
+  .nbq__input{flex:1;min-width:0;border:0;background:transparent;font:500 15px Montserrat,var(--font-body--family),sans-serif;color:#2B2B2B;height:46px;outline:none;-webkit-appearance:none;appearance:none}
+  .nbq__input::-webkit-search-cancel-button{display:none}
+  .nbq__input::placeholder{color:#8A7A80}
+  .nbq__btn{flex:none;height:36px;padding:0 16px;border:0;border-radius:999px;background:#C92F60;color:#fff;font:600 13px Montserrat,sans-serif;cursor:pointer}
+  .nbq__btn:hover{background:#9E2149}
+  .nbq__clear{flex:none;width:36px;height:36px;border:0;background:none;cursor:pointer;display:none;align-items:center;justify-content:center;color:#6E6E6E}
+  .nbq.has-q .nbq__clear{display:flex}
+  .nbq__drop{position:absolute;left:16px;right:16px;top:calc(100% - 4px);background:#fff;border:1px solid #F2D6DE;border-radius:18px;box-shadow:0 12px 32px rgba(43,43,43,.12);padding:10px;z-index:30;max-height:70vh;overflow:auto}
+  .nbq__drop[hidden]{display:none}
+  .nbq__lbl{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#6E6E6E;padding:8px 8px 6px}
+  .nbq__chips{display:flex;flex-wrap:wrap;gap:8px;padding:0 8px 8px}
+  .nbq__chip{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border-radius:999px;background:#FFF5F7;border:1px solid #F2D6DE;font-size:13px;font-weight:600;color:#2B2B2B;text-decoration:none}
+  .nbq__chip:hover{border-color:#C92F60;color:#C92F60}
+  .nbq__item{display:flex;gap:12px;align-items:center;padding:8px;border-radius:12px;text-decoration:none;color:#2B2B2B}
+  .nbq__item:hover,.nbq__item[aria-selected="true"]{background:#FFF5F7}
+  .nbq__img{width:52px;height:52px;border-radius:10px;background:#FFF5F7;flex:none;object-fit:contain}
+  .nbq__t{font-size:14px;font-weight:600;line-height:1.3}
+  .nbq__v{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6E6E6E}
+  .nbq__p{font-size:13px;font-weight:700;color:#C92F60}
+  .nbq__all{display:block;text-align:center;margin-top:6px;padding:12px;border-radius:12px;background:#2B2B2B;color:#fff;font-size:14px;font-weight:600;text-decoration:none}
+  .nbq__all:hover{background:#C92F60;color:#fff}
+  .nbq__none{padding:14px 8px;font-size:14px;color:#6E6E6E}
+</style>
+
+<div class="nbq" data-nbq>
+  <div class="nbq__in">
+    <form class="nbq__form" action="{{ routes.search_url }}" method="get" role="search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6E6E6E" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <label for="nbq-{{ section.id }}" class="visually-hidden">Buscar en Nina Beauty</label>
+      <input id="nbq-{{ section.id }}" class="nbq__input" type="search" name="q" value="{{ search.terms | escape }}" placeholder="{{ section.settings.placeholder | escape }}" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="combobox" aria-expanded="false" aria-controls="nbq-drop-{{ section.id }}" aria-autocomplete="list" enterkeyhint="search">
+      <input type="hidden" name="options[prefix]" value="last">
+      <button type="button" class="nbq__clear" aria-label="Borrar búsqueda" data-nbq-clear><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <button type="submit" class="nbq__btn">Buscar</button>
+    </form>
+    <div class="nbq__drop" id="nbq-drop-{{ section.id }}" role="listbox" hidden data-nbq-drop>
+      <div data-nbq-pop>
+        <div class="nbq__lbl">Búsquedas populares</div>
+        <div class="nbq__chips">
+          {%- assign pops = section.settings.popular | split: ',' -%}
+          {%- for p in pops -%}
+            {%- assign pt = p | strip -%}
+            {%- if pt != blank -%}<a class="nbq__chip" href="{{ routes.search_url }}?q={{ pt | url_encode }}&amp;options%5Bprefix%5D=last">{{ pt }}</a>{%- endif -%}
+          {%- endfor -%}
+        </div>
+      </div>
+      <div data-nbq-res></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.currentScript.previousElementSibling;
+  if (!root || !root.matches('[data-nbq]')) return;
+  var input = root.querySelector('.nbq__input');
+  var drop = root.querySelector('[data-nbq-drop]');
+  var pop = root.querySelector('[data-nbq-pop]');
+  var res = root.querySelector('[data-nbq-res]');
+  var clear = root.querySelector('[data-nbq-clear]');
+  var searchUrl = '{{ routes.search_url }}';
+  var suggestUrl = '{{ routes.predictive_search_url }}';
+  var timer, ctrl, last = '';
+  var fmt = new Intl.NumberFormat('es-ES', { style: 'currency', currency: '{{ cart.currency.iso_code | default: "EUR" }}' });
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function open() { drop.hidden = false; input.setAttribute('aria-expanded', 'true'); }
+  function close() { drop.hidden = true; input.setAttribute('aria-expanded', 'false'); }
+  function allLink(q) { return searchUrl + '?q=' + encodeURIComponent(q) + '&options%5Bprefix%5D=last'; }
+
+  function render(q, data) {
+    var r = (data && data.resources && data.resources.results) || {};
+    var prods = r.products || [], cols = r.collections || [];
+    var h = '';
+    if (cols.length) {
+      h += '<div class="nbq__lbl">Categorías</div><div class="nbq__chips">';
+      cols.forEach(function (c) { h += '<a class="nbq__chip" href="' + esc(c.url) + '">' + esc(c.title) + '</a>'; });
+      h += '</div>';
+    }
+    if (prods.length) {
+      h += '<div class="nbq__lbl">Productos</div>';
+      prods.forEach(function (p) {
+        var img = p.featured_image && p.featured_image.url ? p.featured_image.url + (p.featured_image.url.indexOf('?') > -1 ? '&' : '?') + 'width=120' : '';
+        var price = p.price ? fmt.format(parseFloat(p.price)) : '';
+        h += '<a class="nbq__item" role="option" href="' + esc(p.url) + '">' +
+          (img ? '<img class="nbq__img" src="' + esc(img) + '" alt="" loading="lazy">' : '<span class="nbq__img"></span>') +
+          '<span style="display:flex;flex-direction:column;gap:2px;min-width:0"><span class="nbq__v">' + esc(p.vendor) + '</span><span class="nbq__t">' + esc(p.title) + '</span>' +
+          (price ? '<span class="nbq__p">' + (p.price_max && p.price_max !== p.price ? 'Desde ' : '') + price + '</span>' : '') + '</span></a>';
+      });
+    }
+    if (!prods.length && !cols.length) {
+      h += '<div class="nbq__none">No encontramos «' + esc(q) + '». Prueba con otra marca o palabra.</div>';
+    } else {
+      h += '<a class="nbq__all" href="' + allLink(q) + '">Ver todos los resultados de «' + esc(q) + '»</a>';
+    }
+    res.innerHTML = h;
+  }
+
+  function query(q) {
+    if (ctrl) ctrl.abort();
+    ctrl = window.AbortController ? new AbortController() : null;
+    var url = suggestUrl + '.json?q=' + encodeURIComponent(q) +
+      '&resources[type]=product,collection&resources[limit]=6&resources[limit_scope]=each&resources[options][unavailable_products]=last&resources[options][fields]=title,product_type,variants.title,vendor,tag';
+    fetch(url, ctrl ? { signal: ctrl.signal } : {})
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (input.value.trim() === q) render(q, d); })
+      .catch(function () {});
+  }
+
+  function update() {
+    var q = input.value.trim();
+    root.classList.toggle('has-q', q.length > 0);
+    if (q === last) return;
+    last = q;
+    clearTimeout(timer);
+    if (q.length < 2) { res.innerHTML = ''; pop.hidden = false; return; }
+    pop.hidden = true;
+    timer = setTimeout(function () { query(q); }, 220);
+  }
+
+  input.addEventListener('input', function () { update(); open(); });
+  input.addEventListener('focus', function () { update(); open(); });
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { close(); input.blur(); return; }
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+    var items = Array.prototype.slice.call(res.querySelectorAll('.nbq__item'));
+    if (!items.length) return;
+    e.preventDefault();
+    var i = items.findIndex(function (x) { return x.getAttribute('aria-selected') === 'true'; });
+    items.forEach(function (x) { x.removeAttribute('aria-selected'); });
+    i = e.key === 'ArrowDown' ? Math.min(i + 1, items.length - 1) : Math.max(i - 1, 0);
+    items[i].setAttribute('aria-selected', 'true');
+    items[i].focus();
+  });
+  clear.addEventListener('click', function () { input.value = ''; update(); input.focus(); });
+  document.addEventListener('click', function (e) { if (!root.contains(e.target)) close(); });
+  root.addEventListener('focusout', function () { setTimeout(function () { if (!root.contains(document.activeElement)) close(); }, 0); });
+  if (input.value) root.classList.add('has-q');
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Nina · Buscador",
+  "tag": "div",
+  "class": "nina-buscador",
+  "settings": [
+    { "type": "text", "id": "placeholder", "label": "Texto de ayuda", "default": "Busca perfume, marca o tono" },
+    { "type": "textarea", "id": "popular", "label": "Búsquedas populares (con comas)", "default": "Lattafa, Paco Rabanne, Carolina Herrera, Estuches, Perfumes árabes, Sérum, Labial" }
+  ],
+  "enabled_on": { "groups": ["header"] },
+  "presets": [{ "name": "Nina · Buscador" }]
+}
+{% endschema %}

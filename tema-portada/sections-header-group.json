@@ -114,10 +114,15 @@
         "enable_transparent_header_product": false,
         "enable_transparent_header_collection": false
       }
+    },
+    "nina_buscador": {
+      "type": "nina-buscador",
+      "settings": {}
     }
   },
   "order": [
     "header_announcements_9jGBFp",
-    "header_section"
+    "header_section",
+    "nina_buscador"
   ]
 }
