@@ -9,9 +9,9 @@ import * as store from './store.js';
 const VARIANTS_Q = `query($ids: [ID!]!) {
   nodes(ids: $ids) {
     ... on ProductVariant {
-      id title price compareAtPrice inventoryQuantity
+      id title sku price compareAtPrice inventoryQuantity
       image { url }
-      product { id title vendor handle status tags featuredMedia { preview { image { url } } } }
+      product { id title vendor handle status tags productType featuredMedia { preview { image { url } } } }
     }
   }
 }`;
