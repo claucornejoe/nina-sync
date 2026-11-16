@@ -221,6 +221,7 @@
     <span style="color:#111;font-weight:600">{{ collection.title }}</span>
   </nav>
 
+  {%- unless collection.handle == 'all' -%}
   {%- liquid
     assign titulo = collection.title
     assign ult = titulo | split: ' ' | last
@@ -303,6 +304,8 @@
       </div>
     </section>
   {%- endif -%}
+
+  {%- endunless -%}
 
   {%- paginate collection.products by section.settings.por_pagina -%}
   <div class="nbc-bar" id="nbc-resultados">

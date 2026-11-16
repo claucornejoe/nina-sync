@@ -1,0 +1,27 @@
+{%- doc -%}
+  Círculo con imagen para una colección (catálogo Nina).
+  @param {object} cc - La colección
+{%- enddoc -%}
+{%- liquid
+  assign img = cc.image
+  if img == blank
+    assign img = cc.featured_image
+  endif
+  assign nombre = cc.title
+  if cc.handle == 'skin-care' or cc.handle == 'maquillaje' or cc.handle == 'virales-nina'
+    assign nombre = 'Ver todo'
+  endif
+-%}
+<li>
+  <a href="{{ cc.url }}">
+    <span class="nct-img" aria-hidden="true">
+      {%- if img -%}
+        {{ img | image_url: width: 240, height: 240, crop: 'center' | image_tag: loading: 'lazy', alt: '', width: 120, height: 120 }}
+      {%- else -%}
+        <span class="nct-mariposa"></span>
+      {%- endif -%}
+    </span>
+    <span class="nct-name">{{ nombre }}</span>
+    {%- if cc.products_count > 0 -%}<span class="nct-count">{{ cc.products_count }} productos</span>{%- endif -%}
+  </a>
+</li>

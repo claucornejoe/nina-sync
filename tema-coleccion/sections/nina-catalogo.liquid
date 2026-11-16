@@ -1,0 +1,146 @@
+{%- comment -%}
+  Nina Beauty · Catálogo: todas las secciones de la tienda en círculos con imagen.
+  Se ve en /collections (lista de colecciones) y en /collections/all (encima de los productos).
+  En /collections/all solo se muestra si la colección es «all»; en otras colecciones no pinta nada.
+{%- endcomment -%}
+{%- liquid
+  assign mostrar = false
+  if template.name == 'list-collections'
+    assign mostrar = true
+  elsif collection.handle == 'all'
+    assign mostrar = true
+  endif
+-%}
+{%- if mostrar -%}
+{%- liquid
+  assign grupos = 'perfumeria|Perfumería|Fragancias originales para ella, para él y para regalar.|pink|perfumes-mujer,perfumes-hombre,perfumes-unisex,perfumes-arabes,estuches;maquillaje|Maquillaje|Labios, ojos, rostro y uñas de las marcas que te gustan.|dark|maquillaje,maquillaje-labios,maquillaje-ojos,maquillaje-rostro,maquillaje-unas,maquillaje-sets,maquillaje-accesorios;skin|Nina Skin Care|Rutinas para cuidar tu piel, de la limpieza a la protección solar.|skin|skin-care,skin-care-coreano,skin-care-limpieza,skin-care-tonicos,skin-care-serums,skin-care-cremas,skin-care-ojos-labios,skin-care-mascarillas,skin-care-solar,skin-care-corporal,skin-care-hombre,skin-care-sets,skin-care-suplementos;virales|ViralesNina|Lo que se hace viral: gadgets, cabello, uñas y más.|pink|virales-nina,virales-gadgets,virales-cabello,virales-unas,virales-brochas,virales-organizadores,virales-bienestar;especiales|Especiales|Ofertas, novedades e ideas para regalar.|dark|ofertas-de-la-semana,recien-llegados,ideas-para-navidad' | split: ';'
+  assign usados = 'frontpage,all,'
+  for g in grupos
+    assign partes = g | split: '|'
+    assign usados = usados | append: partes[4] | append: ','
+  endfor
+  assign usados_lista = usados | split: ','
+-%}
+<style>
+  .nct{max-width:1360px;margin:0 auto;padding:16px 24px 32px;font-family:var(--font-body--family);color:#111}
+  .nct *{box-sizing:border-box}
+  .nct h1,.nct h2{font-family:var(--font-heading--family);font-weight:600;margin:0}
+  .nct-hero{background:#111;color:#fff;border-radius:20px;padding:36px 40px;display:flex;flex-wrap:wrap;gap:16px 32px;align-items:flex-end;justify-content:space-between;margin-bottom:22px}
+  .nct-hero h1{font-size:clamp(38px,5vw,58px);line-height:1.02;color:#fff}
+  .nct-hero h1 span{color:#F72E75;font-style:italic}
+  .nct-hero p{margin:8px 0 0;font-size:15px;line-height:1.6;max-width:520px;color:#EDEDED}
+  .nct-jump{display:flex;flex-wrap:wrap;gap:8px}
+  .nct-jump a{text-decoration:none;color:#111;background:#F72E75;font-size:13px;font-weight:700;padding:11px 16px;border-radius:999px}
+  .nct-jump a.is-skin{background:#89D3E9;color:#2B2B2B}
+  .nct-jump a.is-dark{background:#fff;color:#111}
+  .nct-group{border-radius:20px;padding:28px 28px 22px;margin-bottom:18px;scroll-margin-top:110px;background:#FFF4F6}
+  .nct-group--dark{background:#F6F2F3}
+  .nct-group--skin{background:#E3F3F8}
+  .nct-group__head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 20px;margin-bottom:20px}
+  .nct-group__head h2{font-size:34px;line-height:1.05}
+  .nct-group__head p{margin:4px 0 0;font-size:14px;line-height:1.5}
+  .nct-group__head img{display:block;height:58px;width:auto}
+  .nct-all{text-decoration:none;font-size:13px;font-weight:700;color:#fff;background:#111;padding:12px 18px;border-radius:999px;white-space:nowrap}
+  .nct-group--skin .nct-all{background:#2B2B2B}
+  .nct-circles{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:22px 12px}
+  .nct-circles a{text-decoration:none;color:#111;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+  .nct-img{width:108px;height:108px;border-radius:50%;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 3px #fff,0 0 0 5px #F72E75;transition:transform .2s,box-shadow .2s}
+  .nct-group--dark .nct-img{box-shadow:0 0 0 3px #fff,0 0 0 5px #111}
+  .nct-group--skin .nct-img{box-shadow:0 0 0 3px #fff,0 0 0 5px #89D3E9}
+  .nct-img img{width:100%;height:100%;object-fit:cover}
+  .nct-img .nct-mariposa{width:40px;height:48px;background:#F72E75;-webkit-mask:url('{{ 'nina-skincare-mariposa-azul.svg' | asset_url }}') center/contain no-repeat;mask:url('{{ 'nina-skincare-mariposa-azul.svg' | asset_url }}') center/contain no-repeat}
+  .nct-group--skin .nct-mariposa{background:#89D3E9}
+  .nct-group--dark .nct-mariposa{background:#111}
+  .nct-circles a:hover .nct-img,.nct-circles a:focus-visible .nct-img{transform:scale(1.05)}
+  .nct-name{font-size:13px;font-weight:600;line-height:1.3}
+  .nct-count{font-size:11px;color:#5E5E5E;margin-top:-6px}
+  .nct :focus-visible{outline:2px solid #111;outline-offset:3px}
+  @media (max-width:700px){
+    .nct{padding:8px 16px 24px}
+    .nct-hero{padding:26px 20px}
+    .nct-group{padding:22px 14px 18px}
+    .nct-group__head h2{font-size:28px}
+    .nct-circles{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px 8px}
+    .nct-img{width:88px;height:88px}
+  }
+</style>
+
+<div class="nct">
+  <section class="nct-hero">
+    <div>
+      <h1>Todo el <span>catálogo</span></h1>
+      <p>Elige una sección y encuentra lo que buscas: perfumes, maquillaje, cuidado de la piel y los productos más virales.</p>
+    </div>
+    <nav class="nct-jump" aria-label="Ir a una sección">
+      {%- for g in grupos -%}
+        {%- assign partes = g | split: '|' -%}
+        <a href="#nct-{{ partes[0] }}" class="{% if partes[3] == 'skin' %}is-skin{% elsif partes[3] == 'dark' %}is-dark{% endif %}">{{ partes[1] }}</a>
+      {%- endfor -%}
+    </nav>
+  </section>
+
+  {%- for g in grupos -%}
+    {%- liquid
+      assign partes = g | split: '|'
+      assign handles = partes[4] | split: ','
+      assign hay = false
+      for hh in handles
+        if collections[hh].id != blank
+          assign hay = true
+        endif
+      endfor
+      assign primero = collections[handles[0]]
+    -%}
+    {%- if hay -%}
+      <section class="nct-group nct-group--{{ partes[3] }}" id="nct-{{ partes[0] }}" aria-labelledby="nct-t-{{ partes[0] }}">
+        <div class="nct-group__head">
+          <div>
+            {%- if partes[3] == 'skin' -%}
+              <h2 id="nct-t-{{ partes[0] }}"><img src="{{ 'nina-skincare-logo-azul.svg' | asset_url }}" alt="Nina Skin Care" width="116" height="58" loading="lazy"></h2>
+            {%- else -%}
+              <h2 id="nct-t-{{ partes[0] }}">{{ partes[1] }}</h2>
+            {%- endif -%}
+            <p>{{ partes[2] }}</p>
+          </div>
+          {%- if primero.id != blank and primero.products_count > 0 -%}
+            <a class="nct-all" href="{{ primero.url }}">Ver todo</a>
+          {%- endif -%}
+        </div>
+        <ul class="nct-circles">
+          {%- for hh in handles -%}
+            {%- assign cc = collections[hh] -%}
+            {%- if cc.id != blank -%}
+              {%- render 'nina-circulo', cc: cc -%}
+            {%- endif -%}
+          {%- endfor -%}
+        </ul>
+      </section>
+    {%- endif -%}
+  {%- endfor -%}
+
+  {%- capture otros -%}
+    {%- for cc in collections -%}
+      {%- unless usados_lista contains cc.handle -%}
+        {%- if cc.products_count > 0 -%}{%- render 'nina-circulo', cc: cc -%}{%- endif -%}
+      {%- endunless -%}
+    {%- endfor -%}
+  {%- endcapture -%}
+  {%- if otros != blank -%}
+    <section class="nct-group nct-group--dark" id="nct-otros" aria-labelledby="nct-t-otros">
+      <div class="nct-group__head"><div><h2 id="nct-t-otros">Más colecciones</h2></div></div>
+      <ul class="nct-circles">{{ otros }}</ul>
+    </section>
+  {%- endif -%}
+</div>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Nina · Catálogo",
+  "enabled_on": { "templates": ["collection", "list-collections"] },
+  "settings": [
+    { "type": "paragraph", "content": "Muestra todas las secciones en círculos. Solo aparece en /collections y en /collections/all. Si una colección no tiene imagen, usa la foto de su primer producto." }
+  ],
+  "presets": [{ "name": "Nina · Catálogo" }]
+}
+{% endschema %}

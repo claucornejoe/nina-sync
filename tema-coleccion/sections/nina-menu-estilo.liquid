@@ -1,0 +1,33 @@
+{%- comment -%}
+  Nina Beauty · Estilo del menú desplegable: subcategorías en círculos con imagen,
+  repartidas en horizontal. El desplegable de Nina Skin Care usa sus colores azules.
+  Necesita el bloque de menú en «Imágenes de colecciones» (menu_style: collection_images).
+{%- endcomment -%}
+<style>
+  .menu-list__submenu .mega-menu__list:has(.mega-menu__link-image){display:flex !important;flex-wrap:wrap;justify-content:center;gap:22px 10px;grid-column:1 / -1}
+  .menu-list__submenu .mega-menu__list:has(.mega-menu__link-image) > .mega-menu__column{flex:0 0 112px;max-width:112px;grid-column:auto !important}
+  .menu-list__submenu .mega-menu__grid:has(.mega-menu__link-image){display:block !important}
+  .menu-list__submenu .mega-menu__link:has(.mega-menu__link-image){display:flex !important;flex-direction:column;align-items:center;gap:8px;text-align:center;font-size:13px;line-height:1.3}
+  .menu-list__submenu .mega-menu__link-image{width:96px !important;height:96px !important;max-width:none;aspect-ratio:1/1 !important;border-radius:50% !important;object-fit:cover;background:#fff;box-shadow:0 0 0 3px #fff,0 0 0 5px #FFCCD5;transition:transform .2s,box-shadow .2s;margin:0 auto}
+  .menu-list__submenu .mega-menu__link:hover .mega-menu__link-image,
+  .menu-list__submenu .mega-menu__link:focus-visible .mega-menu__link-image{transform:scale(1.05);box-shadow:0 0 0 3px #fff,0 0 0 5px #F72E75}
+  .menu-list__submenu .mega-menu__link:not(:has(.mega-menu__link-image))::before{display:none !important}
+  .menu-list__submenu .mega-menu__list:has(.mega-menu__link-image) .mega-menu__link:not(:has(.mega-menu__link-image)){display:flex !important;flex-direction:column;align-items:center;gap:8px;text-align:center;font-size:13px}
+  .menu-list__submenu .mega-menu__list:has(.mega-menu__link-image) .mega-menu__link:not(:has(.mega-menu__link-image))::after{content:'';order:-1;width:96px;height:96px;border-radius:50%;background:#FFF4F6;box-shadow:0 0 0 3px #fff,0 0 0 5px #FFCCD5}
+  /* Nina Skin Care: colores de la submarca */
+  .menu-list__submenu:has(a[href*="/collections/skin-care"]) .menu-list__submenu-inner{background:#E3F3F8}
+  .menu-list__submenu:has(a[href*="/collections/skin-care"]) .mega-menu__link{color:#2B2B2B}
+  .menu-list__submenu:has(a[href*="/collections/skin-care"]) .mega-menu__link-image{box-shadow:0 0 0 3px #fff,0 0 0 5px #89D3E9}
+  .menu-list__submenu:has(a[href*="/collections/skin-care"]) .mega-menu__link:hover .mega-menu__link-image{box-shadow:0 0 0 3px #fff,0 0 0 5px #90B7C3}
+  .menu-list__submenu:has(a[href*="/collections/skin-care"]) .mega-menu__link:not(:has(.mega-menu__link-image))::after{background:#fff;box-shadow:0 0 0 3px #fff,0 0 0 5px #89D3E9}
+</style>
+
+{% schema %}
+{
+  "name": "Nina · Estilo del menú",
+  "settings": [
+    { "type": "paragraph", "content": "Pone las subcategorías del menú desplegable en círculos con imagen. No tiene ajustes." }
+  ],
+  "presets": [{ "name": "Nina · Estilo del menú" }]
+}
+{% endschema %}

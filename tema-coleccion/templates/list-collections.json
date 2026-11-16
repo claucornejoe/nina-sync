@@ -1,0 +1,11 @@
+{
+  "sections": {
+    "nina_catalogo": {
+      "type": "nina-catalogo",
+      "settings": {}
+    }
+  },
+  "order": [
+    "nina_catalogo"
+  ]
+}
