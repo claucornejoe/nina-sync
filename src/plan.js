@@ -23,6 +23,7 @@ export function planSync(variants, bts, r, prevCosts = new Map()) {
 
   for (const v of variants) {
     if (!v.ean) continue;
+    if (r.skipTags?.some((t) => v.tags?.includes(t))) continue; // no es de BTS (ViralesNina): no se toca
     const base = { ean: v.ean, productTitle: v.productTitle, variantTitle: v.variantTitle, productId: v.productId };
     const b = bts.get(v.ean);
     if (!byProduct.has(v.productId)) byProduct.set(v.productId, { title: v.productTitle, tags: v.tags || [], bts: [] });
