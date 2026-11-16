@@ -44,6 +44,8 @@ export const config = {
     offerTag: process.env.OFFER_TAG || 'oferta-semana',
     offerDays: num('OFFER_DAYS', 7),
     manualPriceTag: process.env.MANUAL_PRICE_TAG || 'precio-manual',
+    // Productos que no vienen de BTS (p. ej. ViralesNina, de AliExpress): la sincronización no los toca.
+    skipTags: (process.env.SKIP_SYNC_TAGS || 'virales-nina').split(',').map((t) => t.trim()).filter(Boolean),
     newProductsDays: num('NEW_PRODUCTS_DAYS', 7),
     newArrivalTag: process.env.NEW_ARRIVAL_TAG || 'recien-llegado',
     newArrivalDays: num('NEW_ARRIVAL_DAYS', 30),

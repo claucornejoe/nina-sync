@@ -73,3 +73,10 @@ test('el informe se dibuja', () => {
   assert.match(html, /A &lt;b&gt;/);
   assert.match(changesCsv(changes), /Baja de precio/);
 });
+
+test('productos ViralesNina (no son de BTS) no se tocan', () => {
+  const p = planSync([v({ ean: '9', available: 4, price: 10, tags: ['virales-nina'] })], new Map(), { ...r, skipTags: ['virales-nina'] });
+  assert.equal(p.stockUpdates.length, 0);
+  assert.equal(p.changes.length, 0);
+  assert.equal(p.missing, 0);
+});

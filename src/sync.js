@@ -47,7 +47,7 @@ async function doSync(trigger, dryRun) {
     // 3. Planificar.
     const prevCosts = await db.getCosts([...bts.keys()]);
     const plan = planSync(variants, bts, r, prevCosts);
-    const withEan = variants.filter((v) => v.ean).length;
+    const withEan = variants.filter((v) => v.ean && !r.skipTags?.some((t) => v.tags?.includes(t))).length;
     if (withEan > 20 && plan.missing > withEan * 0.5) {
       throw new Error(`BTS no trae ${plan.missing} de ${withEan} EAN: parece un fallo de BTS, no se toca nada`);
     }
