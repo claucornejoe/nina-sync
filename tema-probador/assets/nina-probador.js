@@ -54,6 +54,19 @@ class Probador {
     this.fuente = null; // video o imagen
     this.landmarks = null;
     this.productos = new Map(); // handle -> datos de Shopify (stock real)
+    // Stock que la sección ya trae renderizado desde Shopify: [[sku, código de barras, disponible], ...]
+    this.stockTema = new Map();
+    const js = (root.closest('.np-seccion') || root.parentElement || document).querySelector('script[data-np-stock]');
+    if (js) {
+      try {
+        for (const fila of JSON.parse(js.textContent)) {
+          if (!fila) continue;
+          const [sku, barcode, disponible] = fila;
+          if (sku) this.stockTema.set(String(sku), disponible);
+          if (barcode) this.stockTema.set(String(barcode), disponible);
+        }
+      } catch (e) { console.warn('[Nina probador] stock del tema ilegible', e); }
+    }
     this.montar();
     this.cargarTonos();
   }
@@ -226,13 +239,26 @@ class Probador {
   /* ---------- Stock real de Shopify ---------- */
   producto(handle) {
     if (!this.productos.has(handle)) {
-      this.productos.set(handle, fetch(`/products/${handle}.js`, { headers: { Accept: 'application/json' } })
-        .then(r => r.ok ? r.json() : null).catch(() => undefined));
+      const raiz = (window.Shopify && Shopify.routes && Shopify.routes.root) || '/';
+      this.productos.set(handle, fetch(`${raiz}products/${handle}.js`, { credentials: 'same-origin' })
+        .then(r => {
+          if (r.status === 404) return null;
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.json();
+        })
+        .then(p => (p && p.product) ? p.product : p)
+        .catch(e => { console.warn('[Nina probador] stock no disponible para', handle, e); return undefined; }));
     }
     return this.productos.get(handle);
   }
 
   consultarStock(handles) {
+    // 1) Stock renderizado por el tema (fiable y sin peticiones)
+    for (const t of this.tonos) {
+      if (t.disponible === undefined && this.stockTema.has(t.ean)) { t.enTienda = true; t.disponible = this.stockTema.get(t.ean); }
+    }
+    // 2) Para lo que falte, se pregunta a la tienda
+    handles = handles.filter(h => this.tonos.some(t => t.handle === h && t.disponible === undefined));
     const nuevos = handles.filter(h => !this.productos.has(h));
     if (!nuevos.length) return;
     Promise.all(nuevos.map(h => this.producto(h).then(p => {
@@ -240,8 +266,8 @@ class Probador {
       for (const t of this.tonos) {
         if (t.handle !== h) continue;
         const v = p && varianteDe(p, t);
-        t.enTienda = !!v;
-        t.disponible = !!(v && v.available);
+        // Solo se tacha cuando Shopify confirma que el tono está agotado
+        if (v && typeof v.available === 'boolean') { t.enTienda = true; t.disponible = v.available; }
       }
     }))).then(() => { this.pintarLista(); if (this.tono) this.pintarFicha(); });
   }
