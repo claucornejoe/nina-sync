@@ -26,13 +26,13 @@
   >
     <noscript>Para usar el probador virtual necesitas activar JavaScript.</noscript>
   </div>
-  {%- comment -%} Stock real de los tonos del probador (colección «probador-labios»): [sku, código de barras, disponible] {%- endcomment -%}
+  {%- comment -%} Stock real de los tonos del probador (colección «probador-labios»): [sku, código de barras, disponible, unidades, política, gestión] {%- endcomment -%}
   {%- assign np_coleccion = collections['probador-labios'] -%}
   <script type="application/json" data-np-stock>[
     {%- if np_coleccion -%}
       {%- paginate np_coleccion.products by 100 -%}
         {%- for p in np_coleccion.products -%}
-          {%- for v in p.variants -%}["{{ v.sku | escape }}","{{ v.barcode | escape }}",{{ v.available }}],{%- endfor -%}
+          {%- for v in p.variants -%}["{{ v.sku | escape }}","{{ v.barcode | escape }}",{{ v.available }},{{ v.inventory_quantity | default: 0 }},"{{ v.inventory_policy }}","{{ v.inventory_management }}"],{%- endfor -%}
         {%- endfor -%}
       {%- endpaginate -%}
     {%- endif -%}

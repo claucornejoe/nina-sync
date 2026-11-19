@@ -61,11 +61,18 @@ class Probador {
       try {
         for (const fila of JSON.parse(js.textContent)) {
           if (!fila) continue;
-          const [sku, barcode, disponible] = fila;
-          if (sku) this.stockTema.set(String(sku), disponible);
-          if (barcode) this.stockTema.set(String(barcode), disponible);
+          // [sku, código de barras, disponible, unidades, política, gestión]
+          const [sku, barcode, , unidades, politica, gestion] = fila;
+          // Se mira el inventario real y no «available», que depende del país desde el que se mira
+          // la tienda (desde Chile Shopify da todo como no disponible). Solo se tacha si Shopify
+          // controla el stock, no deja vender sin stock y quedan 0 unidades.
+          const agotado = !!gestion && politica !== 'continue' && typeof unidades === 'number' && unidades <= 0;
+          if (sku) this.stockTema.set(String(sku), !agotado);
+          if (barcode) this.stockTema.set(String(barcode), !agotado);
         }
       } catch (e) { console.warn('[Nina probador] stock del tema ilegible', e); }
+      const n = [...this.stockTema.values()];
+      console.info(`[Nina probador] stock del tema: ${n.filter(Boolean).length} con stock, ${n.filter(x => !x).length} agotados`);
     }
     this.montar();
     this.cargarTonos();
@@ -266,8 +273,10 @@ class Probador {
       for (const t of this.tonos) {
         if (t.handle !== h) continue;
         const v = p && varianteDe(p, t);
-        // Solo se tacha cuando Shopify confirma que el tono está agotado
-        if (v && typeof v.available === 'boolean') { t.enTienda = true; t.disponible = v.available; }
+        // Aquí «available» depende del país del visitante, así que no sirve para tachar:
+        // solo se marca «Próximamente» cuando el producto no existe en la tienda.
+        if (p === null) { t.enTienda = false; t.disponible = false; }
+        else if (v) { t.enTienda = true; t.disponible = true; }
       }
     }))).then(() => { this.pintarLista(); if (this.tono) this.pintarFicha(); });
   }
@@ -279,7 +288,7 @@ class Probador {
       const p = await this.producto(t.handle);
       if (!p) throw new Error('cesta');
       const v = varianteDe(p, t);
-      if (!v || !v.available) throw new Error('agotado');
+      if (!v || t.disponible === false) throw new Error('agotado');
       const r = await fetch('/cart/add.js', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: [{ id: v.id, quantity: 1 }] }) });
       if (!r.ok) throw new Error('cesta');
       b.textContent = 'Añadido a la cesta ✓';
