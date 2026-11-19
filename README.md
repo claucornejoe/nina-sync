@@ -30,6 +30,20 @@ Página **Google y descripciones** del panel (`/seo`). A cada producto, en cuant
 
 Desde la página se puede probar con un producto (ver sin guardar o rehacer y guardar) y lanzar un repaso de todo. El aviso de productos nuevos se registra solo al arrancar si `PUBLIC_URL` está puesta.
 
+## Foro Nina
+
+Página **Foro Nina** del panel (`/foro`) y foro público en **www.ninabeauty.es/apps/foro**, todo en español de España y con el diseño Nina.
+
+- Las clientas leen sin cuenta; para **abrir un tema o responder** inician sesión con su cuenta de Nina Beauty. Eligen su nombre en el foro (se propone «Laura M.»); el correo nunca se muestra.
+- La primera vez aceptan las normas, la política de privacidad y que tienen **14 años o más** (edad de consentimiento en España).
+- **Moderación**: por defecto revisas todo antes de publicarlo (`FORO_MODERACION=previa`). Con `confianza`, las clientas con 2 mensajes aprobados publican directamente, salvo que el texto lleve enlaces, redes, teléfonos, correos, insultos o promesas de salud.
+- «Me ayudó», «Avisar de un problema» (con 3 avisos se oculta hasta que lo revises), temas destacados, respuestas con la etiqueta **Equipo Nina** y bloqueo de clientas.
+- Correo a `REPORT_TO` cuando hay mensajes por revisar (como mucho uno cada 30 minutos).
+- SEO: las páginas se sirven en el dominio de la tienda, dentro del tema, con datos estructurados `DiscussionForumPosting` en `es-ES`.
+- `/apps/foro/ultimos.json` da los últimos temas para mostrarlos en el Nina Blog.
+
+**Activarlo (una vez):** en el Dev Dashboard de Shopify, app Nina Sync → configuración → **Proxy de la aplicación**: prefijo `apps`, subruta `foro`, URL `https://<tu-dominio-de-railway>/proxy/foro`. Publica la versión. Las peticiones llegan firmadas con el secreto de la app (`SHOPIFY_CLIENT_SECRET`) y Nina Sync rechaza las que no lo están.
+
 ## Puesta en marcha en Railway
 
 1. **New Project → Deploy from GitHub repo** → `nina-sync`.
