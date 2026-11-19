@@ -12,14 +12,26 @@ const LABIO_EXT = [61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291, 375, 321, 40
 const LABIO_INT = [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308, 324, 318, 402, 317, 14, 87, 178, 88, 95];
 const LABIO_INF_CENTRO = [14, 17]; // para el brillo
 
-// Cómo se mezcla cada acabado: cubrir (normal), color (tono), multiplicar (profundidad), brillo
+// Cada acabado: opacidad (cuánto cubre), textura (cuánto se ven las líneas y sombras del labio),
+// brillo (reflejos que siguen la luz real) y reflejo (brillo extra en el centro, solo gloss)
 const ACABADOS = {
-  mate:     { cubre: 0.42, color: 0.55, mult: 0.30, brillo: 0 },
-  satinado: { cubre: 0.36, color: 0.55, mult: 0.25, brillo: 0.18 },
-  brillo:   { cubre: 0.26, color: 0.50, mult: 0.18, brillo: 0.38 },
-  tinte:    { cubre: 0.18, color: 0.45, mult: 0.22, brillo: 0.10 },
-  lapiz:    { cubre: 0.40, color: 0.55, mult: 0.30, brillo: 0 },
+  mate:     { opacidad: 0.86, textura: 0.55, brillo: 0.05, reflejo: 0 },
+  satinado: { opacidad: 0.80, textura: 0.75, brillo: 0.40, reflejo: 0.10 },
+  brillo:   { opacidad: 0.66, textura: 0.90, brillo: 0.85, reflejo: 0.30 },
+  tinte:    { opacidad: 0.46, textura: 1.00, brillo: 0.25, reflejo: 0 },
+  lapiz:    { opacidad: 0.84, textura: 0.55, brillo: 0.05, reflejo: 0 },
 };
+const PUNTOS_LABIO = [...new Set([...LABIO_EXT, ...LABIO_INT, 61, 291, 0, 13, 14, 17])];
+const hexRGB = h => { const n = parseInt(h.slice(1), 16); return [n >> 16, n >> 8 & 255, n & 255]; };
+// Curva suave y cerrada que pasa por el centro de cada tramo (sin esquinas)
+const curva = (c, pts) => {
+  const n = pts.length, mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+  c.beginPath();
+  const m0 = mid(pts[n - 1], pts[0]); c.moveTo(m0[0], m0[1]);
+  for (let i = 0; i < n; i++) { const p = pts[i], m = mid(p, pts[(i + 1) % n]); c.quadraticCurveTo(p[0], p[1], m[0], m[1]); }
+  c.closePath();
+};
+
 const NOMBRE_ACABADO = { mate: 'Mate', satinado: 'Satinado', brillo: 'Brillo', tinte: 'Tinte', lapiz: 'Perfilador' };
 
 const euros = n => n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR' });
@@ -392,9 +404,27 @@ class Probador {
     const ts = Math.max(ahora, this.ts + 1); this.ts = ts;
     try {
       const r = this._detSync.detectForVideo(this.fuente, ts);
-      this.landmarks = r.faceLandmarks && r.faceLandmarks[0] || null;
+      this.landmarks = this.suavizar(r.faceLandmarks && r.faceLandmarks[0] || null);
     } catch (e) { this.landmarks = null; }
     this.aviso.hidden = !!this.landmarks;
+  }
+
+  // Filtro adaptativo: con la cara quieta promedia (no tiembla); con movimiento rápido sigue al instante
+  suavizar(lm) {
+    if (!lm) { this.previos = null; return null; }
+    if (this.fuente !== this.video) { this.previos = null; return lm; }
+    const ancho = Math.hypot(lm[61].x - lm[291].x, lm[61].y - lm[291].y) || 0.1;
+    const prev = this.previos, sal = lm.slice();
+    if (prev) {
+      for (const i of PUNTOS_LABIO) {
+        const a = lm[i], b = prev[i];
+        const d = Math.hypot(a.x - b.x, a.y - b.y) / ancho;
+        const k = Math.min(1, 0.28 + d * 9);
+        sal[i] = { x: b.x + (a.x - b.x) * k, y: b.y + (a.y - b.y) * k, z: a.z };
+      }
+    }
+    this.previos = sal;
+    return sal;
   }
 
   pararCamara() {
@@ -432,56 +462,104 @@ class Probador {
   }
 
   labios(lm, t) {
-    const { ctx, mask, capa } = this, W = mask.width, H = mask.height;
+    const { ctx, mask } = this, W = mask.width, H = mask.height;
     const a = ACABADOS[t.acabado] || ACABADOS.mate, k = this.intensidad;
     const P = i => [lm[i].x * W, lm[i].y * H];
-    const anchoBoca = Math.hypot(P(61)[0] - P(291)[0], P(61)[1] - P(291)[1]);
-    const camino = (c, idx) => { c.beginPath(); idx.forEach((i, n) => { const [x, y] = P(i); n ? c.lineTo(x, y) : c.moveTo(x, y); }); c.closePath(); };
+    const izq = P(61), der = P(291);
+    const anchoBoca = Math.hypot(izq[0] - der[0], izq[1] - der[1]);
+    if (anchoBoca < 8) return;
+    const cx = (izq[0] + der[0]) / 2, cy = (P(13)[1] + P(14)[1]) / 2;
+    // El contorno de MediaPipe queda un pelín por dentro del borde del labio: se abre un 3 %
+    const ext = LABIO_EXT.map(i => { const [x, y] = P(i); return [cx + (x - cx) * 1.03, cy + (y - cy) * 1.05]; });
+    // El interior se abre un poco hacia fuera para no teñir dientes ni lengua
+    const int = LABIO_INT.map(i => { const [x, y] = P(i); return [cx + (x - cx) * 1.04, cy + (y - cy) * 1.12]; });
 
-    // Máscara suave de los labios (exterior menos interior)
-    const m = mask.getContext('2d');
+    // Caja de trabajo alrededor de la boca (con margen para medir la piel)
+    const pad = anchoBoca * 0.35;
+    const xs = ext.map(p => p[0]), ys = ext.map(p => p[1]);
+    const bx = Math.max(0, Math.floor(Math.min(...xs) - pad)), by = Math.max(0, Math.floor(Math.min(...ys) - pad));
+    const bw = Math.min(W, Math.ceil(Math.max(...xs) + pad)) - bx, bh = Math.min(H, Math.ceil(Math.max(...ys) + pad)) - by;
+    if (bw < 4 || bh < 4) return;
+
+    // Máscara suave: exterior menos interior, con curvas y borde difuminado
+    const m = mask.getContext('2d', { willReadFrequently: true });
     m.setTransform(1, 0, 0, 1, 0, 0);
-    m.clearRect(0, 0, W, H);
-    m.filter = `blur(${Math.max(1, anchoBoca * 0.018).toFixed(1)}px)`;
+    m.clearRect(bx, by, bw, bh);
+    m.filter = `blur(${Math.max(1, anchoBoca * 0.02).toFixed(1)}px)`;
     m.fillStyle = '#000';
-    camino(m, LABIO_EXT); m.fill();
+    curva(m, ext); m.fill();
     m.globalCompositeOperation = 'destination-out';
-    camino(m, LABIO_INT); m.fill();
+    curva(m, int); m.fill();
     m.globalCompositeOperation = 'source-over';
     m.filter = 'none';
+    const alfa = m.getImageData(bx, by, bw, bh).data;
 
-    // Capa de color recortada a la máscara
-    const c = capa.getContext('2d');
-    c.setTransform(1, 0, 0, 1, 0, 0);
-    c.globalCompositeOperation = 'source-over';
-    c.clearRect(0, 0, W, H);
-    c.fillStyle = t.hex; c.fillRect(0, 0, W, H);
-    c.globalCompositeOperation = 'destination-in';
-    c.drawImage(mask, 0, 0);
+    // Píxeles originales de esa zona (sin espejo: mismas coordenadas que los puntos)
+    const tr = this.trabajo || (this.trabajo = document.createElement('canvas'));
+    if (tr.width < bw || tr.height < bh) { tr.width = Math.max(bw, tr.width); tr.height = Math.max(bh, tr.height); }
+    const w = tr.getContext('2d', { willReadFrequently: true });
+    w.setTransform(1, 0, 0, 1, 0, 0);
+    w.clearRect(0, 0, tr.width, tr.height);
+    w.drawImage(this.fuente, -bx, -by, W, H);
+    const img = w.getImageData(0, 0, bw, bh), d = img.data;
+    // Copia desenfocada: quita el ruido de la cámara para que los reflejos no salgan a manchas
+    const su = this.suaveCv || (this.suaveCv = document.createElement('canvas'));
+    su.width = bw; su.height = bh;
+    const sc = su.getContext('2d', { willReadFrequently: true });
+    sc.filter = `blur(${Math.max(1, anchoBoca * 0.025).toFixed(1)}px)`;
+    sc.drawImage(tr, 0, 0, bw, bh, 0, 0, bw, bh);
+    sc.filter = 'none';
+    const ds = sc.getImageData(0, 0, bw, bh).data;
 
-    const pasada = (modo, alfa) => { if (alfa <= 0) return; ctx.globalCompositeOperation = modo; ctx.globalAlpha = Math.min(1, alfa * k); ctx.drawImage(capa, 0, 0); };
-    // ctx ya puede estar en espejo: la capa está en coordenadas de la imagen, igual que el dibujo
-    pasada('source-over', a.cubre);
-    pasada('color', a.color);
-    pasada('multiply', a.mult);
+    // Luz de la escena: brillo medio del labio y de la piel de alrededor
+    let sl = 0, nl = 0, sp = 0, np = 0, pr = 0, pg = 0, pb = 0;
+    for (let q = 0; q < d.length; q += 4) {
+      const L = 0.299 * d[q] + 0.587 * d[q + 1] + 0.114 * d[q + 2];
+      const al = alfa[q + 3];
+      if (al > 200) { sl += L; nl++; }
+      else if (al === 0 && L > 40 && L < 245) { sp += L; np++; pr += d[q]; pg += d[q + 1]; pb += d[q + 2]; }
+    }
+    if (!nl) return;
+    const Llab = sl / nl, Lpiel = np ? sp / np : 150;
+    // Luz más tenue = labial más oscuro; y un toque del color de la luz (cálida o fría)
+    const luz = Math.min(1.12, Math.max(0.5, Lpiel / 150));
+    const tinte = np ? [pr / np, pg / np, pb / np].map(v => v / (Lpiel || 1)) : [1, 1, 1];
+    const base = hexRGB(t.hex).map((v, i) => v * luz * (0.8 + 0.2 * Math.min(1.25, tinte[i])));
+    const umbral = Math.max(Llab * 1.25, Llab + 22);
 
-    // Brillo: reflejo suave en el centro del labio inferior y superior
-    if (a.brillo > 0) {
-      c.globalCompositeOperation = 'source-over';
-      c.clearRect(0, 0, W, H);
-      const [x1, y1] = P(LABIO_INF_CENTRO[0]), [x2, y2] = P(LABIO_INF_CENTRO[1]);
-      const cx = (x1 + x2) / 2, cy = y1 + (y2 - y1) * 0.45;
-      const g = c.createRadialGradient(cx, cy, 0, cx, cy, anchoBoca * 0.32);
-      g.addColorStop(0, 'rgba(255,255,255,0.9)'); g.addColorStop(1, 'rgba(255,255,255,0)');
-      c.fillStyle = g; c.fillRect(0, 0, W, H);
-      const [sx, sy] = P(0), [ix, iy] = P(13);
-      const g2 = c.createRadialGradient(sx, (sy + iy) / 2, 0, sx, (sy + iy) / 2, anchoBoca * 0.18);
-      g2.addColorStop(0, 'rgba(255,255,255,0.6)'); g2.addColorStop(1, 'rgba(255,255,255,0)');
-      c.fillStyle = g2; c.fillRect(0, 0, W, H);
-      c.globalCompositeOperation = 'destination-in';
-      c.drawImage(mask, 0, 0);
-      pasada('soft-light', a.brillo * 1.6);
-      pasada('screen', a.brillo * 0.5);
+    for (let q = 0; q < d.length; q += 4) {
+      const al = alfa[q + 3];
+      if (!al) continue;
+      const r = d[q], g = d[q + 1], b = d[q + 2];
+      const Lf = 0.299 * r + 0.587 * g + 0.114 * b;
+      const Ls = 0.299 * ds[q] + 0.587 * ds[q + 1] + 0.114 * ds[q + 2];
+      const L = Ls * 0.65 + Lf * 0.35;
+      // Textura: sombras y pliegues del labio se conservan sobre el color nuevo
+      const rel = Math.min(1.7, Math.max(0.35, L / Llab));
+      const sombra = 1 + (rel - 1) * a.textura;
+      // Brillo real: donde el labio ya refleja luz, el reflejo atraviesa el labial
+      const esp = Ls > umbral ? Math.pow(Math.min(1, (Ls - umbral) / (255 - umbral + 1)), 1.4) * a.brillo * 200 : 0;
+      const op = (al / 255) * a.opacidad * k;
+      for (let c = 0; c < 3; c++) {
+        const nuevo = base[c] * sombra + esp;
+        d[q + c] = d[q + c] * (1 - op) + Math.min(255, nuevo) * op;
+      }
+    }
+    w.putImageData(img, 0, 0);
+    // ctx puede estar en espejo: se dibuja en coordenadas de la imagen, igual que el vídeo
+    ctx.drawImage(tr, 0, 0, bw, bh, bx, by, bw, bh);
+
+    // Gloss: reflejo extra y suave en el centro del labio inferior
+    if (a.reflejo > 0) {
+      const [x1, y1] = P(14), [x2, y2] = P(17);
+      const gx = (x1 + x2) / 2, gy = y1 + (y2 - y1) * 0.42;
+      const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, anchoBoca * 0.22);
+      g.addColorStop(0, `rgba(255,255,255,${(a.reflejo * k).toFixed(2)})`); g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.save();
+      ctx.beginPath(); curva(ctx, ext); ctx.clip('evenodd');
+      ctx.globalCompositeOperation = 'screen';
+      ctx.fillStyle = g; ctx.fillRect(gx - anchoBoca, gy - anchoBoca, anchoBoca * 2, anchoBoca * 2);
+      ctx.restore();
     }
     ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
