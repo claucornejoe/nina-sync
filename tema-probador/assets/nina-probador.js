@@ -363,12 +363,28 @@ class Probador {
   async usarFoto(file) {
     if (!file) return;
     try {
-      const img = new Image();
-      img.src = URL.createObjectURL(file);
-      await img.decode();
+      this.estado.textContent = 'Cargando la foto…';
+      // Las fotos del móvil son enormes (12–48 MP) y a veces vienen giradas: se pasan a un lienzo
+      // de 1280 px como máximo, ya enderezado, que es lo que usan la detección y el dibujo.
+      let src, w, h;
+      try {
+        src = await createImageBitmap(file, { imageOrientation: 'from-image' });
+        w = src.width; h = src.height;
+      } catch {
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        await img.decode();
+        src = img; w = img.naturalWidth; h = img.naturalHeight;
+      }
+      if (!w || !h) throw new Error('foto vacía');
+      const esc = Math.min(1, 1280 / Math.max(w, h));
+      const foto = document.createElement('canvas');
+      foto.width = Math.round(w * esc); foto.height = Math.round(h * esc);
+      foto.getContext('2d').drawImage(src, 0, 0, foto.width, foto.height);
+      if (src.close) src.close();
       await this.detector();
       this.pararCamara();
-      this.fuente = img; this.espejo = false;
+      this.fuente = foto; this.espejo = false;
       this.empezar();
     } catch (e) {
       console.warn('[Nina probador]', e);
@@ -379,7 +395,7 @@ class Probador {
 
   empezar() {
     const f = this.fuente;
-    const w = f.videoWidth || f.naturalWidth, h = f.videoHeight || f.naturalHeight;
+    const w = f.videoWidth || f.naturalWidth || f.width, h = f.videoHeight || f.naturalHeight || f.height;
     const esc = Math.min(1, 1280 / Math.max(w, h));
     this.canvas.width = Math.round(w * esc); this.canvas.height = Math.round(h * esc);
     this.mask.width = this.capa.width = this.canvas.width;
@@ -405,7 +421,10 @@ class Probador {
     try {
       const r = this._detSync.detectForVideo(this.fuente, ts);
       this.landmarks = this.suavizar(r.faceLandmarks && r.faceLandmarks[0] || null);
-    } catch (e) { this.landmarks = null; }
+    } catch (e) { console.warn('[Nina probador] detección', e); this.landmarks = null; }
+    this.aviso.textContent = this.fuente === this.video
+      ? 'No encuentro tu cara. Mira a la cámara con buena luz.'
+      : 'No encuentro una cara en esta foto. Prueba con un selfie de frente y con buena luz.';
     this.aviso.hidden = !!this.landmarks;
   }
 
