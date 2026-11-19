@@ -13,11 +13,22 @@ import { placeholderMedia, logoUrl, realImageFor } from './images.js';
 const catFailed = new Map();
 const imgFailed = new Map();
 
+/** ¿Es un producto nuevo? (creado desde SEO_DESCRIPCIONES_DESDE). Sin fecha conocida, no se toca. */
+export function isNew(p) {
+  const since = seo.descSince();
+  if (Number.isNaN(since.getTime())) return true;
+  if (p.createdAt && new Date(p.createdAt) >= since) return true;
+  // Existentes sin descripción con una etiqueta de SEO_DESCRIBIR_EXISTENTES (p. ej. skin-care).
+  const extra = seo.describeExisting();
+  const empty = !String(p.descriptionHtml || '').replace(/<[^>]+>/g, '').trim();
+  return empty && extra.length > 0 && (p.tags || []).some((t) => extra.includes(t.toLowerCase()));
+}
+
 /** Qué le falta a un producto. */
 export function needs(p, { capReached = false } = {}) {
   if ((p.tags || []).some((t) => t.toLowerCase() === seo.skipTag)) return { any: false };
   const category = !p.category && !(catFailed.get(p.id) > Date.now());
-  const description = !!seo.openaiKey() && !capReached && !aiPaused() && !p.aiDescription && isReplaceable(p.descriptionHtml);
+  const description = !!seo.openaiKey() && !capReached && !aiPaused() && !p.aiDescription && isNew(p) && isReplaceable(p.descriptionHtml);
   const g = p.google || {};
   const google = (!g.gender && !!googleGender(p.tags)) || !g.ageGroup || !g.condition;
   const barcodes = p.variants.filter((v) => !v.barcodes.length && isGtin(v.sku));

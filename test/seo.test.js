@@ -29,6 +29,13 @@ test('categoría de perfumes por reglas', () => {
   assert.equal(ruleCategory({ ...good, title: 'Le Male Eau de Toilette Estuche', tags: ['Estuche', 'Hombre'] }).id, P.edt.id);
   assert.equal(ruleCategory({ ...good, title: 'Dior Sauvage Elixir', tags: ['Parfum'] }).id, P.extract.id);
   assert.equal(ruleCategory({ ...good, title: 'Máscara de pestañas', productType: 'Maquillaje', tags: ['Maybelline'] }), null);
+  const sc = (title, tags) => ruleCategory({ ...good, title, productType: 'Cuidado de la piel', tags }).id.split('/').pop();
+  assert.equal(sc('Payot Nue Mousse Nettoyante Douceur', ['skin-care', 'sc-limpieza']), 'hb-3-2-9-6');
+  assert.equal(sc('Laneige Lip Serum Raspberry Jam', ['skin-care', 'sc-ojos-labios']), 'hb-3-2-9-9');
+  assert.equal(sc('Nurana Contorno De Ojos Con Aloe Vera', ['skin-care', 'sc-ojos-labios']), 'hb-3-2-9-19');
+  assert.equal(sc('Clarins Multi-Intensive Crème Mains Anti-taches', ['skin-care', 'sc-cremas']), 'hb-3-2-9-22');
+  assert.equal(sc('Payot Suprême Absolu Infusión', ['skin-care', 'Payot']), 'hb-3-2-9');
+  assert.equal(ruleCategory({ ...good, title: 'Nyx Bare With Me Blur', productType: 'Maquillaje', tags: ['maquillaje', 'Nyx'] }).id.split('/').pop(), 'hb-3-2-6');
 });
 
 test('género de Google y EAN', () => {
@@ -51,6 +58,21 @@ test('qué le falta a un producto', () => {
   assert.equal(n.google, true);
   assert.deepEqual(n.barcodes.map((v) => v.id), ['v2']);
   assert.equal(needs({ ...good, tags: [...good.tags, 'seo-manual'] }).any, false);
+});
+
+test('solo escribe descripciones en productos nuevos', () => {
+  process.env.OPENAI_API_KEY = 'sk-test';
+  assert.equal(needs({ ...good, createdAt: '2026-11-10T10:00:00Z' }).description, false);
+  assert.equal(needs({ ...good, createdAt: '2026-11-14T10:00:00Z' }).description, true);
+  assert.equal(needs({ ...good, createdAt: undefined }).description, false);
+  const sc = { ...good, title: 'Shiseido Men Face Cleanser', tags: ['skin-care', 'sc-limpieza'], descriptionHtml: '', createdAt: '2026-11-12T10:00:00Z' };
+  assert.equal(needs(sc).description, false);
+  process.env.SEO_DESCRIBIR_EXISTENTES = 'skin-care';
+  assert.equal(needs(sc).description, true);
+  assert.equal(needs({ ...sc, descriptionHtml: '<p>Texto propio</p>' }).description, false);
+  assert.equal(needs({ ...good, createdAt: '2026-11-10T10:00:00Z' }).description, false);
+  delete process.env.SEO_DESCRIBIR_EXISTENTES;
+  delete process.env.OPENAI_API_KEY;
 });
 
 test('la descripción no lleva precios, envíos ni la tienda', () => {
@@ -155,7 +177,7 @@ test('maquillaje y skin care: categoría por etiqueta y tonos', () => {
   const lab = { title: 'Maybelline Superstay Matte Ink', vendor: 'Maybelline', productType: 'Maquillaje', tags: ['maquillaje', 'mq-labios', 'Maybelline'], variants: [{ title: '20 Pioneer' }, { title: '65 Seductress' }] };
   assert.equal(ruleCategory(lab).name, 'Maquillaje de labios');
   assert.equal(ruleCategory({ ...lab, tags: ['skin-care', 'sc-serums'], productType: 'Cuidado de la piel' }).name, 'Sérums faciales');
-  assert.equal(ruleCategory({ ...lab, tags: ['skin-care', 'sc-cremas'], productType: 'Cuidado de la piel' }), null);
+  assert.equal(ruleCategory({ ...lab, tags: ['skin-care', 'sc-cremas'], productType: 'Cuidado de la piel' }).name, 'Cremas hidratantes faciales');
   assert.match(renderDescription(lab, { intro: 'Labial líquido mate.', familia_olfativa: '', notas_salida: [], notas_corazon: [], notas_fondo: [], detalles: [], seguro: true }), /Tonos:<\/strong> 20 Pioneer, 65 Seductress/);
 });
 
@@ -164,4 +186,11 @@ test('quita líneas repetidas sin negrita', async () => {
   const html = '<p>Hola.</p>\n<ul>\n<li><strong>Tipo:</strong> Eau de Parfum</li>\n<li>tipo: eau de parfum</li>\n<li>para: mujer</li>\n<li>tamaños: 30 ml</li>\n<li>Frasco de vidrio facetado (imagen comercial ampliamente usada)</li>\n<li>Incluye loción corporal de 100 ml</li>\n</ul>';
   assert.equal(stripRedundant(html), '<p>Hola.</p>\n<ul>\n<li><strong>Tipo:</strong> Eau de Parfum</li>\n<li>Incluye loción corporal de 100 ml</li>\n</ul>');
   assert.equal(usefulDetail('Concentración: eau de parfum'), false);
+});
+
+test('cosmética: modo de uso en su propia línea; perfumes sin él', () => {
+  const sc = { ...good, title: 'Shiseido Men Face Cleanser', productType: 'Cuidado de la piel', tags: ['skin-care'], variants: [{ id: 'v', title: '125ml', sku: '', barcodes: [] }] };
+  const html = renderDescription(sc, { intro: 'Espuma limpiadora facial para hombre.', modo_de_uso: 'Aplicar mañana y noche sobre el rostro húmedo y aclarar.', seguro: true });
+  assert.match(html, /<li><strong>Modo de uso:<\/strong> Aplicar mañana y noche sobre el rostro húmedo y aclarar\.<\/li>/);
+  assert.doesNotMatch(renderDescription(good, { intro: 'Floral.', modo_de_uso: 'Pulverizar.', seguro: true }), /Modo de uso/);
 });

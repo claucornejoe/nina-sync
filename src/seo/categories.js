@@ -15,7 +15,7 @@ export const PERFUME_CATEGORIES = {
 };
 
 // Maquillaje y cuidado de la piel: por la etiqueta de sección que ponen los CSV (mq-*, sc-*).
-// Las que no son concretas (cremas, limpieza, sets…) las decide la IA.
+// Sin etiqueta de sección, va a la categoría general de maquillaje o cuidado de la piel.
 export const TAG_CATEGORIES = {
   'mq-ojos': { id: C + 'hb-3-2-6-3', name: 'Maquillaje para ojos' },
   'mq-rostro': { id: C + 'hb-3-2-6-4', name: 'Maquillaje para cara y mejillas' },
@@ -27,7 +27,18 @@ export const TAG_CATEGORIES = {
   'sc-tonicos': { id: C + 'hb-3-2-9-17', name: 'Tónicos y astringentes' },
   'sc-mascarillas': { id: C + 'hb-3-2-9-13', name: 'Máscaras y peelings para cuidado de la piel' },
   'sc-sets': { id: C + 'hb-3-2-9-25', name: 'Kits y sets de cuidado de la piel' },
+  'mq-sets': { id: C + 'hb-3-2-3', name: 'Juegos de maquillaje' },
+  'mq-accesorios': { id: C + 'hb-3-2-5', name: 'Objetos cosméticos' },
+  'sc-limpieza': { id: C + 'hb-3-2-9-6', name: 'Productos de limpieza facial' },
+  'sc-cremas': { id: C + 'hb-3-2-9-20', name: 'Cremas hidratantes faciales' },
+  'sc-ojos-labios': { id: C + 'hb-3-2-9-19', name: 'Cremas para el contorno de ojos' },
+  'sc-corporal': { id: C + 'hb-3-2-9-10', name: 'Lociones y humectantes' },
+  'sc-hombre': { id: C + 'hb-3-2-9', name: 'Cuidado de la piel' },
 };
+const LIP_CARE = { id: C + 'hb-3-2-9-9', name: 'Cuidado labial' };
+const HAND_CREAM = { id: C + 'hb-3-2-9-22', name: 'Cremas para manos' };
+// Sin etiqueta de sección: la categoría general (así nunca se quedan sin categoría).
+const GENERAL = { 'skin-care': { id: C + 'hb-3-2-9', name: 'Cuidado de la piel' }, maquillaje: { id: C + 'hb-3-2-6', name: 'Maquillaje' } };
 
 const has = (tags, t) => (tags || []).some((x) => x.toLowerCase() === t.toLowerCase());
 
@@ -40,9 +51,18 @@ export function isPerfume(p) {
 
 /** Categoría por reglas para perfumes; null si no es perfume (entonces decide la IA). */
 export function ruleCategory(p) {
-  for (const t of p.tags || []) if (TAG_CATEGORIES[t.toLowerCase()]) return TAG_CATEGORIES[t.toLowerCase()];
-  if (!isPerfume(p)) return null;
   const t = String(p.title || '').toLowerCase();
+  for (const tag of p.tags || []) {
+    const k = tag.toLowerCase();
+    if (!TAG_CATEGORIES[k]) continue;
+    if (k === 'sc-ojos-labios' && /\b(lip|labial|labios|l[eè]vres)\b/.test(t)) return LIP_CARE;
+    if (k === 'sc-cremas' && /\b(manos|mains|hands?)\b/.test(t)) return HAND_CREAM;
+    return TAG_CATEGORIES[k];
+  }
+  if (!isPerfume(p)) {
+    for (const k of Object.keys(GENERAL)) if (has(p.tags, k)) return GENERAL[k];
+    return null;
+  }
   if (/\b(hair mist|perfume (para el )?cabello|hair perfume|capilar)\b/.test(t)) return PERFUME_CATEGORIES.hair;
   if (/\b(muestras?|discovery|miniaturas?|coffret de miniaturas)\b/.test(t)) return PERFUME_CATEGORIES.samples;
   if (/\b(aceite|perfume oil|oil perfume|attar)\b/.test(t)) return PERFUME_CATEGORIES.oil;

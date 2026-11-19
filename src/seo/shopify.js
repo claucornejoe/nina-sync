@@ -1,7 +1,7 @@
 // Consultas a Shopify que usa «Google y descripciones». Reutiliza el cliente de Nina Sync.
 import { gql } from '../shopify.js';
 
-const PRODUCT_FIELDS = `id title vendor productType tags status descriptionHtml
+const PRODUCT_FIELDS = `id title vendor productType tags status descriptionHtml createdAt
   category { id name fullName }
   gGender: metafield(namespace: "mm-google-shopping", key: "gender") { value }
   gAge: metafield(namespace: "mm-google-shopping", key: "age_group") { value }
@@ -18,6 +18,7 @@ const shape = (p) => ({
   productType: p.productType,
   tags: p.tags,
   status: p.status,
+  createdAt: p.createdAt,
   descriptionHtml: p.descriptionHtml,
   category: p.category,
   google: { gender: p.gGender?.value, ageGroup: p.gAge?.value, condition: p.gCond?.value },
