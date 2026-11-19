@@ -11,6 +11,7 @@ import * as progress from './progress.js';
 import { mountSeo } from './seo/routes.js';
 import { mountLoyalty } from './loyalty/routes.js';
 import { mountStockAlerts } from './stockAlerts/routes.js';
+import { mountForum } from './forum/routes.js';
 
 if (!config.panelPassword) throw new Error('Falta PANEL_PASSWORD');
 await db.migrate();
@@ -86,6 +87,7 @@ app.get('/ofertas', auth, async (_req, res) => res.send(views.offersPage(await d
 await mountSeo(app, auth); // Google y descripciones (categoría + descripción con IA)
 await mountLoyalty(app, auth); // NinaCash, niveles y cupones por nivel
 await mountStockAlerts(app, auth); // «Agotado · Avísame»: guarda correos y avisa al volver el stock
+await mountForum(app, auth); // Foro Nina: preguntas y consejos de clientas en /apps/foro
 app.get('/recien-llegados', auth, async (_req, res) => res.send(views.newArrivalsPage(await db.activeNewArrivals())));
 
 // ---- Automática cada 4 horas ----

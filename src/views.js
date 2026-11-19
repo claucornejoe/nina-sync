@@ -60,6 +60,7 @@ const I = {
   back: '<path d="M15 5l-7 7 7 7"/>',
   download: '<path d="M12 4v11M7 10l5 5 5-5"/><path d="M5 20h14"/>',
   heart: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/>',
+  chat: '<path d="M4 5h16v11H9l-5 4V5Z"/><path d="M8 9.5h8M8 12.5h5"/>',
   bell: '<path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15L6 16Z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
 };
 export const icon = (n, size = 20) =>
@@ -189,6 +190,7 @@ ${refresh ? '<meta http-equiv="refresh" content="15">' : ''}
   ${link('/seo', 'seo', 'layers', 'Google y descripciones')}
   ${link('/ninacash', 'ninacash', 'heart', 'NinaCash')}
   ${link('/avisos', 'avisos', 'bell', 'Avisos de stock')}
+  ${link('/foro', 'foro', 'chat', 'Foro Nina')}
   ${link('/salir', 'salir', 'out', 'Salir')}
  </nav>
  <div class="foot"><img src="/static/mariposa.svg" alt="">Stock y precios con BTS</div>
