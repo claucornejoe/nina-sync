@@ -1,18 +1,20 @@
 // NinaCash: suma el saldo de cada compra, calcula el nivel y crea las ventajas de cada nivel.
 //
 // Cómo funciona:
-//  - Al pagarse un pedido (aviso orders/paid) se guarda con su NinaCash como «pendiente».
-//  - 14 días después de la entrega se suma como crédito en tienda de Shopify (la clienta lo ve en su cuenta
-//    y lo puede usar al pagar). Caduca a los 12 meses.
+//  - Al pagarse un pedido (aviso orders/paid) se suma su NinaCash al momento como crédito en tienda de Shopify
+//    (la clienta lo ve en su cuenta y lo puede usar al pagar). Caduca a los 12 meses.
+//    Con NINACASH_ABONO=tras-devolucion se queda «pendiente» hasta 14 días después de la entrega.
 //  - Si el pedido se cancela o se devuelve, se ajusta: si aún estaba pendiente se recalcula; si ya se había
 //    sumado, se resta la diferencia del saldo.
 //  - El nivel sale de lo comprado en los últimos 12 meses y se guarda como etiqueta (nivel-glam…) y en
 //    metacampos de la clienta (nina.nivel, nina.gasto_12m, nina.ninacash, nina.ninacash_pendiente) para «Mi cuenta».
 //  - Glam: 1 código de envío gratis al mes (nina.cupones). Butterfly: envío gratis automático y obsequio mensual
 //    (el primer pedido del mes lleva la etiqueta «obsequio-butterfly»).
+import { config } from '../config.js';
 import * as rules from './rules.js';
 import * as store from './store.js';
 import * as sh from './shopify.js';
+import { checkExpiring } from './expiry.js';
 
 export const active = () => process.env.NINACASH_ACTIVO === 'true';
 const GIFT_TAG = process.env.NINACASH_OBSEQUIO_TAG || 'obsequio-butterfly';
@@ -49,7 +51,7 @@ export async function processOrder(orderId, origin = 'aviso') {
     rate = lvl.rate;
   }
   const earned = rules.earnedFor(eligible, rate);
-  const releaseAt = rules.releaseDate(order);
+  const releaseAt = rules.creditDate(order);
   let credited = Number(prev?.credited || 0);
   let status = prev?.status || 'pendiente';
   if (!counts) status = credited > 0 ? 'sumado' : 'anulado';
@@ -65,9 +67,10 @@ export async function processOrder(orderId, origin = 'aviso') {
     credited = rules.round2(credited - diff);
     await store.log({ ...ctx, kind: 'restado', amount: -taken, note: `Devolución o cancelación${taken < diff ? ` (solo quedaban ${taken.toFixed(2)} € de saldo)` : ''}` });
     if (credited <= 0 && !counts) status = 'anulado';
+    if (taken < diff) await store.log({ ...ctx, kind: 'error', note: `Faltaron ${(diff - taken).toFixed(2)} € por restar: ya había gastado su NinaCash` });
   }
 
-  // Toca sumarlo: entregado + 14 días.
+  // Toca sumarlo: al pagar (o entregado + 14 días si NINACASH_ABONO=tras-devolucion).
   // En modo prueba se queda «pendiente» para sumarlo de verdad cuando se active.
   if (status === 'pendiente' && counts && releaseAt && releaseAt <= new Date() && earned > 0 && !dry) {
     await sh.credit(customerId, earned, new Date(Date.now() + rules.EXPIRY_DAYS * 86400_000));
@@ -138,7 +141,7 @@ export async function refreshCustomer(customerId, name = null) {
 async function writeCustomerMetafields(customerId, { level, spent, balance, pending }) {
   const codes = (await store.activeMonthlyCodes(customerId)).map((m) => ({
     codigo: m.code,
-    texto: 'Envío gratis de tu nivel Glam (1 al mes, pedidos de menos de 39 €)',
+    texto: `Envío gratis de tu nivel Glam (1 al mes, pedidos de menos de ${config.rules.freeShippingFrom} €)`,
     caduca: new Date(m.ends_at).toISOString().slice(0, 10),
   }));
   await sh.setMetafields([
@@ -181,6 +184,7 @@ export async function setup() {
     def('gasto_12m', 'Compras últimos 12 meses', 'number_decimal', 'Euros comprados en los últimos 12 meses (lo pone Nina Sync)'),
     def('ninacash', 'Saldo NinaCash', 'number_decimal', 'Saldo disponible en euros (crédito en tienda)'),
     def('ninacash_pendiente', 'NinaCash pendiente', 'number_decimal', 'Se suma 14 días después de la entrega'),
+    def('ninacash_caduca', 'NinaCash que caduca pronto', 'json', '{importe, fecha} del saldo que caduca en los próximos 30 días'),
     def('cupones', 'Cupones personales', 'json', 'Códigos personales activos [{codigo, texto, caduca}]'),
     { key: 'cupones_semana', name: 'Cupones de la semana por nivel', type: 'json', ownerType: 'SHOP', description: '[{codigo, texto, caduca, niveles:[1-4], nivel_min}]' },
   ]);
@@ -235,6 +239,13 @@ export async function dailyRun({ backfill = false } = {}) {
       }
     }
     await publishWeeklyCoupons();
+    try {
+      const x = await checkExpiring({ active: active(), setMetafields: sh.setMetafields, log: store.log });
+      r.expiryMails = x.sent;
+    } catch (e) {
+      r.errors++;
+      await logErr(e);
+    }
   } finally {
     state.busy = false;
     state.lastRun = { at: new Date(), ...r };

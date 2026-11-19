@@ -35,7 +35,7 @@ export const config = {
     margin: num('MARGIN_DIVISOR', 0.7),
     shipping: num('SHIPPING_COST', 6), // lo que cobra BTS por pedido
     shippingPrice: num('SHIPPING_PRICE', 4.95), // lo que paga el cliente por debajo del mínimo
-    freeShippingFrom: num('FREE_SHIPPING_FROM', 39), // envío gratis desde este importe
+    freeShippingFrom: num('FREE_SHIPPING_FROM', 49), // envío gratis desde este importe
     paypalFixed: num('PAYPAL_FIXED', 0.35),
     paypalNet: num('PAYPAL_NET', 0.911),
     minProfitAfterRounding: num('MIN_PROFIT_ROUNDING', 0.5),
@@ -59,6 +59,20 @@ export const config = {
     pass: process.env.SMTP_PASS,
     to: process.env.REPORT_TO,
     from: process.env.REPORT_FROM || process.env.SMTP_USER,
+    fromName: process.env.MAIL_FROM_NAME || 'Nina Beauty', // nombre que ve la clienta
+    // Dirección desde la que salen los correos a clientas (Clau: avisos@ninabeauty.es).
+    // Puede ser un buzón propio (entonces SMTP_USER = esta dirección) o un alias de SMTP_USER en Google Workspace.
+    fromAddress: process.env.MAIL_FROM || 'avisos@ninabeauty.es',
+    replyTo: process.env.MAIL_REPLY_TO || '',
+  },
+
+  stockAlerts: {
+    storeUrl: (process.env.STORE_URL || 'https://www.ninabeauty.es').replace(/\/+$/, ''),
+    // Webs desde las que se puede pedir un aviso (el formulario del tema).
+    origins: (process.env.STORE_ORIGINS || 'https://www.ninabeauty.es,https://ninabeauty.es,https://ikwg4h-mk.myshopify.com').split(',').map((s) => s.trim()).filter(Boolean),
+    lowStockMax: num('ALERT_LOW_STOCK_MAX', 10), // con esto o menos: «Han llegado pocas unidades»
+    maxPerRun: num('ALERT_MAX_PER_RUN', 400), // Gmail/Workspace admite unos 2.000 al día
+    expireDays: num('ALERT_EXPIRE_DAYS', 180), // sin reposición en 6 meses: se borra el correo
   },
   publicUrl: process.env.PUBLIC_URL || '',
 };

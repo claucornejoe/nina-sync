@@ -52,9 +52,19 @@ npm start             # panel web en el puerto 3000
 
 Página **NinaCash** del panel (`/ninacash`). Con avisos de Shopify (`orders/paid`, `orders/cancelled`, `orders/fulfilled`, `refunds/create`, `customers/create`) y un repaso diario:
 
-- **NinaCash**: cada pedido pagado con cuenta genera el 1 %, 1,5 % o 2 % (según el nivel con el que se compró) de los productos tras descuentos, sin envío ni la parte pagada con NinaCash. Queda **pendiente** y se suma 14 días después de la entrega como **crédito en tienda** de Shopify (caduca a los 12 meses). La clienta lo ve en su cuenta y, con la sesión iniciada, lo aplica al pagar en el checkout. Si devuelve o se cancela, se ajusta o se resta.
+- **NinaCash**: cada pedido pagado con cuenta genera el 1 %, 1,5 % o 2 % (según el nivel con el que se compró) de los productos tras descuentos, sin envío ni la parte pagada con NinaCash. Se suma **al pagar** como **crédito en tienda** de Shopify (caduca a los 12 meses). La clienta lo ve en su cuenta y, con la sesión iniciada, lo aplica al pagar en el checkout. Si devuelve o se cancela, se resta (si ya lo gastó, se resta lo que quede y se avisa en el panel). Con `NINACASH_ABONO=tras-devolucion` se espera a 14 días después de la entrega.
 - **Nivel** por compras de los últimos 12 meses: Sparkle 0 €, Glow 100 €, Glam 250 €, Butterfly 500 €. Etiqueta en la clienta (`nivel-sparkle`, `nivel-glow`, `nivel-glam`, `nivel-butterfly`) y segmentos «Nivel Nina …» para limitar descuentos.
 - **Metacampos para «Mi cuenta»** (espacio `nina` del cliente): `nivel` (1-4), `gasto_12m`, `ninacash`, `ninacash_pendiente`, `cupones` (JSON de códigos personales). En la tienda: `nina.cupones_semana` (JSON con `codigo`, `texto`, `caduca`, `niveles`, `nivel_min`).
 - **Cupones por nivel**: se crean en el panel eligiendo niveles; Shopify solo los acepta a clientas de esos segmentos. También se puede elegir el segmento al crear un descuento en el admin.
 - **Glam**: un código de envío gratis personal cada mes. **Butterfly**: envío gratis automático y la etiqueta `obsequio-butterfly` en su primer pedido del mes.
 - `NINACASH_ACTIVO=false` (por defecto) es modo prueba: calcula y apunta, pero no cambia nada en Shopify.
+- **Caducidad**: cada saldo caduca a los 12 meses (lo quita Shopify). 30 y 7 días antes, Nina Sync envía un correo desde `avisos@ninabeauty.es` (si hay SMTP) y guarda `nina.ninacash_caduca` (`{importe, fecha}`) para el aviso de Mi cuenta y del carrito.
+
+## Avisos de stock («Agotado · Avísame»)
+
+Página `/avisos` del panel. Código en `src/stockAlerts/`.
+
+- **Formulario de la tienda → `POST /api/avisame`** (JSON `{ email, variant_id, consent: true }`). Solo acepta peticiones desde `STORE_ORIGINS`, comprueba que el tamaño existe y está agotado, y guarda la solicitud con el texto de consentimiento. Límite de 10 por hora por IP, 20 pendientes por correo y un campo trampa `website` contra robots.
+- **Al final de cada sincronización** (y con «Revisar ahora»), los tamaños pedidos que ya tienen stock reciben el correo «¡Ha vuelto!» (`email.js`). Con `ALERT_LOW_STOCK_MAX` unidades o menos dice «Han llegado pocas unidades»; si hay más, «La última vez se agotó».
+- **RGPD:** un solo correo por solicitud; al enviarlo se borra la dirección. Las solicitudes sin reposición en `ALERT_EXPIRE_DAYS` días también se borran. Desde el panel se pueden borrar todos los avisos de un correo.
+- Los correos salen desde **avisos@ninabeauty.es** (`MAIL_FROM`) por la cuenta SMTP de Google Workspace (`sendCustomerMail` en `src/mail.js`), que sirve también para otros correos a clientas. Sin SMTP, las solicitudes se guardan y esperan.

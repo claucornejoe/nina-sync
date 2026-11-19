@@ -9,6 +9,7 @@ import * as sh from './shopify.js';
 import * as engine from './engine.js';
 import * as rules from './rules.js';
 import { ninacashPage } from './views.js';
+import { migrate as expiryMigrate } from './expiry.js';
 
 const WEBHOOK_PATH = '/webhooks/ninacash';
 const TOPICS = ['ORDERS_PAID', 'ORDERS_CANCELLED', 'ORDERS_FULFILLED', 'REFUNDS_CREATE', 'CUSTOMERS_CREATE'];
@@ -34,6 +35,7 @@ export function parseCouponForm(b, now = new Date()) {
 
 export async function mountLoyalty(app, auth) {
   await store.migrate();
+  await expiryMigrate();
 
   app.post(WEBHOOK_PATH, express.raw({ type: '*/*', limit: '2mb' }), (req, res) => {
     const secret = process.env.SHOPIFY_WEBHOOK_SECRET || config.shopify.clientSecret;
