@@ -8,6 +8,7 @@ import { sendReport } from './mail.js';
 import { notifyRestocked } from './stockAlerts/notify.js';
 import { matchPurchases } from './stockAlerts/report.js';
 import * as progress from './progress.js';
+import { writeProbadorStock } from './probadorStock.js';
 
 let running = null;
 
@@ -74,6 +75,16 @@ async function doSync(trigger, dryRun) {
         await shopify.addTags(productId, [r.offerTag]);
         await db.upsertOffer(productId, title, until);
         progress.tick(++done);
+      }
+    }
+
+    // 4b. Probador de labios: tonos con stock (metacampo de tienda nina.probador_stock).
+    if (!dryRun) {
+      try {
+        const p = await writeProbadorStock(variants, plan.stockUpdates);
+        console.log(`Probador: ${p.conStock} de ${p.total} tonos con stock`);
+      } catch (e) {
+        console.error('No se pudo actualizar el stock del probador:', e.message);
       }
     }
 
