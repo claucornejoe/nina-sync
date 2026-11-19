@@ -29,6 +29,13 @@ test('categoría de perfumes por reglas', () => {
   assert.equal(ruleCategory({ ...good, title: 'Le Male Eau de Toilette Estuche', tags: ['Estuche', 'Hombre'] }).id, P.edt.id);
   assert.equal(ruleCategory({ ...good, title: 'Dior Sauvage Elixir', tags: ['Parfum'] }).id, P.extract.id);
   assert.equal(ruleCategory({ ...good, title: 'Máscara de pestañas', productType: 'Maquillaje', tags: ['Maybelline'] }), null);
+  const sc = (title, tags) => ruleCategory({ ...good, title, productType: 'Cuidado de la piel', tags }).id.split('/').pop();
+  assert.equal(sc('Payot Nue Mousse Nettoyante Douceur', ['skin-care', 'sc-limpieza']), 'hb-3-2-9-6');
+  assert.equal(sc('Laneige Lip Serum Raspberry Jam', ['skin-care', 'sc-ojos-labios']), 'hb-3-2-9-9');
+  assert.equal(sc('Nurana Contorno De Ojos Con Aloe Vera', ['skin-care', 'sc-ojos-labios']), 'hb-3-2-9-19');
+  assert.equal(sc('Clarins Multi-Intensive Crème Mains Anti-taches', ['skin-care', 'sc-cremas']), 'hb-3-2-9-22');
+  assert.equal(sc('Payot Suprême Absolu Infusión', ['skin-care', 'Payot']), 'hb-3-2-9');
+  assert.equal(ruleCategory({ ...good, title: 'Nyx Bare With Me Blur', productType: 'Maquillaje', tags: ['maquillaje', 'Nyx'] }).id.split('/').pop(), 'hb-3-2-6');
 });
 
 test('género de Google y EAN', () => {
@@ -170,7 +177,7 @@ test('maquillaje y skin care: categoría por etiqueta y tonos', () => {
   const lab = { title: 'Maybelline Superstay Matte Ink', vendor: 'Maybelline', productType: 'Maquillaje', tags: ['maquillaje', 'mq-labios', 'Maybelline'], variants: [{ title: '20 Pioneer' }, { title: '65 Seductress' }] };
   assert.equal(ruleCategory(lab).name, 'Maquillaje de labios');
   assert.equal(ruleCategory({ ...lab, tags: ['skin-care', 'sc-serums'], productType: 'Cuidado de la piel' }).name, 'Sérums faciales');
-  assert.equal(ruleCategory({ ...lab, tags: ['skin-care', 'sc-cremas'], productType: 'Cuidado de la piel' }), null);
+  assert.equal(ruleCategory({ ...lab, tags: ['skin-care', 'sc-cremas'], productType: 'Cuidado de la piel' }).name, 'Cremas hidratantes faciales');
   assert.match(renderDescription(lab, { intro: 'Labial líquido mate.', familia_olfativa: '', notas_salida: [], notas_corazon: [], notas_fondo: [], detalles: [], seguro: true }), /Tonos:<\/strong> 20 Pioneer, 65 Seductress/);
 });
 
