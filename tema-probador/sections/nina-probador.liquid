@@ -11,7 +11,7 @@
   #shopify-section-{{ section.id }} .np-titulo { margin: 0; font-size: clamp(32px, 4.4vw, 48px); line-height: 1.05; font-weight: 500; text-wrap: balance; }
   #shopify-section-{{ section.id }} .np-sub { margin: 12px 0 0; color: #6E6E6E; }
 </style>
-<div class="np-seccion">
+<div class="np-seccion" data-np-pais="{{ localization.country.iso_code }}">
   {%- if section.settings.titulo != blank -%}
     <header class="np-cabecera">
       {%- if section.settings.antetitulo != blank -%}<p class="np-antetitulo">{{ section.settings.antetitulo }}</p>{%- endif -%}
@@ -27,6 +27,8 @@
     <noscript>Para usar el probador virtual necesitas activar JavaScript.</noscript>
   </div>
   {%- comment -%} Stock real de los tonos del probador (colección «probador-labios»): [sku, código de barras, disponible, unidades, política, gestión] {%- endcomment -%}
+  {%- comment -%} Stock principal: metacampo de la tienda nina.probador_stock {ean: unidades}, igual para todos los países {%- endcomment -%}
+  <script type="application/json" data-np-stock-tienda>{{ shop.metafields.nina.probador_stock.value | json }}</script>
   {%- assign np_coleccion = collections['probador-labios'] -%}
   <script type="application/json" data-np-stock>[
     {%- if np_coleccion -%}

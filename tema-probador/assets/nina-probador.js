@@ -56,7 +56,20 @@ class Probador {
     this.productos = new Map(); // handle -> datos de Shopify (stock real)
     // Stock que la sección ya trae renderizado desde Shopify: [[sku, código de barras, disponible], ...]
     this.stockTema = new Map();
-    const js = (root.closest('.np-seccion') || root.parentElement || document).querySelector('script[data-np-stock]');
+    const caja = root.closest('.np-seccion') || root.parentElement || document;
+    // Fuente principal: metacampo de la tienda nina.probador_stock {ean: unidades}. No depende del
+    // país ni del mercado del visitante, así que todos ven lo mismo.
+    const jm = caja.querySelector('script[data-np-stock-tienda]');
+    let nTienda = 0;
+    if (jm) {
+      try {
+        const m = JSON.parse(jm.textContent);
+        if (m && typeof m === 'object') for (const [ean, u] of Object.entries(m)) {
+          if (typeof u === 'number') { this.stockTema.set(String(ean), u > 0); nTienda++; }
+        }
+      } catch (e) { console.warn('[Nina probador] metacampo de stock ilegible', e); }
+    }
+    const js = nTienda ? null : caja.querySelector('script[data-np-stock]');
     if (js) {
       try {
         for (const fila of JSON.parse(js.textContent)) {
@@ -71,9 +84,9 @@ class Probador {
           if (barcode) this.stockTema.set(String(barcode), !agotado);
         }
       } catch (e) { console.warn('[Nina probador] stock del tema ilegible', e); }
-      const n = [...this.stockTema.values()];
-      console.info(`[Nina probador] stock del tema: ${n.filter(Boolean).length} con stock, ${n.filter(x => !x).length} agotados`);
     }
+    const n = [...this.stockTema.values()];
+    console.info(`[Nina probador] stock (${nTienda ? 'metacampo' : 'colección'}): ${n.filter(Boolean).length} con stock, ${n.filter(x => !x).length} agotados; país ${caja.dataset ? caja.dataset.npPais : '?'}`);
     this.montar();
     this.cargarTonos();
   }
@@ -275,8 +288,8 @@ class Probador {
         const v = p && varianteDe(p, t);
         // Aquí «available» depende del país del visitante, así que no sirve para tachar:
         // solo se marca «Próximamente» cuando el producto no existe en la tienda.
-        if (p === null) { t.enTienda = false; t.disponible = false; }
-        else if (v) { t.enTienda = true; t.disponible = true; }
+        // Nunca se tacha por esto: un 404 puede deberse solo al país del visitante.
+        if (v) t.enTienda = true;
       }
     }))).then(() => { this.pintarLista(); if (this.tono) this.pintarFicha(); });
   }
