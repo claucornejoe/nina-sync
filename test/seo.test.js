@@ -71,6 +71,9 @@ test('solo escribe descripciones en productos nuevos', () => {
   assert.equal(needs(sc).description, true);
   assert.equal(needs({ ...sc, descriptionHtml: '<p>Texto propio</p>' }).description, false);
   assert.equal(needs({ ...good, createdAt: '2026-11-10T10:00:00Z' }).description, false);
+  process.env.SEO_DESCRIBIR_EXISTENTES = 'todos';
+  assert.equal(needs({ ...sc, tags: ['Perfume'] }).description, true);
+  assert.equal(needs({ ...sc, tags: ['Perfume'], descriptionHtml: '<p>Ya escrita</p>' }).description, false);
   delete process.env.SEO_DESCRIBIR_EXISTENTES;
   delete process.env.OPENAI_API_KEY;
 });
