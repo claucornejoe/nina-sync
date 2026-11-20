@@ -66,7 +66,7 @@ export function cleanText(s) {
 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 // Detalles que repiten datos que ya van en la lista, o que hablan de la imagen: fuera.
-const REDUNDANT = /^(marca|tipo|para|g[eé]nero|concentraci[oó]n|familia|notas?|tama[nñ]os?|tonos?|formatos?|contenido neto|modo de uso)\b|imagen/i;
+const REDUNDANT = /^(marca|tipo|para|g[eé]nero|concentraci[oó]n|familia|notas?|tama[nñ]os?|tonos?|formatos?|contenido|capacidad|modo de uso)\b|imagen|^\d+([.,]\d+)?\s?(ml|g|gr|oz|cl|l)\.?$/i;
 export const usefulDetail = (d) => !!d && !REDUNDANT.test(String(d).trim());
 
 /** Quita de una descripción ya escrita las líneas sueltas sin negrita que repiten datos (versiones anteriores). */

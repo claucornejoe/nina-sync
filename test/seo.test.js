@@ -189,6 +189,9 @@ test('quita líneas repetidas sin negrita', async () => {
   const html = '<p>Hola.</p>\n<ul>\n<li><strong>Tipo:</strong> Eau de Parfum</li>\n<li>tipo: eau de parfum</li>\n<li>para: mujer</li>\n<li>tamaños: 30 ml</li>\n<li>Frasco de vidrio facetado (imagen comercial ampliamente usada)</li>\n<li>Incluye loción corporal de 100 ml</li>\n</ul>';
   assert.equal(stripRedundant(html), '<p>Hola.</p>\n<ul>\n<li><strong>Tipo:</strong> Eau de Parfum</li>\n<li>Incluye loción corporal de 100 ml</li>\n</ul>');
   assert.equal(usefulDetail('Concentración: eau de parfum'), false);
+  assert.equal(usefulDetail('Contenido: 30 ml'), false);
+  assert.equal(usefulDetail('50 ml'), false);
+  assert.equal(usefulDetail('Incluye niacinamida y extractos vegetales'), true);
 });
 
 test('cosmética: modo de uso en su propia línea; perfumes sin él', () => {
