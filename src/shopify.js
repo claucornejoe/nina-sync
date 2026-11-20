@@ -85,6 +85,7 @@ export async function getAllVariants(locationId, onProgress = () => {}) {
         productId: v.product.id,
         productTitle: v.product.title,
         tags: v.product.tags,
+        status: v.product.status,
         inventoryItemId: v.inventoryItem.id,
         available: v.inventoryItem.inventoryLevel?.quantities?.[0]?.quantity ?? 0,
       });

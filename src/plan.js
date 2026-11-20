@@ -1,4 +1,5 @@
-import { computePrice, computeStock, round2 } from './pricing.js';
+import { computePrice, computeStock, round2, profit } from './pricing.js';
+import { applyOverride } from './competition/engine.js';
 import { expectedTags, tagDiff, isPerfumeCategory } from './tags.js';
 
 const money = (n) => (n === null || n === undefined ? '' : Number(n).toFixed(2));
@@ -12,8 +13,10 @@ const eur = (n) => money(n).replace('.', ',') + ' €';
  * @param {Map} prevCosts coste y PVP de BTS de la sincronización anterior, por EAN.
  *   Solo es «oferta» si el precio baja porque BTS ha bajado el coste o el PVP; una bajada
  *   por cambiar la fórmula (por ejemplo, quitar el envío del precio) no lo es.
+ * @param {Map} overrides precios ajustados por competencia (pestaña «Competencia»), por EAN: bajan el precio
+ *   de la fórmula, nunca por debajo del margen mínimo con el coste actual de BTS.
  */
-export function planSync(variants, bts, r, prevCosts = new Map()) {
+export function planSync(variants, bts, r, prevCosts = new Map(), overrides = new Map()) {
   const stockUpdates = [];
   const priceUpdates = new Map(); // productId -> [{id, price, compareAtPrice}]
   const offerProducts = new Map(); // productId -> title
@@ -39,6 +42,16 @@ export function planSync(variants, bts, r, prevCosts = new Map()) {
 
       if (b.cost && !manual) {
         const p = computePrice(b.cost, b.rrp, r);
+        const ov = overrides.get(v.ean);
+        if (ov && p.status !== 'pierde') {
+          const adj = applyOverride(p.price, ov, b.cost, r);
+          if (adj < p.price) {
+            p.price = adj;
+            p.profit = profit(adj, b.cost, r);
+            p.compareAt = b.rrp && b.rrp > adj ? round2(b.rrp) : null;
+            p.competencia = true;
+          }
+        }
         if (p.status === 'pierde') {
           targetStock = 0;
           if (v.available !== 0)
@@ -66,6 +79,7 @@ export function planSync(variants, bts, r, prevCosts = new Map()) {
                 (prev && !formulaOnly ? ` (antes ${eur(Number(prev.cost))})` : '') +
                 ` · ganancia ${eur(p.profit)}` +
                 (p.status === 'pvp' ? ' · topado al PVP' : '') +
+                (p.competencia ? ' · ajustado por competencia' : '') +
                 (formulaOnly ? ' · ajuste de fórmula, BTS no ha cambiado el coste' : ''),
             });
             if (priceDrop) offerProducts.set(v.productId, v.productTitle);

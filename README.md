@@ -82,3 +82,25 @@ Página `/avisos` del panel. Código en `src/stockAlerts/`.
 - **Al final de cada sincronización** (y con «Revisar ahora»), los tamaños pedidos que ya tienen stock reciben el correo «¡Ha vuelto!» (`email.js`). Con `ALERT_LOW_STOCK_MAX` unidades o menos dice «Han llegado pocas unidades»; si hay más, «La última vez se agotó».
 - **RGPD:** un solo correo por solicitud; al enviarlo se borra la dirección. Las solicitudes sin reposición en `ALERT_EXPIRE_DAYS` días también se borran. Desde el panel se pueden borrar todos los avisos de un correo.
 - Los correos salen desde **avisos@ninabeauty.es** (`MAIL_FROM`) por la cuenta SMTP de Google Workspace (`sendCustomerMail` en `src/mail.js`), que sirve también para otros correos a clientas. Sin SMTP, las solicitudes se guardan y esperan.
+
+## Competencia (`/competencia`)
+
+Compara tus precios con Google Shopping España, buscando cada tamaño por su EAN con [SerpApi](https://serpapi.com) (plan gratis: 250 búsquedas al mes).
+
+- Cada día a las 05:15 (Madrid) gasta la parte del presupuesto mensual que toca; primero los nunca comprobados y los más caros. Botón «Buscar 25 productos ahora».
+- Quita nuestra tienda, muestras, decants, testers y precios absurdos (< 50 % de la mediana).
+- Posición frente a la tienda más barata: mejor precio, en línea (≤ 5 %), por encima, muy por encima (> 15 %).
+- «Revisar ajuste» → pantalla de confirmación → «Sí, aplicar». El precio sugerido queda 1 céntimo por debajo de la más barata (redondeo de la tienda), nunca por debajo del margen mínimo. Solo baja precios.
+- El ajuste dura 30 días y la sincronización lo respeta; si BTS sube el coste, lo sube lo justo para mantener el margen mínimo. `precio-manual` no se toca. `DRY_RUN=true` no cambia nada.
+
+| Variable | Por defecto | Para qué |
+|---|---|---|
+| `SERPAPI_KEY` | — | Clave de SerpApi (obligatoria) |
+| `COMPETENCIA_BUSQUEDAS_MES` | 250 | Búsquedas al mes que puede gastar |
+| `COMPETENCIA_GANANCIA_MIN` | 3 | Ganancia mínima en € al ajustar |
+| `COMPETENCIA_MARGEN_MIN_PCT` | 10 | Ganancia mínima en % del precio al ajustar |
+| `COMPETENCIA_MUY_CARO_PCT` | 15 | Desde qué % más caro es «muy por encima» |
+| `COMPETENCIA_EN_LINEA_PCT` | 5 | Hasta qué % más caro es «en línea» |
+| `COMPETENCIA_AJUSTE_DIAS` | 30 | Días que dura un ajuste |
+| `COMPETENCIA_REVISAR_DIAS` | 30 | Días antes de volver a buscar un producto |
+| `COMPETENCIA_AUTO` | true | `false` apaga la búsqueda diaria |

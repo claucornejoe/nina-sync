@@ -9,6 +9,7 @@ import { notifyRestocked } from './stockAlerts/notify.js';
 import { matchPurchases } from './stockAlerts/report.js';
 import * as progress from './progress.js';
 import { writeProbadorStock } from './probadorStock.js';
+import * as compStore from './competition/store.js';
 
 let running = null;
 
@@ -47,7 +48,8 @@ async function doSync(trigger, dryRun) {
 
     // 3. Planificar.
     const prevCosts = await db.getCosts([...bts.keys()]);
-    const plan = planSync(variants, bts, r, prevCosts);
+    const overrides = await compStore.activeOverrides().catch(() => new Map());
+    const plan = planSync(variants, bts, r, prevCosts, overrides);
     const withEan = variants.filter((v) => v.ean).length;
     if (withEan > 20 && plan.missing > withEan * 0.5) {
       throw new Error(`BTS no trae ${plan.missing} de ${withEan} EAN: parece un fallo de BTS, no se toca nada`);
@@ -114,6 +116,15 @@ async function doSync(trigger, dryRun) {
       console.error('No se pudieron procesar las novedades de BTS:', e.message);
     }
     plan.changes.push(...(await expireNewArrivals({ dryRun })));
+
+    // Pestaña «Competencia»: apunta el precio actual de cada tamaño ya comparado.
+    if (!dryRun) {
+      const newPrice = new Map();
+      for (const vs of plan.priceUpdates.values()) for (const u of vs) newPrice.set(u.id, u);
+      await compStore
+        .refreshOurPrices(variants.map((v) => { const u = newPrice.get(v.id); return u ? { ean: v.ean, price: Number(u.price), compareAt: u.compareAtPrice ? Number(u.compareAtPrice) : null } : v; }))
+        .catch((e) => console.error('Competencia: no se pudieron apuntar los precios:', e.message));
+    }
 
     progress.step(6);
     if (!dryRun) await db.saveCosts([...bts.values()]);
