@@ -8,6 +8,10 @@ import { isPlaceholderUrl } from './images.js';
 
 const USER = () => process.env.ICECAT_USER || 'openIcecat-live';
 const MAX_EXTRA = () => Number(process.env.ICECAT_MAX_EXTRA || 3);
+// Automático: cada noche busca en Icecat los productos aún no comprobados (los nuevos) y añade sus fotos.
+// ICECAT_AUTO=false lo apaga (los botones del panel siguen funcionando).
+export const icecatAuto = () => process.env.ICECAT_AUTO !== 'false';
+export const icecatCron = () => process.env.ICECAT_CRON || '40 3 * * *';
 
 export async function migrate() {
   await pool.query(`CREATE TABLE IF NOT EXISTS icecat_check (
@@ -41,12 +45,13 @@ let running = null;
 export const icecatStatus = () => running;
 
 /** Recorre la tienda y apunta cuántas fotos tiene cada producto en Icecat (prueba con todos los EAN de sus tamaños). */
-export async function checkAll() {
+export async function checkAll({ onlyNew = false } = {}) {
   if (running) return;
   running = { done: 0, total: 0, withPhotos: 0 };
   try {
+    const checked = onlyNew ? new Set((await pool.query('SELECT product_id FROM icecat_check')).rows.map((r) => r.product_id)) : null;
     const products = [];
-    for await (const p of sh.allProducts()) products.push(p);
+    for await (const p of sh.allProducts()) if (!checked || !checked.has(p.id)) products.push(p);
     running.total = products.length;
     for (const p of products) {
       let photos = [];
@@ -71,8 +76,17 @@ export async function checkAll() {
     }
   } finally {
     running = { ...running, finished: new Date() };
-    setTimeout(() => (running = null), 60_000);
+    console.log(`Icecat: comprobados ${running.done} productos, ${running.withPhotos} con fotos`);
+    const fin = running;
+    setTimeout(() => running === fin && (running = null), 60_000);
   }
+}
+
+/** Ronda automática: comprueba los productos nuevos y añade las fotos que haya. */
+export async function autoRun() {
+  await checkAll({ onlyNew: true });
+  running = null; // la comprobación ya terminó: deja pasar a addAll
+  await addAll();
 }
 
 export async function summary() {
@@ -121,6 +135,7 @@ export async function addAll() {
         );
         if (d.productUpdate.userErrors.length) throw new Error(JSON.stringify(d.productUpdate.userErrors));
         await pool.query(`UPDATE icecat_check SET added=$2, error=NULL WHERE product_id=$1`, [p.id, add.length]);
+        running.added = (running.added || 0) + 1;
       } catch (e) {
         await pool.query(`UPDATE icecat_check SET error=$2 WHERE product_id=$1`, [r.product_id, String(e.message).slice(0, 300)]);
       }
@@ -128,6 +143,8 @@ export async function addAll() {
     }
   } finally {
     running = { ...running, finished: new Date() };
-    setTimeout(() => (running = null), 60_000);
+    if (running.adding) console.log(`Icecat: fotos añadidas a ${running.added || 0} de ${running.total} productos`);
+    const fin = running;
+    setTimeout(() => running === fin && (running = null), 60_000);
   }
 }

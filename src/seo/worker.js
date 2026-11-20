@@ -21,7 +21,10 @@ export function isNew(p) {
   // Existentes sin descripción con una etiqueta de SEO_DESCRIBIR_EXISTENTES (p. ej. skin-care).
   const extra = seo.describeExisting();
   const empty = !String(p.descriptionHtml || '').replace(/<[^>]+>/g, '').trim();
-  return empty && extra.length > 0 && (p.tags || []).some((t) => extra.includes(t.toLowerCase()));
+  if (!empty || !extra.length) return false;
+  // «todos» (o *): cualquier producto con la descripción vacía.
+  if (extra.includes('todos') || extra.includes('*')) return true;
+  return (p.tags || []).some((t) => extra.includes(t.toLowerCase()));
 }
 
 /** Qué le falta a un producto. */
@@ -157,6 +160,7 @@ export async function processProduct(productId, { origin = 'manual', preview = f
       if (update.metafields && !update.metafields.length) delete update.metafields;
       if (Object.keys(update).length > 1) await sh.updateProduct(update);
       if (n.barcodes.length) await sh.setBarcodes(p.id, n.barcodes.map((v) => ({ id: v.id, ean: v.sku })));
+      if (out.error) console.warn('Google y descripciones:', p.title, '·', out.error);
       if (Object.keys(update).length > 1 || n.barcodes.length || out.note || out.error) await store.log(out);
     }
     return out;
@@ -223,6 +227,7 @@ export async function sweep(origin = 'repaso') {
         enqueue(p.id, origin);
       }
     }
+    console.log(`Google y descripciones: repaso ${origin} · ${total} productos · ${missing} con algo pendiente${capReached ? ' · tope diario de IA alcanzado' : ''}${aiPaused() ? ' · IA en pausa: ' + aiPaused() : ''}`);
     return { total, missing };
   } finally {
     sweeping = false;

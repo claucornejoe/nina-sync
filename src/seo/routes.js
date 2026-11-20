@@ -114,5 +114,6 @@ export async function mountSeo(app, auth) {
         .catch((e) => (state.lastSweep = { at: new Date(), error: e.message }));
     cron.schedule(seo.cron, () => run('repaso'), { timezone: config.timezone });
     setTimeout(() => run('repaso'), 60_000); // primer repaso al minuto de arrancar
+    if (icecat.icecatAuto()) cron.schedule(icecat.icecatCron(), () => icecat.autoRun().catch((e) => console.error('Icecat:', e.message)), { timezone: config.timezone });
   }
 }
