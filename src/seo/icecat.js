@@ -47,9 +47,9 @@ export const icecatStatus = () => running;
 /** Recorre la tienda y apunta cuántas fotos tiene cada producto en Icecat (prueba con todos los EAN de sus tamaños). */
 export async function checkAll({ onlyNew = false } = {}) {
   if (running) return;
-  running = { done: 0, total: 0, withPhotos: 0 };
+  running = { done: 0, total: 0, withPhotos: 0, errors: 0, noEan: 0, firstError: null };
   try {
-    const checked = onlyNew ? new Set((await pool.query('SELECT product_id FROM icecat_check')).rows.map((r) => r.product_id)) : null;
+    const checked = onlyNew ? new Set((await pool.query('SELECT product_id FROM icecat_check WHERE error IS NULL')).rows.map((r) => r.product_id)) : null;
     const products = [];
     for await (const p of sh.allProducts()) if (!checked || !checked.has(p.id)) products.push(p);
     running.total = products.length;
@@ -57,6 +57,7 @@ export async function checkAll({ onlyNew = false } = {}) {
       let photos = [];
       let ean = null;
       let error = null;
+      if (!p.variants.some((v) => v.sku)) running.noEan++;
       try {
         for (const v of p.variants) {
           if (!v.sku) continue;
@@ -65,6 +66,8 @@ export async function checkAll({ onlyNew = false } = {}) {
         }
       } catch (e) {
         error = e.message;
+        running.errors++;
+        running.firstError ||= e.message;
       }
       if (photos.length) running.withPhotos++;
       await pool.query(
@@ -76,7 +79,7 @@ export async function checkAll({ onlyNew = false } = {}) {
     }
   } finally {
     running = { ...running, finished: new Date() };
-    console.log(`Icecat: comprobados ${running.done} productos, ${running.withPhotos} con fotos`);
+    console.log(`Icecat: comprobados ${running.done} productos, ${running.withPhotos} con fotos, ${running.errors} con error, ${running.noEan} sin EAN${running.firstError ? ` · primer error: ${running.firstError}` : ''}`);
     const fin = running;
     setTimeout(() => running === fin && (running = null), 60_000);
   }
