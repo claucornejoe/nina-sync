@@ -1,0 +1,86 @@
+{%- comment -%}
+  Nina Beauty · NinaCesta: añade productos a la cesta desde las secciones propias
+  (portada, probador, colecciones Nina) y avisa al tema Horizon igual que su propio
+  botón «Añadir», para que se actualicen el número del carrito y el carrito lateral.
+  Uso: NinaCesta.add(idVariante, cantidad, elementoOrigen).then(function (r) { r.cart, r.updated })
+  Si falla, la promesa se rechaza con un Error cuyo .data trae la respuesta de Shopify.
+{%- endcomment -%}
+<script>
+  (function () {
+    if (window.NinaCesta) return;
+    var root = {{ routes.root_url | json }};
+    if (root.slice(-1) !== '/') root += '/';
+    var eventsP = null;
+    function events() {
+      if (!eventsP) eventsP = import('@shopify/events').then(function (m) { return m && m.CartLinesUpdateEvent ? m : null; }).catch(function () { return null; });
+      return eventsP;
+    }
+    function getCart() {
+      return fetch(root + 'cart.js', { headers: { Accept: 'application/json' }, cache: 'no-store' }).then(function (r) { return r.json(); });
+    }
+    function sectionIds() {
+      var ids = [];
+      document.querySelectorAll('cart-items-component').forEach(function (el) {
+        var id = el.dataset && el.dataset.sectionId;
+        if (id && ids.indexOf(id) < 0) ids.push(id);
+      });
+      return ids;
+    }
+    function add(id, qty, source) {
+      qty = Number(qty) || 1;
+      source = source || document;
+      return events().then(function (m) {
+        var deferred = m ? m.CartLinesUpdateEvent.createPromise() : null;
+        if (deferred) {
+          source.dispatchEvent(new m.CartLinesUpdateEvent({
+            action: 'add',
+            context: 'product',
+            lines: [{ merchandiseId: String(id), quantity: qty }],
+            promise: deferred.promise
+          }));
+        }
+        var body = { items: [{ id: Number(id), quantity: qty }] };
+        var ids = sectionIds();
+        if (ids.length) { body.sections = ids.join(','); body.sections_url = location.pathname; }
+        return fetch(root + 'cart/add.js', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify(body)
+        })
+          .then(function (r) {
+            return r.json().catch(function () { return {}; }).then(function (j) {
+              if (!r.ok || j.status) { var err = new Error(j.description || j.message || 'No se pudo añadir'); err.data = j; throw err; }
+              return j;
+            });
+          })
+          .then(function (added) {
+            return getCart().then(function (cart) {
+              if (deferred) {
+                try {
+                  deferred.resolve({
+                    cart: m.CartLinesUpdateEvent.createCartFromAjaxResponse(cart),
+                    detail: { items: cart.items, itemCount: cart.item_count, sections: added.sections || undefined, source: 'nina-cesta', didError: false }
+                  });
+                } catch (e) { deferred.reject(e); }
+              }
+              return { cart: cart, updated: !!deferred };
+            });
+          })
+          .catch(function (err) {
+            if (deferred) {
+              getCart().then(function (cart) {
+                if (!cart || !cart.items) throw new Error('cart');
+                deferred.resolve({
+                  cart: m.CartLinesUpdateEvent.createCartFromAjaxResponse(cart),
+                  detail: { items: cart.items, itemCount: cart.item_count, source: 'nina-cesta', didError: true }
+                });
+              }).catch(function (e) { deferred.reject(e); });
+            }
+            throw err;
+          });
+      });
+    }
+    window.NinaCesta = { add: add, cart: getCart };
+    events();
+  })();
+</script>
