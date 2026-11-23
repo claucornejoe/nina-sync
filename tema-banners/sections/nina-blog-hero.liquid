@@ -1,0 +1,158 @@
+{%- comment -%} Nina Blog: cabecera y llamada a la comunidad (artículos propios + preguntas de clientas) {%- endcomment -%}
+{%- liquid
+  assign modo = section.settings.modo
+  assign foro = section.settings.foro_url | default: '/apps/foro'
+-%}
+<div class="nina-blog nina-blog--{{ modo }}">
+  {%- if modo == 'cabecera' -%}
+    <div class="nina-blog__hero{% if section.settings.hero_foto != blank or section.settings.hero_foto_movil != blank %} nbf-on nbf--{{ section.settings.hero_velo }}{% endif %}">
+      {%- render 'nina-foto-fondo', foto: section.settings.hero_foto, foto_movil: section.settings.hero_foto_movil, eager: true -%}
+      <p class="nina-blog__kicker">{{ section.settings.kicker }}</p>
+      <h1 class="nina-blog__title">{{ section.settings.titulo | default: blog.title }}</h1>
+      <p class="nina-blog__intro">{{ section.settings.intro }}</p>
+      <div class="nina-blog__acciones">
+        <a class="nina-blog__btn" href="{{ foro }}">{{ section.settings.boton_foro }}</a>
+        <a class="nina-blog__btn nina-blog__btn--linea" href="#nina-blog-articulos">{{ section.settings.boton_leer }}</a>
+      </div>
+    </div>
+    {%- if section.settings.mostrar_ejemplos and section.blocks.size > 0 -%}
+      <div class="nina-foro" id="nina-foro">
+        <div class="nina-foro__cab">
+          <h2 class="nina-foro__titulo">{{ section.settings.titulo_foro }}</h2>
+          <a class="nina-blog__btn" href="{{ foro }}">{{ section.settings.boton_foro }}</a>
+        </div>
+        <div class="nina-foro__lista" data-nina-foro-vivo="{{ foro }}/ultimos.json">
+          {%- for block in section.blocks -%}
+            <article class="nina-foro__tema" {{ block.shopify_attributes }}>
+              <span class="nina-foro__etiqueta">{{ block.settings.categoria }}</span>
+              <h3 class="nina-foro__pregunta">{{ block.settings.pregunta }}</h3>
+              <p class="nina-foro__autora">{{ block.settings.autora }}</p>
+              <p class="nina-foro__texto">{{ block.settings.texto }}</p>
+              {%- assign respuestas = block.settings.respuestas | newline_to_br | split: '<br />' -%}
+              <div class="nina-foro__respuestas">
+                <p class="nina-foro__num">{{ respuestas.size }} respuestas</p>
+                {%- for r in respuestas -%}
+                  {%- assign partes = r | strip | split: '|' -%}
+                  {%- if partes.size > 1 -%}
+                    {%- assign nombre = partes[0] | strip -%}
+                    <div class="nina-foro__resp{% if nombre contains 'Nina' %} nina-foro__resp--nina{% endif %}">
+                      <span class="nina-foro__avatar">{{ nombre | slice: 0 }}</span>
+                      <div><strong>{{ nombre }}</strong><p>{{ partes[1] | strip }}</p></div>
+                    </div>
+                  {%- endif -%}
+                {%- endfor -%}
+              </div>
+              <a class="nina-foro__responder" href="{{ foro }}">Responder en el foro →</a>
+            </article>
+          {%- endfor -%}
+        </div>
+      </div>
+    {%- endif -%}
+    <script>
+      (function () {
+        var lista = document.querySelector('[data-nina-foro-vivo]');
+        if (!lista || !window.fetch) return;
+        var esc = function (s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; };
+        fetch(lista.getAttribute('data-nina-foro-vivo'), { headers: { Accept: 'application/json' } })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (d) {
+            if (!d || !d.temas || !d.temas.length) return;
+            lista.innerHTML = d.temas.slice(0, 4).map(function (t) {
+              return '<a class="nina-foro__tema" style="display:block;text-decoration:none" href="' + esc(t.url) + '">' +
+                '<span class="nina-foro__etiqueta">' + esc(t.categoria) + '</span>' +
+                '<h3 class="nina-foro__pregunta">' + esc(t.titulo) + '</h3>' +
+                '<p class="nina-foro__autora">' + esc(t.autor) + ' · ' + t.respuestas + (t.respuestas === 1 ? ' respuesta' : ' respuestas') + '</p>' +
+                '<p class="nina-foro__texto">' + esc(t.extracto) + (t.extracto && t.extracto.length >= 180 ? '…' : '') + '</p>' +
+                '<span class="nina-foro__responder">Leer y responder →</span></a>';
+            }).join('');
+          })
+          .catch(function () {});
+      })();
+    </script>
+    <span id="nina-blog-articulos"></span>
+  {%- else -%}
+    <div class="nina-blog__caja{% if section.settings.caja_foto != blank or section.settings.caja_foto_movil != blank %} nbf-on nbf--{{ section.settings.caja_velo }}{% endif %}">
+      {%- render 'nina-foto-fondo', foto: section.settings.caja_foto, foto_movil: section.settings.caja_foto_movil -%}
+      <div>
+        <h2 class="nina-blog__caja-titulo">{{ section.settings.titulo_caja }}</h2>
+        <p>{{ section.settings.texto_caja }}</p>
+      </div>
+      <a class="nina-blog__btn" href="{{ foro }}">{{ section.settings.boton_foro }}</a>
+    </div>
+    {%- if section.settings.aviso != blank -%}
+      <p class="nina-blog__aviso">{{ section.settings.aviso }}</p>
+    {%- endif -%}
+  {%- endif -%}
+</div>
+
+{% stylesheet %}
+  .nina-blog { --nb-rosa: #F72E75; --nb-petalo: #FFCCD5; --nb-frambuesa: #C92F60; --nb-grafito: #2B2B2B; padding: 0 16px; }
+  .nina-blog__hero { max-width: 1100px; margin: 0 auto; padding: 56px 24px; text-align: center; background: var(--nb-petalo); border-radius: 0 0 28px 28px; color: var(--nb-grafito); }
+  .nina-blog__kicker { font-family: 'Montserrat', var(--font-body--family); font-size: 12px; letter-spacing: .22em; text-transform: uppercase; color: var(--nb-frambuesa); margin: 0 0 8px; }
+  .nina-blog__title { font-family: 'Cormorant Garamond', 'Cormorant', var(--font-heading--family); font-size: clamp(40px, 7vw, 68px); font-weight: 500; color: var(--nb-rosa); margin: 0; line-height: 1.05; }
+  .nina-blog__intro { max-width: 620px; margin: 14px auto 0; font-size: 16px; line-height: 1.6; }
+  .nina-blog__acciones { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 24px; }
+  .nina-blog__btn { display: inline-block; padding: 13px 24px; border-radius: 999px; background: var(--nb-frambuesa); color: #fff; text-decoration: none; font-weight: 500; font-size: 14px; letter-spacing: .04em; border: 1.5px solid var(--nb-frambuesa); }
+  .nina-blog__btn:hover { background: var(--nb-rosa); border-color: var(--nb-rosa); color: #fff; }
+  .nina-blog__btn--linea { background: transparent; color: var(--nb-frambuesa); }
+  .nina-blog__caja { max-width: var(--normal-content-width, 760px); margin: 40px auto 0; padding: 28px; display: flex; flex-wrap: wrap; gap: 18px; align-items: center; justify-content: space-between; background: var(--nb-petalo); border-radius: 20px; color: var(--nb-grafito); }
+  .nina-blog__caja p { margin: 6px 0 0; }
+  .nina-blog__caja-titulo { font-family: 'Cormorant Garamond', 'Cormorant', var(--font-heading--family); font-size: 28px; font-weight: 500; color: var(--nb-rosa); margin: 0; }
+  .nina-blog__aviso { max-width: var(--normal-content-width, 760px); margin: 16px auto 0; font-size: 13px; line-height: 1.5; opacity: .8; }
+  .nina-foro { max-width: 1100px; margin: 40px auto 0; }
+  .nina-foro__cab { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .nina-foro__titulo { font-family: 'Cormorant Garamond', 'Cormorant', var(--font-heading--family); font-size: 34px; font-weight: 500; color: var(--nb-rosa); margin: 0; }
+  .nina-foro__lista { display: grid; grid-template-columns: 1fr; gap: 20px; }
+  @media (min-width: 750px) { .nina-foro__lista { grid-template-columns: 1fr 1fr; } }
+  .nina-foro__tema { border: 1px solid var(--nb-petalo); border-radius: 20px; padding: 22px; background: #fff; color: var(--nb-grafito); }
+  .nina-foro__etiqueta { display: inline-block; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; background: var(--nb-petalo); color: var(--nb-frambuesa); padding: 4px 10px; border-radius: 999px; }
+  .nina-foro__pregunta { font-family: 'Cormorant Garamond', 'Cormorant', var(--font-heading--family); font-size: 24px; font-weight: 600; margin: 12px 0 4px; line-height: 1.2; }
+  .nina-foro__autora { font-size: 13px; opacity: .7; margin: 0; }
+  .nina-foro__texto { margin: 10px 0 0; line-height: 1.55; }
+  .nina-foro__respuestas { margin-top: 16px; border-top: 1px solid var(--nb-petalo); padding-top: 12px; display: grid; gap: 12px; }
+  .nina-foro__num { font-size: 12px; font-weight: 600; color: var(--nb-frambuesa); margin: 0; }
+  .nina-foro__resp { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5; }
+  .nina-foro__resp p { margin: 2px 0 0; }
+  .nina-foro__avatar { flex: 0 0 32px; height: 32px; border-radius: 50%; background: var(--nb-petalo); color: var(--nb-frambuesa); display: grid; place-items: center; font-weight: 600; }
+  .nina-foro__resp--nina .nina-foro__avatar { background: var(--nb-frambuesa); color: #fff; }
+  .nina-foro__responder { display: inline-block; margin-top: 14px; color: var(--nb-frambuesa); font-weight: 600; font-size: 14px; text-decoration: none; }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Nina Blog",
+  "settings": [
+    { "type": "select", "id": "modo", "label": "Tipo", "default": "cabecera", "options": [ { "value": "cabecera", "label": "Cabecera del blog" }, { "value": "caja", "label": "Caja «Pregúntale a Nina» (artículo)" } ] },
+    { "type": "text", "id": "foro_url", "label": "Enlace a la comunidad", "default": "/apps/foro" },
+    { "type": "text", "id": "kicker", "label": "Antetítulo", "default": "Consejos, skincare y comunidad" },
+    { "type": "text", "id": "titulo", "label": "Título", "default": "Nina Blog" },
+    {"type": "header", "content": "Foto: cabecera del blog"},
+    {"type": "image_picker", "id": "hero_foto", "label": "Foto de fondo (ordenador)", "info": "Opcional. Sin foto se ve el diseño de siempre."},
+    {"type": "image_picker", "id": "hero_foto_movil", "label": "Foto de fondo (móvil)", "info": "Opcional. Si la dejas vacía, en el móvil se usa la de ordenador."},
+    {"type": "select", "id": "hero_velo", "label": "Para que se lea el texto sobre la foto", "options": [{"value": "ninguno", "label": "Sin velo (foto tal cual)"}, {"value": "claro", "label": "Velo blanco y texto oscuro"}, {"value": "oscuro", "label": "Velo negro y texto blanco"}], "default": "claro"},
+    {"type": "header", "content": "Foto: caja «Pregúntale a Nina»"},
+    {"type": "image_picker", "id": "caja_foto", "label": "Foto de fondo (ordenador)", "info": "Opcional. Sin foto se ve el diseño de siempre."},
+    {"type": "image_picker", "id": "caja_foto_movil", "label": "Foto de fondo (móvil)", "info": "Opcional. Si la dejas vacía, en el móvil se usa la de ordenador."},
+    {"type": "select", "id": "caja_velo", "label": "Para que se lea el texto sobre la foto", "options": [{"value": "ninguno", "label": "Sin velo (foto tal cual)"}, {"value": "claro", "label": "Velo blanco y texto oscuro"}, {"value": "oscuro", "label": "Velo negro y texto blanco"}], "default": "claro"},
+    { "type": "header", "content": "Textos" },
+    { "type": "textarea", "id": "intro", "label": "Introducción", "default": "Rutinas, perfumes y trucos de belleza explicados fácil. ¿Tienes una duda o un truco que compartir? Abre tu propio tema en el foro Nina y conversa con nuestro equipo y con otras chicas." },
+    { "type": "checkbox", "id": "mostrar_ejemplos", "label": "Mostrar conversaciones del foro", "default": true, "info": "En cuanto el Foro Nina tenga temas publicados, aquí salen los últimos temas reales en lugar de los ejemplos." },
+    { "type": "text", "id": "titulo_foro", "label": "Título del foro", "default": "Lo que se habla en el foro Nina" },
+    { "type": "text", "id": "boton_foro", "label": "Botón comunidad", "default": "Abre tu tema en el foro" },
+    { "type": "text", "id": "boton_leer", "label": "Botón artículos", "default": "Leer artículos" },
+    { "type": "text", "id": "titulo_caja", "label": "Título de la caja", "default": "¿Te ha quedado alguna duda?" },
+    { "type": "textarea", "id": "texto_caja", "label": "Texto de la caja", "default": "Pregunta en la comunidad Nina: te responde nuestro equipo y otras chicas que ya lo han probado." },
+    { "type": "textarea", "id": "aviso", "label": "Aviso", "default": "Los consejos de Nina Blog son orientativos y no sustituyen la opinión de un profesional. Si tienes una irritación o un problema de piel que no mejora, consulta a tu dermatólogo." }
+  ],
+  "blocks": [
+    { "type": "tema", "name": "Tema del foro", "settings": [
+      { "type": "text", "id": "categoria", "label": "Categoría", "default": "Skincare" },
+      { "type": "text", "id": "pregunta", "label": "Pregunta", "default": "¿Cuál es tu duda?" },
+      { "type": "text", "id": "autora", "label": "Quién pregunta" },
+      { "type": "textarea", "id": "texto", "label": "Texto" },
+      { "type": "textarea", "id": "respuestas", "label": "Respuestas (una por línea: Nombre|texto)" }
+    ] }
+  ],
+  "presets": [ { "name": "Nina Blog" } ]
+}
+{% endschema %}

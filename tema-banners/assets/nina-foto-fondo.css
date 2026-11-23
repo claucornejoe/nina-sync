@@ -1,0 +1,10 @@
+/* Nina Beauty · fotos de fondo en banners (snippets/nina-foto-fondo.liquid) */
+.nbf-on{position:relative;isolation:isolate;overflow:hidden}
+.nbf-on>.nbf,.nbf-on>.nbf-velo{position:absolute;inset:0;z-index:-1;margin:0;padding:0;pointer-events:none;border-radius:inherit;display:block}
+.nbf-on>.nbf img{width:100%;height:100%;max-width:none;object-fit:cover;display:block;border-radius:inherit}
+.nbf--claro>.nbf-velo{background:rgba(255,255,255,.62)}
+.nbf--oscuro>.nbf-velo{background:rgba(0,0,0,.45)}
+.nbf--oscuro{color:#fff !important}
+.nbf--oscuro :is(h1,h2,h3,h4,p,span,strong,b,small,em,label,div):not([class*="btn"]):not([class*="btn"] *):not(.nbf-velo):not(h1 *):not(h2 *):not([class*="brand"] *){color:#fff !important}
+.nbf--claro{color:#111 !important}
+.nbf--claro :is(h1,h2,h3,h4,p,span,strong,b,small,em,label,div):not([class*="btn"]):not([class*="btn"] *):not(.nbf-velo):not(h1 *):not(h2 *):not([class*="brand"] *){color:#111 !important}

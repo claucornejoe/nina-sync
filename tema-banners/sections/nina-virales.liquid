@@ -1,0 +1,223 @@
+{% comment %}
+  ViralesNina: sección de productos virales (AliExpress) dentro de Nina Beauty.
+  Muestra solo productos con la etiqueta «virales-nina» (colección virales-nina y sus subcolecciones virales-*).
+  Etiquetas de subcategoría: vn-gadgets, vn-cabello, vn-unas, vn-brochas, vn-organizadores, vn-bienestar.
+{% endcomment %}
+{%- assign vn_main = collections['virales-nina'] -%}
+{%- assign vn_handles = 'virales-gadgets,virales-cabello,virales-unas,virales-brochas,virales-organizadores,virales-bienestar' | split: ',' -%}
+
+<style>
+  .nvn { --vn-rosa: #F72E75; --vn-frambuesa: #C92F60; --vn-petalo: #FFCCD5; --vn-suave: #FFF1F5;
+         --vn-texto: #2B2B2B; --vn-gris: #6E6E6E; color: var(--vn-texto);
+         font-family: Montserrat, var(--font-body--family), sans-serif; }
+  .nvn * { box-sizing: border-box; }
+  .nvn a { color: inherit; text-decoration: none; }
+  .nvn-serif { font-family: 'Cormorant Garamond', Cormorant, var(--font-heading--family), serif; font-weight: 500; }
+  .nvn-wrap { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+
+  .nvn-hero { background: radial-gradient(120% 90% at 50% 0%, var(--vn-petalo) 0%, var(--vn-suave) 45%, #fff 100%); text-align: center; padding: 56px 0 48px; position: relative; overflow: hidden; }
+  .nvn-hero__mar { width: 64px; height: auto; display: block; margin: 0 auto 10px; }
+  .nvn-hero__eyebrow { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; letter-spacing: .18em; text-transform: uppercase;
+                       color: var(--vn-frambuesa); background: #fff; border: 1px solid var(--vn-petalo); border-radius: 999px; padding: 6px 14px; margin-bottom: 16px; }
+  .nvn-hero__eyebrow svg { width: 14px; height: 14px; }
+  .nvn-hero__brand { font-size: clamp(44px, 8vw, 78px); line-height: 1; margin: 0 0 6px; letter-spacing: -.01em; }
+  .nvn-hero__brand span { color: var(--vn-rosa); font-style: italic; }
+  .nvn-hero h1 { font-size: clamp(18px, 2.4vw, 22px); font-weight: 500; margin: 0 0 14px; color: var(--vn-texto); }
+  .nvn-hero p { max-width: 560px; margin: 0 auto 26px; color: var(--vn-gris); font-size: 16px; line-height: 1.6; }
+  .nvn-btn { display: inline-block; background: var(--vn-frambuesa); color: #fff !important; padding: 14px 30px; border-radius: 999px;
+             font-size: 14px; letter-spacing: .08em; text-transform: uppercase; font-weight: 500; transition: background .2s; }
+  .nvn-btn:hover { background: #A82650; }
+  .nvn-btn--claro { background: #fff; color: var(--vn-frambuesa) !important; border: 1px solid var(--vn-frambuesa); }
+  .nvn-btn--claro:hover { background: var(--vn-suave); }
+
+  .nvn-note { background: var(--vn-suave); border-top: 1px solid var(--vn-petalo); border-bottom: 1px solid var(--vn-petalo); }
+  .nvn-note__in { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 28px; padding: 14px 16px; font-size: 13px; color: var(--vn-texto); }
+  .nvn-note__in span { display: inline-flex; align-items: center; gap: 8px; }
+  .nvn-note__in svg { width: 18px; height: 18px; color: var(--vn-frambuesa); flex: none; }
+
+  .nvn-h2 { text-align: center; font-size: clamp(26px, 3.6vw, 36px); margin: 0 0 8px; }
+  .nvn-sub { text-align: center; color: var(--vn-gris); margin: 0 0 28px; font-size: 15px; }
+  .nvn-block { padding: 48px 0; }
+
+  .nvn-cats { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; }
+  .nvn-cats > .nvn-cat { flex: 0 0 calc((100% - 80px) / 6); }
+  .nvn-cat { display: flex; flex-direction: column; align-items: center; text-align: center; border-radius: 18px; padding: 18px 12px 16px;
+             background: var(--vn-suave); transition: transform .2s, box-shadow .2s; }
+  .nvn-cat:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(201,47,96,.15); }
+  .nvn-cat__img { width: 96px; height: 96px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; margin-bottom: 12px; }
+  .nvn-cat__img img { width: 100%; height: 100%; object-fit: contain; }
+  .nvn-cat__img img.nvn-cat__mar { width: 56%; height: 56%; }
+  .nvn-cat__name { font-weight: 500; font-size: 14px; line-height: 1.3; }
+  .nvn-cat__count { font-size: 12px; color: var(--vn-gris); margin-top: 4px; }
+
+  .nvn-prods { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .nvn-prod { display: flex; flex-direction: column; }
+  .nvn-prod__img { aspect-ratio: 1 / 1; background: #fff; border: 1px solid #F6E3E9; border-radius: 14px; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; }
+  .nvn-prod__img img { width: 100%; height: 100%; object-fit: cover; }
+  .nvn-prod__tag { position: absolute; top: 10px; left: 10px; background: var(--vn-rosa); color: #fff; font-size: 11px; padding: 4px 9px; border-radius: 999px; letter-spacing: .04em; }
+  .nvn-prod__title { font-size: 14px; line-height: 1.4; margin: 12px 0 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .nvn-prod__price { font-weight: 600; font-size: 15px; }
+  .nvn-prod__price s { color: var(--vn-gris); font-weight: 400; font-size: 13px; margin-left: 6px; }
+  .nvn-center { text-align: center; margin-top: 30px; }
+  .nvn-empty { text-align: center; background: var(--vn-suave); border-radius: 18px; padding: 40px 20px; color: var(--vn-gris); }
+  .nvn-empty img { width: 64px; height: auto; margin-bottom: 10px; }
+
+  .nvn-why { background: var(--vn-suave); }
+  .nvn-why__grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; text-align: center; }
+  .nvn-why__item h3 { font-size: 22px; margin: 10px 0 6px; }
+  .nvn-why__item p { color: var(--vn-gris); font-size: 14px; line-height: 1.6; margin: 0; }
+  .nvn-why__icon { width: 54px; height: 54px; border-radius: 50%; background: #fff; display: inline-flex; align-items: center; justify-content: center; color: var(--vn-frambuesa); }
+  .nvn-why__icon svg { width: 26px; height: 26px; }
+
+  @media (max-width: 989px) { .nvn-cats > .nvn-cat { flex-basis: calc((100% - 32px) / 3); } .nvn-prods { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 640px) {
+    .nvn-hero { padding: 36px 0 32px; }
+    .nvn-cats { gap: 12px; } .nvn-cats > .nvn-cat { flex-basis: calc((100% - 12px) / 2); }
+    .nvn-prods { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .nvn-why__grid { grid-template-columns: 1fr; }
+    .nvn-block { padding: 36px 0; }
+  }
+</style>
+
+<div class="nvn">
+  <section class="nvn-hero{% if section.settings.hero_foto != blank or section.settings.hero_foto_movil != blank %} nbf-on nbf--{{ section.settings.hero_velo }}{% endif %}">
+    {%- render 'nina-foto-fondo', foto: section.settings.hero_foto, foto_movil: section.settings.hero_foto_movil, eager: true -%}
+    <div class="nvn-wrap">
+      <img class="nvn-hero__mar" src="{{ 'nina-mariposa-rosa.svg' | asset_url }}" alt="" width="64" height="64">
+      <span class="nvn-hero__eyebrow"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.4L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.6zM19 14l.9 2.6L22 17.5l-2.1.9L19 21l-.9-2.6-2.1-.9 2.1-.9z"/></svg>{{ section.settings.eyebrow }}</span>
+      <div class="nvn-hero__brand nvn-serif">Virales<span>Nina</span></div>
+      <h1>{{ section.settings.heading }}</h1>
+      {%- if section.settings.text != blank -%}<p>{{ section.settings.text }}</p>{%- endif -%}
+      <a class="nvn-btn" href="{{ vn_main.url | default: '/collections/virales-nina' }}">{{ section.settings.button_label }}</a>
+    </div>
+  </section>
+
+  {%- if section.settings.note_show -%}
+  <div class="nvn-note">
+    <div class="nvn-note__in">
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>{{ section.settings.note_shipping }}</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>{{ section.settings.note_taxes }}</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="17.5" r="1.6"/><circle cx="17.5" cy="17.5" r="1.6"/></svg>{{ section.settings.note_tracking }}</span>
+    </div>
+  </div>
+  {%- endif -%}
+
+  <section class="nvn-block">
+    <div class="nvn-wrap">
+      <h2 class="nvn-h2 nvn-serif">{{ section.settings.cats_heading }}</h2>
+      <p class="nvn-sub">{{ section.settings.cats_text }}</p>
+      <div class="nvn-cats">
+        {%- for h in vn_handles -%}
+          {%- assign c = collections[h] -%}
+          {%- if c != blank -%}
+            <a class="nvn-cat" href="{{ c.url }}">
+              <span class="nvn-cat__img">
+                {%- if c.image -%}
+                  <img src="{{ c.image | image_url: width: 200 }}" alt="{{ c.title | escape }}" loading="lazy" width="96" height="96">
+                {%- elsif c.products.first.featured_image -%}
+                  <img src="{{ c.products.first.featured_image | image_url: width: 200 }}" alt="{{ c.title | escape }}" loading="lazy" width="96" height="96">
+                {%- else -%}
+                  <img class="nvn-cat__mar" src="{{ 'nina-mariposa-rosa.svg' | asset_url }}" alt="" loading="lazy" width="54" height="54">
+                {%- endif -%}
+              </span>
+              <span class="nvn-cat__name">{{ c.title }}</span>
+              {%- if c.products_count > 0 -%}
+                <span class="nvn-cat__count">{{ c.products_count }} {% if c.products_count == 1 %}producto{% else %}productos{% endif %}</span>
+              {%- else -%}
+                <span class="nvn-cat__count">Muy pronto</span>
+              {%- endif -%}
+            </a>
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+    </div>
+  </section>
+
+  <section class="nvn-block" style="padding-top:0">
+    <div class="nvn-wrap">
+      <h2 class="nvn-h2 nvn-serif">{{ section.settings.products_heading }}</h2>
+      <p class="nvn-sub">{{ section.settings.products_text }}</p>
+      {%- if vn_main != blank and vn_main.products_count > 0 -%}
+        <div class="nvn-prods">
+          {%- for p in vn_main.products limit: section.settings.products_limit -%}
+            <a class="nvn-prod" href="{{ p.url }}">
+              <span class="nvn-prod__img">
+                {%- if p.featured_image -%}
+                  <img src="{{ p.featured_image | image_url: width: 500 }}" alt="{{ p.featured_image.alt | default: p.title | escape }}" loading="lazy" width="250" height="250">
+                {%- endif -%}
+                {%- if p.compare_at_price > p.price -%}<span class="nvn-prod__tag">Oferta</span>
+                {%- elsif p.tags contains 'recien-llegado' -%}<span class="nvn-prod__tag">Nuevo</span>
+                {%- else -%}<span class="nvn-prod__tag">Viral</span>{%- endif -%}
+              </span>
+              <span class="nvn-prod__title">{{ p.title }}</span>
+              <span class="nvn-prod__price">
+                {%- if p.price_varies -%}Desde {% endif -%}{{ p.price | money }}
+                {%- if p.compare_at_price > p.price -%}<s>{{ p.compare_at_price | money }}</s>{%- endif -%}
+              </span>
+            </a>
+          {%- endfor -%}
+        </div>
+        <div class="nvn-center"><a class="nvn-btn nvn-btn--claro" href="{{ vn_main.url }}">Ver todo ViralesNina</a></div>
+      {%- else -%}
+        <div class="nvn-empty">
+          <img src="{{ 'nina-mariposa-rosa.svg' | asset_url }}" alt="" width="64" height="64">
+          <p>Estamos eligiendo los productos más virales del momento. Muy pronto los tendrás aquí.</p>
+        </div>
+      {%- endif -%}
+    </div>
+  </section>
+
+  <section class="nvn-block nvn-why">
+    <div class="nvn-wrap">
+      <div class="nvn-why__grid">
+        <div class="nvn-why__item">
+          <span class="nvn-why__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 15.4 7.2 17.9l.9-5.4L4.2 8.7l5.4-.8z"/></svg></span>
+          <h3 class="nvn-serif">Elegidos por Nina</h3>
+          <p>Solo lo que de verdad arrasa en TikTok e Instagram, probado y con buenas opiniones.</p>
+        </div>
+        <div class="nvn-why__item">
+          <span class="nvn-why__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+          <h3 class="nvn-serif">Envío internacional</h3>
+          <p>{{ section.settings.why_shipping }}</p>
+        </div>
+        <div class="nvn-why__item">
+          <span class="nvn-why__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+          <h3 class="nvn-serif">Pago seguro</h3>
+          <p>Paga con PayPal o con tarjeta, sin necesidad de cuenta.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+{% schema %}
+{
+  "name": "ViralesNina",
+  "tag": "section",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Etiqueta superior", "default": "Lo más viral de las redes" },
+    { "type": "text", "id": "heading", "label": "Título", "default": "Los productos de belleza que arrasan en TikTok" },
+    { "type": "textarea", "id": "text", "label": "Texto", "default": "Gadgets, accesorios y caprichos que todo el mundo quiere, elegidos por Nina a precios para darte el gusto." },
+    { "type": "text", "id": "button_label", "label": "Texto del botón", "default": "Ver todos los virales" },
+    {"type": "header", "content": "Foto: banner de arriba"},
+    {"type": "image_picker", "id": "hero_foto", "label": "Foto de fondo (ordenador)", "info": "Opcional. Sin foto se ve el diseño de siempre."},
+    {"type": "image_picker", "id": "hero_foto_movil", "label": "Foto de fondo (móvil)", "info": "Opcional. Si la dejas vacía, en el móvil se usa la de ordenador."},
+    {"type": "select", "id": "hero_velo", "label": "Para que se lea el texto sobre la foto", "options": [{"value": "ninguno", "label": "Sin velo (foto tal cual)"}, {"value": "claro", "label": "Velo blanco y texto oscuro"}, {"value": "oscuro", "label": "Velo negro y texto blanco"}], "default": "claro"},
+    { "type": "header", "content": "Franja de envío" },
+    { "type": "checkbox", "id": "note_show", "label": "Mostrar franja", "default": true },
+    { "type": "text", "id": "note_shipping", "label": "Plazo de envío", "default": "Envío internacional: 7-15 días laborables" },
+    { "type": "text", "id": "note_taxes", "label": "Impuestos", "default": "IVA incluido, sin aduanas ni sorpresas" },
+    { "type": "text", "id": "note_tracking", "label": "Seguimiento", "default": "Con número de seguimiento" },
+    { "type": "header", "content": "Categorías" },
+    { "type": "text", "id": "cats_heading", "label": "Título de categorías", "default": "Elige tu capricho" },
+    { "type": "text", "id": "cats_text", "label": "Texto de categorías", "default": "Todo lo que se ha hecho viral, por categoría" },
+    { "type": "header", "content": "Productos" },
+    { "type": "text", "id": "products_heading", "label": "Título de productos", "default": "Los más virales" },
+    { "type": "text", "id": "products_text", "label": "Texto de productos", "default": "Las últimas novedades que están triunfando" },
+    { "type": "range", "id": "products_limit", "label": "Productos a mostrar", "min": 4, "max": 16, "step": 4, "default": 8 },
+    { "type": "header", "content": "Ventajas" },
+    { "type": "text", "id": "why_shipping", "label": "Texto de envío", "default": "Llega a tu casa en 7-15 días laborables, con seguimiento y sin pagar aduanas." }
+  ],
+  "presets": [{ "name": "ViralesNina" }]
+}
+{% endschema %}

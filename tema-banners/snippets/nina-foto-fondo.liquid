@@ -1,0 +1,23 @@
+{%- comment -%}
+  Nina Beauty · Foto de fondo para cualquier banner (2026-11-23).
+  Uso:  {%- render 'nina-foto-fondo', foto: s.x_foto, foto_movil: s.x_foto_movil -%}
+  Va como PRIMER hijo del banner, y el banner lleva la clase «nbf-on nbf--<velo>» cuando hay foto.
+  Sin foto no pinta nada: el banner se ve con su diseño de siempre.
+{%- endcomment -%}
+{%- liquid
+  assign fd = foto | default: foto_movil
+  assign carga = 'lazy'
+  if eager
+    assign carga = 'eager'
+  endif
+-%}
+{%- if fd != blank -%}
+  {{- 'nina-foto-fondo.css' | asset_url | stylesheet_tag -}}
+  <picture class="nbf" aria-hidden="true">
+    {%- if foto_movil != blank -%}
+      <source media="(max-width: 749px)" srcset="{{ foto_movil | image_url: width: 600 }} 600w, {{ foto_movil | image_url: width: 900 }} 900w, {{ foto_movil | image_url: width: 1200 }} 1200w" sizes="100vw">
+    {%- endif -%}
+    {{ fd | image_url: width: 2000 | image_tag: widths: '600, 900, 1200, 1600, 2000', sizes: '100vw', loading: carga, alt: '' }}
+  </picture>
+  <i class="nbf-velo" aria-hidden="true"></i>
+{%- endif -%}
