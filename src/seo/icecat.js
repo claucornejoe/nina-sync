@@ -1,4 +1,5 @@
 // Fotos extra desde Icecat (catálogo de contenido oficial de las marcas para tiendas), por EAN.
+// Si Icecat no tiene el producto gratis, se prueba en Open Beauty Facts (catálogo libre de cosmética).
 // Primero se COMPRUEBA cuántas fotos hay (sin tocar nada). Añadirlas es un paso aparte, a mano desde el panel.
 // Regla de Clau: las fotos van a nivel de producto, nunca repetidas por cada tamaño.
 import { pool } from '../db.js';
@@ -40,6 +41,25 @@ export async function icecatPhotos(ean) {
   return parseGallery(j);
 }
 
+// Open Beauty Facts: catálogo libre de cosmética (fotos con licencia CC BY-SA, citar la fuente). OBF=false lo apaga.
+const OBF = () => process.env.OBF !== 'false';
+export function parseObf(j) {
+  if (!j || j.status !== 1 || !j.product) return [];
+  const p = j.product;
+  const urls = [p.image_front_url, p.image_url].filter((u) => /^https?:/.test(u || ''));
+  // La versión .400 es pequeña: se pide la grande (.full).
+  const big = [...new Set(urls.map((u) => u.replace(/\.(\d+)\.jpg$/, '.full.jpg')))];
+  return big.slice(0, 1).map((url) => ({ url, main: true, w: 0, source: 'openbeautyfacts' }));
+}
+export async function obfPhotos(ean) {
+  if (!OBF()) return [];
+  const res = await fetch(`https://world.openbeautyfacts.org/api/v2/product/${encodeURIComponent(ean)}.json?fields=image_front_url,image_url`, {
+    headers: { Accept: 'application/json', 'User-Agent': 'NinaSync/1.0' },
+  });
+  if (!res.ok) return [];
+  return parseObf(await res.json().catch(() => null));
+}
+
 export function parseGallery(j) {
   const g = j?.data?.Gallery || [];
   const out = g
@@ -70,9 +90,11 @@ export async function checkAll({ onlyNew = false } = {}) {
       try {
         for (const v of p.variants) {
           if (!v.sku) continue;
-          photos = await icecatPhotos(v.sku);
-          if (photos.length) { ean = v.sku; break; }
+          photos = await icecatPhotos(v.sku).catch((e) => ((error = e.message), []));
+          if (!photos.length) photos = await obfPhotos(v.sku).catch(() => []);
+          if (photos.length) { ean = v.sku; error = null; break; }
         }
+        if (error && !photos.length) throw new Error(error);
       } catch (e) {
         error = e.message;
         running.errors++;
