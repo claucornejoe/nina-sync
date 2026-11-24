@@ -200,3 +200,12 @@ test('cosmética: modo de uso en su propia línea; perfumes sin él', () => {
   assert.match(html, /<li><strong>Modo de uso:<\/strong> Aplicar mañana y noche sobre el rostro húmedo y aclarar\.<\/li>/);
   assert.doesNotMatch(renderDescription(good, { intro: 'Floral.', modo_de_uso: 'Pulverizar.', seguro: true }), /Modo de uso/);
 });
+
+test('Open Beauty Facts: foto grande de la portada', async () => {
+  const { parseObf } = await import('../src/seo/icecat.js');
+  assert.deepEqual(parseObf({ status: 0 }), []);
+  const r = parseObf({ status: 1, product: { image_front_url: 'https://images.openbeautyfacts.org/images/products/360/052/361/4462/front_fr.12.400.jpg' } });
+  assert.equal(r.length, 1);
+  assert.equal(r[0].url, 'https://images.openbeautyfacts.org/images/products/360/052/361/4462/front_fr.12.full.jpg');
+  assert.equal(r[0].main, true);
+});
