@@ -120,7 +120,7 @@ export async function checkAll({ onlyNew = false } = {}) {
 export async function autoRun() {
   await checkAll({ onlyNew: true });
   running = null; // la comprobación ya terminó: deja pasar a addAll
-  await addAll();
+  await addAll({ auto: true });
 }
 
 export async function summary() {
@@ -145,9 +145,11 @@ export function plan(p, photos, max = MAX_EXTRA()) {
 }
 
 /** Añade las fotos de Icecat a los productos comprobados que aún no las tienen. */
-export async function addAll() {
+/** auto=true (ronda nocturna): no añade las fotos de Open Beauty Facts; esas se añaden a mano desde el panel, tras revisarlas. */
+export async function addAll({ auto = false } = {}) {
   if (running) return;
-  const rows = (await pool.query(`SELECT * FROM icecat_check WHERE pics > 0 AND added = 0`)).rows;
+  const all = (await pool.query(`SELECT * FROM icecat_check WHERE pics > 0 AND added = 0`)).rows;
+  const rows = auto ? all.filter((r) => !(r.urls || []).some((u) => u.source === 'openbeautyfacts')) : all;
   running = { done: 0, total: rows.length, adding: true };
   try {
     for (const r of rows) {
@@ -163,7 +165,7 @@ export async function addAll() {
         const d = await gql(
           `mutation($product: ProductUpdateInput!, $media: [CreateMediaInput!]) { productUpdate(product: $product, media: $media) { userErrors { field message } } }`,
           {
-            product: { id: p.id, metafields: [{ namespace: 'nina_seo', key: 'foto', type: 'single_line_text_field', value: 'icecat' }] },
+            product: { id: p.id, metafields: [{ namespace: 'nina_seo', key: 'foto', type: 'single_line_text_field', value: (r.urls || []).some((u) => u.source === 'openbeautyfacts') ? 'openbeautyfacts' : 'icecat' }] },
             media: add.map((x) => ({ originalSource: x.url, mediaContentType: 'IMAGE', alt: p.title })),
           },
         );
