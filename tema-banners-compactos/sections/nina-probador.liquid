@@ -21,7 +21,7 @@
   }
   {%- if section.settings.destacar %}
   #shopify-section-{{ section.id }} .np-marco {
-    position: relative; border-radius: 28px; padding: 34px 28px 28px;
+    position: relative; border-radius: 28px; padding: 28px 28px 28px;
     background: linear-gradient(#FFF6F8, #FFF6F8) padding-box, linear-gradient(135deg, #F72E75 0%, #C92F60 100%) border-box;
     border: 3px solid transparent; box-shadow: 0 18px 44px rgba(201, 47, 96, .16);
   }
@@ -33,7 +33,7 @@
   }
   #shopify-section-{{ section.id }} .np-marco .np-cabecera { margin-bottom: 20px; }
   @media (max-width: 860px) {
-    #shopify-section-{{ section.id }} .np-marco { border-radius: 22px; padding: 28px 12px 14px; }
+    #shopify-section-{{ section.id }} .np-marco { border-radius: 22px; padding: 22px 12px 14px; }
     #shopify-section-{{ section.id }} .np-sello { font-size: 10px; padding: 8px 14px; }
   }
   {%- endif %}
@@ -81,7 +81,7 @@
     { "type": "text", "id": "titulo", "label": "Título", "default": "Encuentra tu labial ideal" },
     { "type": "richtext", "id": "texto", "label": "Texto", "default": "<p>Activa la cámara, elige una marca y prueba los tonos más vendidos en tus labios.</p>" },
     { "type": "checkbox", "id": "destacar", "label": "Enmarcar en rosa para destacarlo", "default": true },
-    { "type": "text", "id": "sello", "label": "Etiqueta sobre el marco", "default": "Nuevo · Gratis y al instante" },
+    { "type": "text", "id": "sello", "label": "Etiqueta sobre el marco (opcional)", "info": "Vacía no se muestra nada." },
     { "type": "checkbox", "id": "carrito", "label": "Mostrar botón «Añadir a la cesta»", "default": true },
     { "type": "range", "id": "padding_top", "label": "Margen superior", "min": 0, "max": 100, "step": 4, "unit": "px", "default": 40 },
     { "type": "range", "id": "padding_bottom", "label": "Margen inferior", "min": 0, "max": 100, "step": 4, "unit": "px", "default": 56 }
