@@ -339,3 +339,62 @@
 @container (max-width: 900px){
   .nh-dots{bottom:auto;top:6px;right:8px}
 }
+
+/* ===== 2026-11-24 · Perfumes árabes (más pequeño) + Nina Skin Care al lado ===== */
+.nh-duo{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:40px;align-items:stretch}
+.nh-duo .nh-arab{margin-top:0;grid-template-columns:minmax(0,1fr) 150px;border-radius:20px;min-height:0}
+.nh-duo .nh-arab__txt{padding:22px 0 22px 26px;gap:8px}
+.nh-duo .nh-arab__txt h2{font-size:26px;line-height:1.1}
+.nh-duo .nh-arab__txt p{font-size:13px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nh-duo .nh-arab .nh-btn{min-height:38px;padding:0 16px;font-size:12px;margin-top:4px}
+.nh-duo .nh-arab__art{min-height:0;padding:14px;gap:8px;background:transparent}
+.nh-duo .nh-arab__art svg{height:88px}.nh-duo .nh-arab__art svg:first-of-type{height:108px}
+.nh-scbox{background:#EEF7FA;border:1px solid #D6ECF3;border-radius:20px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;color:#1F3A43}
+.nh-scbox__head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.nh-scbox__logo{height:44px;width:auto;display:block}
+.nh-scbox .nh-scbox__btn{background:#2F6577;color:#fff !important;min-height:38px;padding:0 16px;font-size:12px;gap:6px}
+.nh-scbox .nh-scbox__btn:hover{background:#1F3A43}
+.nh-scbox__p{margin:0;font-size:13px;line-height:1.5;color:#33525C;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nh-sc--mini{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:auto}
+.nh-sc--mini a{min-height:72px;padding:10px 12px;border-radius:12px;gap:4px}
+.nh-sc--mini span:first-of-type{font-size:10.5px}
+.nh-sc--mini span:last-of-type{font-size:16px;line-height:1.1}
+
+/* ===== 2026-11-24 · Tus marcas favoritas: carrusel de círculos con logo ===== */
+.nh-marcas{padding-top:40px}
+.nh-marcas__head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.nh-marcas__nav{display:flex;gap:8px}
+.nh-marcas__btn{width:40px;height:40px;border-radius:50%;border:1px solid #F2D6DE;background:#fff;color:#C92F60;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s,color .2s}
+.nh-marcas__btn:hover{background:#C92F60;color:#fff}
+.nh-marcas__track{display:flex;gap:16px;overflow-x:auto;scrollbar-width:none;padding:4px 2px 6px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent);mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)}
+.nh-marcas__track::-webkit-scrollbar{display:none}
+.nh-marca{flex:0 0 120px;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+.nh-marca__c{width:112px;height:112px;border-radius:50%;background:#fff;border:2px solid #FFCCD5;box-shadow:0 4px 14px rgba(201,47,96,.08);display:flex;align-items:center;justify-content:center;overflow:hidden;transition:transform .2s,border-color .2s}
+.nh-marca:hover .nh-marca__c{transform:scale(1.05);border-color:#F72E75}
+.nh-marca__c img{width:72%;height:72%;object-fit:contain}
+.nh-marca__ini{font-size:17px;line-height:1.1;color:#C92F60;padding:0 10px;text-align:center}
+.nh-marca--txt .nh-marca__n{display:none}
+.nh-marca__n{font-size:12px;font-weight:600;color:#4A4A4A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+
+@container (max-width: 900px){
+  .nh-duo{grid-template-columns:1fr;gap:12px;margin-top:28px}
+  .nh-duo .nh-arab{grid-template-columns:minmax(0,1fr) 96px;border-radius:16px}
+  .nh-duo .nh-arab__txt{padding:16px 0 16px 16px;gap:6px}
+  .nh-duo .nh-arab__txt h2{font-size:20px}
+  .nh-duo .nh-arab__txt p{font-size:12px}
+  .nh-duo .nh-arab__art{min-height:0;padding:10px}
+  .nh-duo .nh-arab__art svg{height:58px}.nh-duo .nh-arab__art svg:first-of-type{height:72px}
+  .nh-scbox{padding:14px;border-radius:16px;gap:8px}
+  .nh-scbox__logo{height:32px}
+  .nh-scbox__p{font-size:12px}
+  .nh-sc--mini{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .nh-sc--mini a{min-height:56px;padding:8px 10px}
+  .nh-sc--mini span:last-of-type{font-size:14px}
+  .nh-marcas{padding-top:28px}
+  .nh-marcas__nav{display:none}
+  .nh-marcas__track{gap:12px}
+  .nh-marca{flex-basis:84px}
+  .nh-marca__c{width:78px;height:78px}
+  .nh-marca__ini{font-size:13px;padding:0 6px}
+  .nh-marca__n{font-size:11px}
+}

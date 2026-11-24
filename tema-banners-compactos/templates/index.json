@@ -151,6 +151,80 @@
     },
     "nina_resto": {
       "type": "nina-home-resto",
+      "blocks": {
+        "marca_1": {
+          "type": "marca",
+          "settings": {
+            "nombre": "Lattafa"
+          }
+        },
+        "marca_2": {
+          "type": "marca",
+          "settings": {
+            "nombre": "Paco Rabanne"
+          }
+        },
+        "marca_3": {
+          "type": "marca",
+          "settings": {
+            "nombre": "Givenchy"
+          }
+        },
+        "marca_4": {
+          "type": "marca",
+          "settings": {
+            "nombre": "Hermès"
+          }
+        },
+        "marca_5": {
+          "type": "marca",
+          "settings": {
+            "nombre": "Jean Paul Gaultier"
+          }
+        },
+        "marca_6": {
+          "type": "marca",
+          "settings": {
+            "nombre": "Tous"
+          }
+        },
+        "marca_7": {
+          "type": "marca",
+          "settings": {
+            "nombre": "Carolina Herrera"
+          }
+        },
+        "marca_8": {
+          "type": "marca",
+          "settings": {
+            "nombre": "Al Haramain"
+          }
+        },
+        "marca_9": {
+          "type": "marca",
+          "settings": {
+            "nombre": "Issey Miyake"
+          }
+        },
+        "marca_10": {
+          "type": "marca",
+          "settings": {
+            "nombre": "Dior"
+          }
+        }
+      },
+      "block_order": [
+        "marca_1",
+        "marca_2",
+        "marca_3",
+        "marca_4",
+        "marca_5",
+        "marca_6",
+        "marca_7",
+        "marca_8",
+        "marca_9",
+        "marca_10"
+      ],
       "settings": {}
     }
   },
