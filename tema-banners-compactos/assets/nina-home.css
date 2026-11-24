@@ -326,3 +326,16 @@
   .nh-mini--probador>div .nh-pb__top{max-width:calc(100% - 36px)}
   .nh-mini--probador .nh-arrow{padding:6px 10px;min-height:32px}
 }
+
+/* ===== 2026-11-24 · Carrusel del banner principal ===== */
+.nh-car{position:relative;display:grid;min-width:0}
+.nh-car>.nh-slide{grid-area:1/1;opacity:0;visibility:hidden;transition:opacity .6s ease,visibility 0s linear .6s}
+.nh-car>.nh-slide.is-on{opacity:1;visibility:visible;transition:opacity .6s ease,visibility 0s}
+.nh-dots{position:absolute;right:14px;bottom:8px;display:flex;gap:4px;z-index:3;pointer-events:none}
+.nh-dot{pointer-events:auto;width:24px;height:24px;padding:0;border:0;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.nh-dot::before{content:"";width:8px;height:8px;border-radius:999px;background:#fff;box-shadow:0 0 0 1px rgba(43,43,43,.25);transition:width .3s,background .3s}
+.nh-dot.is-on::before{width:22px;background:#C92F60}
+@media (prefers-reduced-motion:reduce){.nh-car>.nh-slide{transition:none}}
+@container (max-width: 900px){
+  .nh-dots{bottom:auto;top:6px;right:8px}
+}
