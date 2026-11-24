@@ -1,0 +1,22 @@
+{%- comment -%}
+  Nina Beauty · Menú de escritorio sin desplegables.
+  Petición de Clau (2026-11-16): en ordenador, Nina Skin Care, ViralesNina, etc. no abren
+  nada al pasar el ratón; se entra haciendo clic en el nombre y las subcategorías se ven
+  en su página (círculos). En móvil el menú lateral queda como el original de Horizon.
+{%- endcomment -%}
+{%- comment -%} 2026-11-24: diseño compacto de los banners Nina en todas las páginas (quitar esta línea para volver al tamaño anterior) {%- endcomment -%}
+{{ 'nina-compacto.css' | asset_url | stylesheet_tag }}
+<style>
+  .header-menu .menu-list__submenu,
+  .header-menu .menu-list__disclosure{display:none !important}
+</style>
+
+{% schema %}
+{
+  "name": "Nina · Estilo del menú",
+  "settings": [
+    { "type": "paragraph", "content": "En ordenador, el menú de arriba no abre desplegables: se entra a cada sección haciendo clic en su nombre." }
+  ],
+  "presets": [{ "name": "Nina · Estilo del menú" }]
+}
+{% endschema %}

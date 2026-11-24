@@ -1,0 +1,114 @@
+/* Nina Beauty · Diseño compacto de los banners (2026-11-24, Clau: «banners más pequeños, que todo no ocupe tanto espacio»).
+   Se carga en layout/theme.liquid después de los estilos del tema. Para volver al tamaño anterior basta con quitar esa línea.
+   La portada se compacta en assets/nina-home.css (bloque del final). */
+
+/* Colecciones (nina-coleccion) */
+html body .nbc-crumbs{padding:4px 0 8px}
+html body .nbc-hero{margin-bottom:16px;border-radius:18px}
+html body .nbc-hero__txt{padding:20px 30px;gap:8px}
+html body .nbc-hero h1{font-size:clamp(28px,3vw,40px)}
+html body .nbc-hero p{font-size:14px;line-height:1.5}
+html body .nbc-hero__img{min-height:165px}
+html body .nbc-hero__img .nbc-mariposa{width:96px;height:116px}
+html body .nbc-hero .nbc-btn{min-height:42px}
+html body .nbc-circles{gap:14px;padding-bottom:12px}
+html body .nbc-circle{width:64px;height:64px;font-size:20px}
+html body .nbc-promo{min-height:260px;padding:20px 18px}
+html body .nbc-promo__t{font-size:30px}
+html body .nbc-trust{margin-top:36px}
+html body .nbc-trust div{padding:16px}
+html body .nbc-guide{margin-top:32px}
+html body .nbc-more{padding-top:28px}
+
+/* Todo el catálogo (nina-catalogo) */
+html body .nct-hero{padding:20px 30px;margin-bottom:16px;border-radius:18px}
+html body .nct-hero h1{font-size:clamp(28px,3vw,40px)}
+html body .nct-hero p{font-size:14px;line-height:1.5}
+
+/* Nina Skin Care (siempre en azul) */
+html body .nsc-hero{padding:24px 0 20px}
+html body .nsc-hero__logo{width:min(180px,55vw);margin-bottom:8px}
+html body .nsc-hero h1{font-size:clamp(26px,3.4vw,38px);margin-bottom:10px}
+html body .nsc-hero p{font-size:15px;line-height:1.5;margin-bottom:18px}
+html body .nsc-block{padding:30px 0}
+html body .nsc-kb{padding-bottom:30px}
+html body .nsc-kb h2{font-size:clamp(26px,3.2vw,36px)}
+html body .nsc-kb p{margin-bottom:16px}
+html body .nsc-kb__img:nth-child(2){transform:translateY(-10px)}
+
+/* ViralesNina */
+html body .nvn-hero{padding:24px 0 20px}
+html body .nvn-hero__mar{width:44px;margin-bottom:6px}
+html body .nvn-hero__brand{font-size:clamp(38px,5.6vw,60px)}
+html body .nvn-hero h1{margin-bottom:10px}
+html body .nvn-hero p{font-size:15px;line-height:1.5;margin-bottom:18px}
+html body .nvn-block{padding:30px 0}
+
+/* Blog */
+html body .nina-blog__hero{padding:26px 24px}
+html body .nina-blog__title{font-size:clamp(34px,4.8vw,52px)}
+
+/* Mi cuenta */
+html body .nmc-hero{padding:26px 0 18px}
+html body .nmc-hero h1{font-size:clamp(26px,3.4vw,38px)}
+html body .nmc-auth{padding:28px 16px 40px}
+html body .nmc-auth__side{padding:30px 32px}
+html body .nmc-auth__side h2{font-size:clamp(26px,3.2vw,34px);margin:10px 0 8px}
+html body .nmc-auth__side p{margin-bottom:18px}
+html body .nmc-auth__perks{gap:10px}
+html body .nmc-auth__box{padding:28px 32px 30px}
+
+/* NinaCash */
+html body .nnc-hero{padding:26px 16px 28px}
+html body .nnc-hero .nnc-mar{width:44px;height:44px}
+html body .nnc-hero h1{font-size:clamp(30px,4.2vw,44px);margin:8px 0 10px}
+html body .nnc-hero p{font-size:15px;line-height:1.5}
+html body .nnc-sec{padding-top:34px}
+html body .nnc-sec h2{font-size:clamp(26px,3.2vw,34px)}
+html body .nnc-sec__intro{margin-bottom:20px}
+
+@media (max-width: 860px){
+  html body .nbc-hero{border-radius:16px;margin-bottom:12px}
+  html body .nbc-hero__txt{padding:16px 18px;flex-basis:100%}
+  html body .nbc-hero h1{font-size:28px}
+  html body .nbc-hero p{font-size:13px}
+  html body .nbc-hero__meta{display:none}
+  html body .nbc-hero__img{min-height:96px;flex-basis:100%}
+  html body .nbc-hero__img .nbc-mariposa{width:58px;height:70px}
+  html body .nbc-hero .nbc-btn{min-height:40px;padding:0 16px}
+  html body .nbc-circles{gap:10px;padding-bottom:8px}
+  html body .nbc-circles a{min-width:72px}
+  html body .nbc-circle{width:56px;height:56px;font-size:18px}
+  html body .nbc-promo{min-height:230px;padding:16px 14px}
+  html body .nbc-promo__t{font-size:22px}
+  html body .nbc-trust{margin-top:26px;gap:10px}
+  html body .nbc-trust div{padding:14px}
+  html body .nct-hero{padding:18px;border-radius:16px}
+  html body .nct-hero h1{font-size:28px}
+}
+@media (max-width: 749px){
+  html body .nsc-hero{padding:20px 0 18px}
+  html body .nsc-hero__logo{width:min(160px,50vw);margin-bottom:8px}
+  html body .nsc-hero h1{font-size:24px}
+  html body .nsc-hero p{font-size:13.5px;margin-bottom:14px}
+  html body .nsc-block{padding:22px 0}
+  html body .nsc-kb{padding-bottom:22px}
+  html body .nsc-kb__box{padding:20px 16px;gap:14px}
+  html body .nsc-kb h2{font-size:24px}
+  html body .nsc-kb__imgs{max-width:280px;margin:0 auto}
+  html body .nvn-hero{padding:20px 0 18px}
+  html body .nvn-hero__mar{width:36px}
+  html body .nvn-hero__brand{font-size:38px}
+  html body .nvn-hero p{font-size:13.5px;margin-bottom:14px}
+  html body .nvn-block{padding:22px 0}
+  html body .nina-blog__hero{padding:22px 16px}
+  html body .nina-blog__title{font-size:34px}
+  html body .nmc-hero{padding:18px 0 12px}
+  html body .nmc-hero h1{font-size:24px}
+  html body .nmc-auth{padding:16px 12px 28px}
+  html body .nmc-auth__side{padding:22px 18px}
+  html body .nmc-auth__box{padding:20px 16px 24px}
+  html body .nnc-hero{padding:24px 16px 26px}
+  html body .nnc-hero h1{font-size:28px}
+  html body .nnc-sec{padding-top:26px}
+}
