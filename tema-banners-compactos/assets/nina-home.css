@@ -216,6 +216,19 @@
 .nh-mini--probador>div .nh-pb__top{max-width:calc(100% - 50px)}
 .nh-mini--probador>div,.nh-mini--probador>.nh-arrow{max-width:none}
 
+
+/* Escritorio: alto final = 204 px (340 − 40 %) */
+.nh-hero__main{min-height:204px}
+.nh-hero__txt{padding:16px 8px 16px 26px;gap:6px}
+.nh-hero__h1{font-size:29px}
+.nh-mini{padding:14px 16px;gap:4px}
+.nh-mini h2{font-size:18px}
+.nh-mini--skin img{height:30px !important}
+.nh-mini--probador p{display:none}
+.nh-pb__badge{padding:3px 8px}
+.nh-hero .nh-btn{min-height:38px}
+.nh-mini--probador .nh-arrow{min-height:34px;padding:6px 14px}
+
 /* Minibanner 2: probador de labiales destacado */
 .nh-mini--probador{position:relative;background:linear-gradient(135deg,#F72E75 0%,#C92F60 100%);color:#fff;box-shadow:0 10px 26px rgba(201,47,96,.28)}
 .nh-mini--probador h2{color:#fff}
