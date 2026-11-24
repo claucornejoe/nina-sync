@@ -16,8 +16,23 @@
     #shopify-section-{{ section.id }} .np-rejilla { grid-template-columns: minmax(0, .82fr) minmax(0, 1fr); }
   }
   @media (max-width: 860px) {
-    #shopify-section-{{ section.id }} .np-escenario.np-activo { height: min(50vh, 108vw); }
-    #shopify-section-{{ section.id }} .np-escenario:not(.np-activo) { min-height: 306px; }
+    /* Móvil (2026-11-24, Clau): ventana más baja para ver la cámara y elegir tonos a la vez */
+    #shopify-section-{{ section.id }} .np-cabecera { margin-bottom: 14px; }
+    #shopify-section-{{ section.id }} .np-titulo { font-size: 28px; }
+    #shopify-section-{{ section.id }} .np-sub { margin-top: 6px; font-size: 13px; line-height: 1.45; }
+    #shopify-section-{{ section.id }} .np-rejilla { gap: 12px; }
+    #shopify-section-{{ section.id }} .np-panel { gap: 10px; }
+    #shopify-section-{{ section.id }} .np-escenario.np-activo { height: min(38vh, 82vw); }
+    #shopify-section-{{ section.id }} .np-seccion:has(.np-escenario.np-activo) .np-cabecera { display: none; }
+    #shopify-section-{{ section.id }} .np-lista { max-height: 240px; }
+    /* Antes de activar la cámara: tarjeta baja y horizontal */
+    #shopify-section-{{ section.id }} .np-escenario:not(.np-activo) { min-height: 0; }
+    #shopify-section-{{ section.id }} .np-escenario:not(.np-activo) .np-inicio { flex-direction: row; flex-wrap: wrap; align-items: center; justify-content: flex-start; text-align: left; align-content: flex-start; gap: 8px 12px; padding: 14px; }
+    #shopify-section-{{ section.id }} .np-inicio::before { width: 46px; height: 46px; flex: none; background-size: 32px; }
+    #shopify-section-{{ section.id }} .np-inicio-titulo { flex: 1 1 0; min-width: 0; font-size: 21px; }
+    #shopify-section-{{ section.id }} .np-inicio-texto { flex-basis: 100%; max-width: none; font-size: 12px; line-height: 1.45; }
+    #shopify-section-{{ section.id }} .np-inicio-botones { flex-basis: 100%; flex-wrap: nowrap; justify-content: flex-start; gap: 8px; margin-top: 2px; }
+    #shopify-section-{{ section.id }} .np-inicio-botones > * { flex: 1 1 0; min-height: 42px; padding-inline: 10px; font-size: 13px; white-space: nowrap; }
   }
   {%- if section.settings.destacar %}
   #shopify-section-{{ section.id }} .np-marco {
