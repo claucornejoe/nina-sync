@@ -297,4 +297,19 @@
   .nh-step b{width:36px;height:36px;font-size:18px}
   .nh-step strong{font-size:13px}
   .nh-step span{font-size:11.5px}
+  /* móvil: 40 % menos alto (Clau, 2026-11-24) */
+  .nh-hero__main{min-height:0}
+  .nh-hero__art:not(:has(img)){display:none}
+  .nh-hero__art{height:84px}
+  .nh-hero__txt{padding:14px 16px;gap:4px}
+  .nh-hero__h1{font-size:22px;line-height:1.08}
+  .nh-kicker{font-size:10px}
+  .nh-hero .nh-btn{min-height:38px;padding:0 14px;font-size:12px}
+  .nh-mini{padding:12px;gap:6px;border-radius:14px}
+  .nh-mini h2{font-size:15px}
+  .nh-mini--skin img{height:22px !important}
+  .nh-mini .nh-arrow{font-size:11.5px}
+  .nh-pb__lips{width:36px;top:10px;right:6px}
+  .nh-mini--probador>div .nh-pb__top{max-width:calc(100% - 36px)}
+  .nh-mini--probador .nh-arrow{padding:6px 10px;min-height:32px}
 }
