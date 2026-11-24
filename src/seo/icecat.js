@@ -7,6 +7,9 @@ import { gql } from '../shopify.js';
 import { isPlaceholderUrl } from './images.js';
 
 const USER = () => process.env.ICECAT_USER || 'openIcecat-live';
+// Icecat de pago (Full Icecat): su app_key, en Mi Perfil de icecat.biz. Sin ella solo se ve el catálogo gratis (Open Icecat).
+const APP_KEY = () => process.env.ICECAT_APP_KEY || '';
+let fullOnly = 0; // productos que Icecat solo enseña con Full Icecat
 const MAX_EXTRA = () => Number(process.env.ICECAT_MAX_EXTRA || 3);
 // Automático: cada noche busca en Icecat los productos aún no comprobados (los nuevos) y añade sus fotos.
 // ICECAT_AUTO=false lo apaga (los botones del panel siguen funcionando).
@@ -21,12 +24,17 @@ export async function migrate() {
 
 /** Fotos de Icecat para un EAN: [{ url, main }] (la principal primero). */
 export async function icecatPhotos(ean) {
-  const url = `https://live.icecat.biz/api?UserName=${encodeURIComponent(USER())}&Language=es&GTIN=${encodeURIComponent(ean)}`;
+  const url = `https://live.icecat.biz/api?UserName=${encodeURIComponent(USER())}&Language=es&GTIN=${encodeURIComponent(ean)}${APP_KEY() ? `&app_key=${encodeURIComponent(APP_KEY())}` : ''}`;
   const res = await fetch(url, { headers: { Accept: 'application/json' } });
   if (res.status === 404) return [];
   const j = await res.json().catch(() => ({}));
   if (!res.ok) {
     if (/not found|no product|does not exist/i.test(JSON.stringify(j))) return [];
+    // Sin Full Icecat: el producto existe pero solo es para clientes de pago. No es un fallo: no hay fotos gratis.
+    if (res.status === 403 && /app_key/i.test(JSON.stringify(j)) && !APP_KEY()) {
+      fullOnly++;
+      return [];
+    }
     throw new Error(`Icecat ${res.status}: ${(j.Message || j.message || '').slice(0, 150)}`);
   }
   return parseGallery(j);
@@ -48,6 +56,7 @@ export const icecatStatus = () => running;
 export async function checkAll({ onlyNew = false } = {}) {
   if (running) return;
   running = { done: 0, total: 0, withPhotos: 0, errors: 0, noEan: 0, firstError: null };
+  fullOnly = 0;
   try {
     const checked = onlyNew ? new Set((await pool.query('SELECT product_id FROM icecat_check WHERE error IS NULL')).rows.map((r) => r.product_id)) : null;
     const products = [];
@@ -79,7 +88,7 @@ export async function checkAll({ onlyNew = false } = {}) {
     }
   } finally {
     running = { ...running, finished: new Date() };
-    console.log(`Icecat: comprobados ${running.done} productos, ${running.withPhotos} con fotos, ${running.errors} con error, ${running.noEan} sin EAN${running.firstError ? ` · primer error: ${running.firstError}` : ''}`);
+    console.log(`Icecat: comprobados ${running.done} productos, ${running.withPhotos} con fotos, ${running.errors} con error, ${running.noEan} sin EAN, ${fullOnly} búsquedas solo en Icecat de pago${running.firstError ? ` · primer error: ${running.firstError}` : ''}`);
     const fin = running;
     setTimeout(() => running === fin && (running = null), 60_000);
   }
