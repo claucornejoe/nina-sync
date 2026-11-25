@@ -116,37 +116,13 @@
             "label": "Ofertas de la semana",
             "collection": "ofertas-de-la-semana"
           }
-        },
-        "tab_2": {
-          "type": "pestana",
-          "settings": {
-            "label": "Recién llegados",
-            "collection": "recien-llegados"
-          }
-        },
-        "tab_3": {
-          "type": "pestana",
-          "settings": {
-            "label": "Perfumes árabes",
-            "collection": "perfumes-arabes"
-          }
-        },
-        "tab_4": {
-          "type": "pestana",
-          "settings": {
-            "label": "Estuches y sets",
-            "collection": "estuches"
-          }
         }
       },
       "block_order": [
-        "tab_1",
-        "tab_2",
-        "tab_3",
-        "tab_4"
+        "tab_1"
       ],
       "settings": {
-        "limit": 8
+        "limit": 10
       }
     },
     "nina_resto": {
