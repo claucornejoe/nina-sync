@@ -41,7 +41,7 @@ function formResponder(t, texto = 'Responder como Equipo Nina') {
 <div><button class="btn" type="submit" style="padding:10px 20px;font-size:14px">Publicar respuesta</button></div></form></details>`;
 }
 
-export function foroPage({ revisar, denuncias, recientes, cifras, estado, ajustes, proxyUrl, tiendaUrl, flash }) {
+export function foroPage({ revisar, denuncias, recientes, cifras, ejemplos = 0, estado, ajustes, proxyUrl, tiendaUrl, flash }) {
   const pendientes = revisar.temas.length + revisar.respuestas.length;
   const conectado = !!estado.ultimaVisita;
   const config = conectado
@@ -99,6 +99,9 @@ ${flash ? `<div class="card" style="background:${flash.ok ? 'var(--verde-bg);col
 <label>Mensaje<br><textarea name="cuerpo" required rows="5" style="width:100%;border:1px solid var(--petalo);border-radius:10px;padding:10px;font:14px var(--sans)"></textarea></label>
 <label><input type="checkbox" name="fijar" value="1"> Destacarlo arriba del foro</label>
 <div><button class="btn" type="submit">Publicar como Equipo Nina</button></div></form></div>
+<h2>Temas de ejemplo para arrancar</h2>
+<div class="card"><p style="margin:0 0 10px">7 temas con respuestas (2 skincare, 3 perfumes, 1 maquillaje, 1 cabello y cuerpo). Salen firmados como «Nombre · ejemplo» y con la etiqueta «Tema de ejemplo». Bórralos cuando el foro tenga temas reales.</p>
+${ejemplos ? `<p class="muted" style="margin:0 0 10px">Ahora hay ${ejemplos} publicados.</p>${boton('/foro/ejemplos', { accion: 'borrar' }, 'Borrar los temas de ejemplo', 'ghost', '¿Borrar todos los temas de ejemplo y sus respuestas?')}` : boton('/foro/ejemplos', { accion: 'crear' }, 'Publicar los temas de ejemplo', '')}</div>
 <h2>Temas publicados</h2>${recientesHtml}`;
   return shell('Foro Nina', 'foro', body);
 }

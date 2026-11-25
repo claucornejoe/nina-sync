@@ -2,6 +2,7 @@
 // (proxy de aplicación) dentro del tema, con cabecera y pie de la tienda: por eso salen como «application/liquid».
 // Todo texto de clientas pasa por `t()`, que además neutraliza las llaves para que Liquid no lo interprete.
 import { CATEGORIAS, categoria, rutaTema } from './rules.js';
+import { FONDO_MARIPOSAS } from './mariposas.js';
 
 export const BASE = (process.env.FORO_PATH || '/apps/foro').replace(/\/+$/, '');
 const TZ = 'Europe/Madrid';
@@ -41,10 +42,39 @@ const CSS = `
 .nf *{box-sizing:border-box}
 .nf a{color:var(--fram)}
 .nf h1,.nf h2,.nf h3{font-family:var(--serif);font-weight:500;color:var(--graf);line-height:1.15;margin:0}
-.nf-hero{background:var(--petalo);border-radius:28px;padding:40px 24px;text-align:center}
+.nf-hero{text-align:center;padding:0 8px}
 .nf-kicker{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--fram);margin:0 0 8px;font-weight:600}
-.nf-hero h1{font-size:clamp(38px,6vw,60px);color:var(--rosa)}
-.nf-hero p{max-width:640px;margin:12px auto 0}
+.nf-hero h1{font-size:clamp(34px,4.4vw,42px);color:var(--rosa)}
+.nf-hero p{max-width:640px;margin:2px auto 0}
+.nf-hero .nf-kicker{margin-bottom:4px}
+.nf-banners{display:grid;gap:14px;margin-top:14px}
+@media(min-width:700px){.nf-banners{grid-template-columns:1fr 1fr}}
+.nf-banner{display:flex;align-items:center;justify-content:space-between;gap:14px;border-radius:20px;padding:12px 20px;text-decoration:none;min-height:74px;transition:transform .15s,box-shadow .15s}
+.nf-banner:hover{transform:translateY(-1px);box-shadow:0 10px 26px rgba(201,47,96,.18)}
+.nf-banner b{display:block;font-family:var(--serif);font-weight:500;font-size:clamp(22px,2.6vw,26px);line-height:1.1}
+.nf-banner span{display:block;font-size:13px;margin-top:2px}
+.nf-banner i{font-style:normal;flex:0 0 auto;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:20px}
+.nf-banner.rosa{background:var(--rosa);color:#fff!important}.nf-banner.rosa i{background:#fff;color:var(--rosa)}
+.nf-banner.petalo{background:var(--petalo);color:var(--graf)!important}.nf-banner.petalo b{color:var(--fram)}.nf-banner.petalo i{background:var(--fram);color:#fff}
+.nf-barra{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin:28px 0 18px}
+.nf-barra .nf-cats{margin:0}
+.nf-buscar{display:flex;align-items:center;gap:6px;border:1px solid var(--linea);border-radius:999px;padding:4px 6px 4px 12px;background:rgba(255,255,255,.85);color:var(--gris)}
+.nf-buscar input{border:0;background:transparent;font:13px var(--sans);color:var(--graf);width:150px;padding:4px 0;outline:none}
+.nf-buscar input::placeholder{color:var(--gris)}
+.nf-buscar button{border:0;background:none;color:var(--fram);cursor:pointer;padding:4px;display:grid;place-items:center}
+.nf-buscar:focus-within{border-color:var(--rosa)}
+.nf-hero p{font-size:14px}
+@media(max-width:699px){
+  .nf-banners{grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+  .nf-banner{min-height:0;padding:14px 16px;border-radius:18px}
+  .nf-banner b{font-size:21px}.nf-banner span,.nf-banner i{display:none}
+  .nf-barra{margin:20px 0 14px}
+  .nf-barra .nf-cats{flex-wrap:nowrap;overflow-x:auto;width:100%;padding-bottom:4px;scrollbar-width:none}
+  .nf-barra .nf-cats::-webkit-scrollbar{display:none}
+  .nf-cat{white-space:nowrap}
+  .nf-buscar{width:100%}.nf-buscar input{flex:1;width:auto}
+}
+.nf-chip.ejemplo{background:#fff;border:1px dashed var(--petalo);color:var(--gris)}
 .nf-btn{display:inline-flex;align-items:center;gap:8px;background:var(--fram);color:#fff!important;border:1.5px solid var(--fram);border-radius:999px;padding:12px 24px;font:600 14px var(--sans);letter-spacing:.03em;text-decoration:none;cursor:pointer}
 .nf-btn:hover{background:var(--rosa);border-color:var(--rosa)}
 .nf-btn.linea{background:transparent;color:var(--fram)!important}
@@ -109,16 +139,31 @@ a.nf-card:hover{box-shadow:0 10px 26px rgba(201,47,96,.12);transform:translateY(
 @media(min-width:900px){.nf-dos{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:start}.nf-dos .nf-caja{margin-top:0;position:sticky;top:20px}}
 `;
 
-const envolver = (html, extra = '') => `<style>${CSS}</style><div class="nf">${html}</div>${extra}`;
+// Fuera de .nf: el foro es un espacio de comunidad, así que se oculta la lupa de productos de la cabecera
+// (solo en las páginas del foro) y se ponen las mariposas de marca de agua en el fondo de toda la página.
+const PAGINA = `
+search-button.search-action,.search-action{display:none!important}
+body,main#MainContent{background-image:${FONDO_MARIPOSAS}!important;background-size:420px 420px!important;background-repeat:repeat!important}
+`;
+const envolver = (html, extra = '') => `<style>${PAGINA}${CSS}</style><div class="nf">${html}</div>${extra}`;
 
-function cabecera() {
+function cabecera(enPortada = true) {
   return `<section class="nf-hero">
   <p class="nf-kicker">Comunidad Nina Beauty</p>
   <h1>Foro Nina</h1>
-  <p>Pregunta, comparte tus trucos y ayuda a otras chicas con skincare, maquillaje y perfumes. Nuestro equipo también responde.</p>
-  <div class="nf-acciones"><a class="nf-btn" href="#abrir-tema">Abre tu tema en el foro</a><a class="nf-btn linea" href="/blogs/nina-blog">Leer el Nina Blog</a></div>
-</section>`;
+  <p>Pregunta, comparte tus trucos y ayuda a otras chicas. Nuestro equipo también responde.</p>
+</section>
+<div class="nf-banners">
+  <a class="nf-banner rosa" href="${enPortada ? '' : BASE}#abrir-tema"><div><b>Abre tu tema en el foro</b><span>Cuéntanos tu duda o comparte tu truco</span></div><i aria-hidden="true">${MARIPOSA.replace('width="14" height="14"', 'width="22" height="22"')}</i></a>
+  <a class="nf-banner petalo" href="/blogs/nina-blog"><div><b>Visita nuestro blog</b><span>Rutinas, perfumes y trucos explicados fácil</span></div><i aria-hidden="true">→</i></a>
+</div>`;
 }
+const LUPA = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16.5 16.5 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+/** Buscador discreto: solo busca en los temas del foro, no en productos. */
+const buscador = (buscar, catActual) =>
+  `<form class="nf-buscar" method="get" action="${BASE}" role="search">${catActual ? `<input type="hidden" name="c" value="${t(catActual)}">` : ''}<input type="search" name="q" value="${t(buscar)}" placeholder="Buscar en el foro" aria-label="Buscar en el foro" maxlength="80"><button type="submit" aria-label="Buscar">${LUPA}</button></form>`;
+const autorDe = (x) => (x.ejemplo ? `${x.autor} · ejemplo` : x.autor);
+const chipEjemplo = (x) => (x.ejemplo ? ' <span class="nf-chip ejemplo">Tema de ejemplo</span>' : '');
 
 const mensajes = {
   enviado: ['ok', '¡Gracias! Hemos recibido tu tema. Lo publicaremos en cuanto lo revisemos (normalmente en menos de 24 horas).'],
@@ -167,31 +212,36 @@ function formTema({ sesion, perfil, sugerido, token, valores = {}, catActual }) 
 function tarjeta(tm) {
   const cat = categoria(tm.categoria);
   return `<a class="nf-card" href="${BASE}/${rutaTema(tm)}">
-  ${tm.fijado ? '<span class="nf-chip fijo">Destacado</span> ' : ''}<span class="nf-chip">${t(cat?.nombre || tm.categoria)}</span>
+  ${tm.fijado ? '<span class="nf-chip fijo">Destacado</span> ' : ''}<span class="nf-chip">${t(cat?.nombre || tm.categoria)}</span>${chipEjemplo(tm)}
   <h3>${t(tm.titulo)}</h3>
-  <div class="nf-meta"><span>${tm.equipo ? `<span class="nf-equipo">${MARIPOSA} Equipo Nina</span>` : t(tm.autor)}</span><span>${fecha(tm.actividad)}</span><span>${plural(tm.respuestas, 'respuesta', 'respuestas')}</span>${tm.ayuda ? `<span>♥ ${tm.ayuda}</span>` : ''}</div>
+  <div class="nf-meta"><span>${tm.equipo ? `<span class="nf-equipo">${MARIPOSA} Equipo Nina</span>` : t(autorDe(tm))}</span><span>${fecha(tm.actividad)}</span><span>${plural(tm.respuestas, 'respuesta', 'respuestas')}</span>${tm.ayuda ? `<span>♥ ${tm.ayuda}</span>` : ''}</div>
 </a>`;
 }
 
 /** Portada del foro: categorías, lista de temas y formulario. */
-export function portada({ temas, total, pagina, porPagina, catActual, sesion, perfil, sugerido, token, ok, error, valores }) {
+export function portada({ temas, total, pagina, porPagina, catActual, buscar = '', sesion, perfil, sugerido, token, ok, error, valores }) {
   const cats = [`<a class="nf-cat${!catActual ? ' on' : ''}" href="${BASE}">Todo</a>`]
     .concat(CATEGORIAS.map((c) => `<a class="nf-cat${catActual === c.id ? ' on' : ''}" href="${BASE}?c=${c.id}" title="${t(c.desc)}">${t(c.nombre)}</a>`))
     .join('');
   const paginas = Math.max(1, Math.ceil(total / porPagina));
-  const q = (p) => `${BASE}?${catActual ? `c=${catActual}&amp;` : ''}p=${p}`;
+  const q = (p) => `${BASE}?${catActual ? `c=${catActual}&amp;` : ''}${buscar ? `q=${encodeURIComponent(buscar)}&amp;` : ''}p=${p}`;
   const pag =
     paginas > 1
       ? `<nav class="nf-pag">${pagina > 1 ? `<a class="nf-btn linea" href="${q(pagina - 1)}">← Más recientes</a>` : ''}${pagina < paginas ? `<a class="nf-btn linea" href="${q(pagina + 1)}">Más antiguos →</a>` : ''}</nav>`
       : '';
   const lista = temas.length
     ? `<div class="nf-lista">${temas.map(tarjeta).join('')}</div>${pag}`
-    : `<div class="nf-vacio"><p style="font-family:var(--serif);font-size:26px;color:var(--rosa);margin:0">${catActual ? 'Aún no hay temas aquí' : 'El foro acaba de abrir'}</p><p style="margin:6px 0 0">¡Sé la primera en abrir un tema!</p></div>`;
+    : buscar
+      ? `<div class="nf-vacio"><p style="font-family:var(--serif);font-size:26px;color:var(--rosa);margin:0">No hay temas con «${t(buscar)}»</p><p style="margin:6px 0 0">Prueba con otra palabra o <a href="#abrir-tema">abre tú el tema</a>.</p></div>`
+      : `<div class="nf-vacio"><p style="font-family:var(--serif);font-size:26px;color:var(--rosa);margin:0">${catActual ? 'Aún no hay temas aquí' : 'El foro acaba de abrir'}</p><p style="margin:6px 0 0">¡Sé la primera en abrir un tema!</p></div>`;
   const cat = categoria(catActual);
+  const tituloLista = buscar
+    ? `Resultados para «${t(buscar)}» <a href="${BASE}${catActual ? `?c=${catActual}` : ''}" style="font:600 13px var(--sans);margin-left:8px">Quitar búsqueda</a>`
+    : cat ? t(cat.nombre) : 'Últimos temas';
   return envolver(`${cabecera()}
 ${aviso(ok, error)}
-<nav class="nf-cats" aria-label="Categorías">${cats}</nav>
-<div class="nf-dos"><div><h2 style="font-size:30px;margin-bottom:14px">${cat ? t(cat.nombre) : 'Últimos temas'}</h2>${lista}</div>
+<div class="nf-barra"><nav class="nf-cats" aria-label="Categorías">${cats}</nav>${buscador(buscar, catActual)}</div>
+<div class="nf-dos"><div><h2 style="font-size:30px;margin-bottom:14px">${tituloLista}</h2>${lista}</div>
 ${formTema({ sesion, perfil, sugerido, token, valores, catActual })}</div>
 <p class="nf-legal">Los consejos del foro los escriben clientas y nuestro equipo, son orientativos y no sustituyen la opinión de un profesional. Si tienes una irritación o un problema de piel que no mejora, consulta a tu dermatólogo. <a href="${BASE}/normas">Normas del foro</a>.</p>`);
 }
@@ -215,7 +265,7 @@ export function paginaTema({ tema, respuestas, sesion, perfil, sugerido, token, 
     .map(
       (r) => `<article class="nf-resp${r.equipo ? ' nina' : ''}" id="r${r.id}">
   <div class="nf-av">${r.equipo ? MARIPOSA.replace('width="14" height="14"', 'width="20" height="20"') : t((r.autor || '?').charAt(0).toUpperCase())}</div>
-  <div><div class="nf-meta"><b style="color:var(--graf)">${r.equipo ? `<span class="nf-equipo">${MARIPOSA} Equipo Nina</span>` : t(r.autor)}</b><span>${fecha(r.creado)}</span></div>
+  <div><div class="nf-meta"><b style="color:var(--graf)">${r.equipo ? `<span class="nf-equipo">${MARIPOSA} Equipo Nina</span>` : t(autorDe(r))}</b><span>${fecha(r.creado)}</span></div>
   <div class="nf-cuerpo" style="margin-top:4px;font-size:15px">${parrafos(r.cuerpo)}</div>
   <div class="nf-pie">${votar('respuesta', r.id, r.ayuda)}${denunciar('respuesta', r.id, r.equipo)}</div></div>
 </article>`,
@@ -256,21 +306,22 @@ export function paginaTema({ tema, respuestas, sesion, perfil, sugerido, token, 
     `<nav class="nf-miga"><a href="${BASE}">Foro Nina</a> › <a href="${BASE}?c=${t(tema.categoria)}">${t(cat?.nombre || tema.categoria)}</a></nav>
 ${aviso(ok, error)}
 <article class="nf-tema">
-  ${tema.fijado ? '<span class="nf-chip fijo">Destacado</span> ' : ''}<span class="nf-chip">${t(cat?.nombre || tema.categoria)}</span>
+  ${tema.fijado ? '<span class="nf-chip fijo">Destacado</span> ' : ''}<span class="nf-chip">${t(cat?.nombre || tema.categoria)}</span>${chipEjemplo(tema)}
   <h1>${t(tema.titulo)}</h1>
-  <div class="nf-meta"><span>${tema.equipo ? `<span class="nf-equipo">${MARIPOSA} Equipo Nina</span>` : `Pregunta de <b>${t(tema.autor)}</b>`}</span><span>${fecha(tema.publicado_at || tema.creado)}</span></div>
+  <div class="nf-meta"><span>${tema.equipo ? `<span class="nf-equipo">${MARIPOSA} Equipo Nina</span>` : `Pregunta de <b>${t(autorDe(tema))}</b>`}</span><span>${fecha(tema.publicado_at || tema.creado)}</span></div>
   <div class="nf-cuerpo">${parrafos(tema.cuerpo)}</div>
   <div class="nf-pie">${votar('tema', tema.id, tema.ayuda)}${denunciar('tema', tema.id, tema.equipo)}</div>
 </article>
 <section class="nf-resps"><h2>${respuestas.length ? plural(respuestas.length, 'respuesta', 'respuestas') : 'Aún no hay respuestas'}</h2>${resp || '<p class="nf-nota">¿Sabes algo que pueda ayudar? ¡Sé la primera en responder!</p>'}</section>
 ${responder}
 <p class="nf-legal">Los consejos del foro son orientativos y no sustituyen la opinión de un profesional. Si tienes una irritación o un problema de piel que no mejora, consulta a tu dermatólogo. <a href="${BASE}/normas">Normas del foro</a>.</p>`,
-    `<script type="application/ld+json">${ldTxt}</script>`,
+    // Los temas de ejemplo no se marcan como conversaciones reales para Google.
+    tema.ejemplo ? '' : `<script type="application/ld+json">${ldTxt}</script>`,
   );
 }
 
 export function normas() {
-  return envolver(`${cabecera()}
+  return envolver(`${cabecera(false)}
 <div class="nf-normas"><h2 style="font-size:34px;color:var(--rosa)">Normas del Foro Nina</h2>
 <p>El Foro Nina es un espacio para ayudarnos entre todas. Para que siga siendo bonito:</p>
 <ul>
