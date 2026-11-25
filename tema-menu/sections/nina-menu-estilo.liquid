@@ -1,0 +1,27 @@
+{%- comment -%}
+  Nina Beauty · Estilo del menú.
+  2026-11-25 (Clau): el menú de ordenador vuelve a tener desplegables, pero propios de Nina
+  (los pinta blocks/_header-menu.liquid con el menú «Menú Nina (borrador)», handle menu-nina).
+  Aquí solo quedan las etiquetas «Próximamente» y «Nuevo» del menú lateral del móvil.
+{%- endcomment -%}
+{%- comment -%} 2026-11-24: diseño compacto de los banners Nina en todas las páginas (quitar esta línea para volver al tamaño anterior) {%- endcomment -%}
+{{ 'nina-compacto.css' | asset_url | stylesheet_tag }}
+<style>
+  .header__drawer a[href$="/pages/virales-nina"]::after,
+  .header__drawer a[href$="/apps/foro"]::after{
+    display:inline-block;margin-left:8px;padding:2px 7px;border-radius:999px;
+    font-size:10px;font-weight:600;letter-spacing:.04em;line-height:1.4;text-transform:uppercase;vertical-align:middle
+  }
+  .header__drawer a[href$="/pages/virales-nina"]::after{content:"Próximamente";background:#FFCCD5;color:#C92F60}
+  .header__drawer a[href$="/apps/foro"]::after{content:"Nuevo";background:#F72E75;color:#fff}
+</style>
+
+{% schema %}
+{
+  "name": "Nina · Estilo del menú",
+  "settings": [
+    { "type": "paragraph", "content": "El menú de arriba usa el menú «Menú Nina (borrador)». Para cambiar enlaces: Contenido → Menús. «Próximamente» sale en ViralesNina y «Nuevo» en Foro." }
+  ],
+  "presets": [{ "name": "Nina · Estilo del menú" }]
+}
+{% endschema %}

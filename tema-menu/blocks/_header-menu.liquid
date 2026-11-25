@@ -1,0 +1,811 @@
+
+{%- doc -%}
+  Renders a header menu block.
+  Nina Beauty (2026-11-25): en ordenador se pinta el menú Nina con desplegables propios
+  (Catálogo en columnas, Nina Skin Care en azul, Contacto con correo y WhatsApp,
+  etiquetas «Próximamente» en ViralesNina y «Nuevo» en Foro). El original de Horizon
+  está en blocks/_nina-respaldo-header-menu-2026-11-25.liquid.
+
+  @param {string} [variant] - What version of the menu to render. Defaults to header menu.
+  @param {string} [transparent] - Show a transparent menu
+{%- enddoc -%}
+
+{% liquid
+  assign block_settings = block.settings
+  assign effective_submenu_color = block_settings.background_color | default: settings.page_background_color
+%}
+
+{% case variant %}
+  {% when 'mobile' %}
+    <div
+      class="header__drawer"
+      ref="headerDrawerContainer"
+      data-hydration-key="header-drawer-mobile"
+      {{ block.shopify_attributes }}
+    >
+      {% render 'header-drawer',
+        linklist: block_settings.menu,
+        data_header_drawer_type: 'mobile-drawer',
+        block: block,
+        section: section
+      %}
+    </div>
+
+  {% when 'navigation_bar' %}
+    {% if block_settings.navigation_bar == true %}
+      {% render 'contrast-override',
+        background_color: block_settings.background_color_navigation_bar,
+        text_color: block_settings.text_color_navigation_bar,
+        section_id: block.id
+      %}
+      <div
+        class="menu-list menu-list--mobile{% if transparent == blank %} color-custom-{{ block.id }}{% endif %}"
+        style="--menu-horizontal-gap: 15px; --mobile-nav-margin: auto;"
+        data-hydration-key="header-menu-mobile-navigation-bar"
+        data-navigation-bar-enabled
+      >
+        <div class="menu-list__scroll-container">
+          <ul
+            class="menu-list__list list-unstyled"
+            role="list"
+          >
+            {% for link in block_settings.menu.links %}
+              <li>
+                <a
+                  href="{{ link.url }}"
+                  id="MenuItem-{{ link.handle }}"
+                  class="menu-list__item"
+                  {% if link.current %}
+                    aria-current="page"
+                  {% endif %}
+                >
+                  {{- link.title -}}
+                </a>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% endif %}
+  {% else %}
+    <div
+      ref="headerMenu"
+      class="header-menu nina-nav-wrap"
+      {{ block.shopify_attributes }}
+      data-hydration-key="header-menu"
+      data-skip-node-update
+    >
+      <nav class="nina-nav" aria-label="{{ 'accessibility.header_navigation_label' | t }}">
+        <ul class="nina-nav__list" role="list">
+          {%- for link in block_settings.menu.links -%}
+            {%- liquid
+              assign url = link.url | downcase
+              assign badge = ''
+              assign badge_class = ''
+              assign tipo = 'lista'
+              assign has_drop = false
+              if link.links != blank
+                assign has_drop = true
+              endif
+              if url contains 'virales-nina'
+                assign badge = 'Próximamente'
+                assign badge_class = 'nina-badge--pronto'
+                assign has_drop = false
+              endif
+              if url contains '/apps/foro'
+                assign badge = 'Nuevo'
+                assign badge_class = 'nina-badge--nuevo'
+              endif
+              assign es_skin = false
+              if url contains 'skin-care'
+                assign es_skin = true
+              endif
+              if url contains 'contact'
+                assign tipo = 'contacto'
+              else
+                for child in link.links
+                  if child.links != blank
+                    assign tipo = 'columnas'
+                  endif
+                endfor
+              endif
+            -%}
+            <li class="nina-nav__item{% if has_drop %} nina-nav__item--drop{% endif %}{% if es_skin %} nina-nav__item--skin{% endif %}">
+              <a
+                href="{{ link.url }}"
+                class="nina-nav__link{% if link.active %} is-active{% endif %}"
+                {% if link.current %}aria-current="page"{% endif %}
+                {% if has_drop %}aria-haspopup="true" aria-expanded="false"{% endif %}
+              >
+                <span>{{ link.title }}</span>
+                {%- if badge != blank -%}<span class="nina-badge {{ badge_class }}">{{ badge }}</span>{%- endif -%}
+                {%- if has_drop -%}
+                  <svg class="nina-nav__caret" viewBox="0 0 10 6" aria-hidden="true" focusable="false"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                {%- endif -%}
+              </a>
+
+              {%- if has_drop -%}
+                <div class="nina-drop nina-drop--{{ tipo }}{% if es_skin %} nina-drop--skin{% endif %}">
+                  <div class="nina-drop__inner">
+                    {%- case tipo -%}
+                      {%- when 'columnas' -%}
+                        <div class="nina-drop__cols">
+                          {%- for child in link.links -%}
+                            <div class="nina-drop__col">
+                              <a class="nina-drop__head" href="{{ child.url }}">{{ child.title }}</a>
+                              <ul role="list">
+                                {%- for g in child.links -%}
+                                  <li><a class="nina-drop__link" href="{{ g.url }}">{{ g.title }}</a></li>
+                                {%- endfor -%}
+                              </ul>
+                            </div>
+                          {%- endfor -%}
+                        </div>
+                        <a class="nina-drop__all" href="{{ link.url }}">Ver todo el catálogo →</a>
+
+                      {%- when 'contacto' -%}
+                        <p class="nina-drop__title">¿Hablamos?</p>
+                        <ul class="nina-contact" role="list">
+                          {%- for child in link.links -%}
+                            {%- liquid
+                              assign curl = child.url | downcase
+                              assign icono = 'form'
+                              assign sub = 'Escríbenos y te respondemos pronto'
+                              if curl contains 'mailto:'
+                                assign icono = 'mail'
+                                assign sub = child.url | remove: 'mailto:' | remove: 'MAILTO:' | split: '?' | first
+                              elsif curl contains 'wa.me' or curl contains 'whatsapp'
+                                assign icono = 'wa'
+                                assign num = child.url | split: '/' | last | split: '?' | first
+                                if num != blank and curl contains 'wa.me'
+                                  assign sub = '+' | append: num
+                                else
+                                  assign sub = 'Te contestamos por WhatsApp'
+                                endif
+                              endif
+                            -%}
+                            <li>
+                              <a class="nina-contact__item" href="{{ child.url }}"{% if icono == 'wa' %} target="_blank" rel="noopener"{% endif %}>
+                                <span class="nina-contact__icon nina-contact__icon--{{ icono }}" aria-hidden="true">
+                                  {%- case icono -%}
+                                    {%- when 'mail' -%}
+                                      <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M4 7l8 6 8-6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                    {%- when 'wa' -%}
+                                      <svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2.2a9.7 9.7 0 0 0-8.4 14.6L2.3 21.7l5-1.3A9.7 9.7 0 1 0 12 2.2zm0 17.7c-1.5 0-2.9-.4-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 19.9zm4.4-6c-.2-.1-1.4-.7-1.7-.8-.2-.1-.4-.1-.5.1l-.8.9c-.1.2-.3.2-.5.1a6.6 6.6 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.5-.4h-.5a.9.9 0 0 0-.7.3 2.8 2.8 0 0 0-.9 2.1c0 1.2.9 2.4 1 2.6.1.2 1.8 2.7 4.3 3.8 1.6.7 2.2.7 3 .6.5-.1 1.4-.6 1.6-1.1.2-.6.2-1 .1-1.1l-.5-.3z"/></svg>
+                                    {%- else -%}
+                                      <svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+                                  {%- endcase -%}
+                                </span>
+                                <span class="nina-contact__txt">
+                                  <strong>{{ child.title }}</strong>
+                                  <small>{{ sub }}</small>
+                                </span>
+                              </a>
+                            </li>
+                          {%- endfor -%}
+                        </ul>
+
+                      {%- else -%}
+                        {%- if es_skin -%}<p class="nina-drop__title">Nina Skin Care</p>{%- endif -%}
+                        <ul class="nina-drop__grid{% if link.links.size > 6 %} nina-drop__grid--2{% endif %}" role="list">
+                          {%- for child in link.links -%}
+                            <li><a class="nina-drop__link" href="{{ child.url }}">{{ child.title }}</a></li>
+                          {%- endfor -%}
+                        </ul>
+                        <a class="nina-drop__all" href="{{ link.url }}">Ver todo {{ link.title }} →</a>
+                    {%- endcase -%}
+                  </div>
+                </div>
+              {%- endif -%}
+            </li>
+          {%- endfor -%}
+        </ul>
+      </nav>
+
+      <script>
+        (function () {
+          var nav = document.currentScript && document.currentScript.previousElementSibling;
+          if (!nav || nav.dataset.ninaListo) return;
+          nav.dataset.ninaListo = '1';
+          var items = nav.querySelectorAll('.nina-nav__item--drop');
+          var sinRaton = window.matchMedia('(hover: none)');
+          function cerrar(excepto) {
+            items.forEach(function (li) {
+              if (li === excepto) return;
+              li.classList.remove('is-open');
+              var a = li.querySelector('.nina-nav__link');
+              if (a) a.setAttribute('aria-expanded', 'false');
+            });
+          }
+          items.forEach(function (li) {
+            var a = li.querySelector('.nina-nav__link');
+            var t;
+            li.addEventListener('mouseenter', function () { clearTimeout(t); cerrar(li); li.classList.add('is-open'); a.setAttribute('aria-expanded', 'true'); });
+            li.addEventListener('mouseleave', function () { t = setTimeout(function () { li.classList.remove('is-open'); a.setAttribute('aria-expanded', 'false'); }, 180); });
+            li.addEventListener('focusin', function () { cerrar(li); li.classList.add('is-open'); a.setAttribute('aria-expanded', 'true'); });
+            li.addEventListener('focusout', function (e) { if (!li.contains(e.relatedTarget)) { li.classList.remove('is-open'); a.setAttribute('aria-expanded', 'false'); } });
+            a.addEventListener('click', function (e) {
+              /* En tablet o pantalla táctil el primer toque abre el desplegable; el segundo entra. */
+              if (sinRaton.matches && !li.classList.contains('is-open')) {
+                e.preventDefault(); cerrar(li); li.classList.add('is-open'); a.setAttribute('aria-expanded', 'true');
+              }
+            });
+          });
+          document.addEventListener('keydown', function (e) { if (e.key === 'Escape') cerrar(null); });
+          document.addEventListener('click', function (e) { if (!nav.contains(e.target)) cerrar(null); });
+        })();
+      </script>
+    </div>
+{% endcase %}
+
+{% style %}
+  .header__underlay {
+    --color-submenu: rgb({{effective_submenu_color.rgb}});
+  }
+{% endstyle %}
+{% stylesheet %}
+  .header__drawer {
+    --header-drawer-min-height: 60px;
+    display: flex;
+    min-height: var(--header-drawer-min-height);
+    align-items: center;
+  }
+
+  #header-component[data-menu-style='drawer'] .header__drawer {
+    display: flex;
+    min-height: var(--header-drawer-min-height);
+  }
+
+  @media screen and (min-width: 750px) {
+    #header-component[data-menu-style='menu'] .header__drawer {
+      display: none;
+      min-height: 0;
+    }
+  }
+
+  .header--compact .header__drawer {
+    min-height: var(--minimum-touch-target);
+  }
+
+  .menu-list--mobile {
+    &.menu-list {
+      display: grid;
+    }
+
+    & .menu-list__list {
+      width: max-content;
+      margin-inline: auto;
+      gap: var(--menu-horizontal-gap);
+    }
+
+    & li {
+      width: max-content;
+      padding-block: var(--padding-sm);
+    }
+
+    & li:first-of-type {
+      padding-inline-start: var(--menu-horizontal-gap);
+    }
+
+    & li:last-of-type {
+      padding-inline-end: var(--menu-horizontal-gap);
+    }
+
+    & a {
+      color: var(--color-foreground);
+    }
+  }
+
+  .menu-list__scroll-container {
+    position: relative;
+    overflow-x: auto;
+    mask-image: linear-gradient(to right, transparent, #000 20px, #000 calc(100% - 20px), transparent);
+    padding-block: var(--padding-2xs);
+  }
+
+  .menu-list {
+    display: flex;
+    height: 100%;
+  }
+
+  .menu-list__list {
+    display: flex;
+    justify-content: var(--grid-area-alignment);
+  }
+
+  /* ---------- Nina Beauty · menú de ordenador ---------- */
+  .nina-nav-wrap {
+    --nina-rosa: #f72e75;
+    --nina-frambuesa: #c92f60;
+    --nina-petalo: #ffccd5;
+    --nina-grafito: #2b2b2b;
+    --nina-azul: #89d3e9;
+    --nina-bruma: #90b7c3;
+    --nina-azul-osc: #3f7f93;
+    height: 100%;
+    display: flex;
+    align-items: stretch;
+  }
+
+  @media screen and (max-width: 749px) {
+    .nina-nav-wrap { display: none; }
+  }
+
+  .nina-nav { display: flex; height: 100%; }
+
+  .nina-nav__list {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .nina-nav__item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  .nina-nav__link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 100%;
+    min-height: 44px;
+    padding: 0 clamp(6px, 0.9vw, 14px);
+    font-family: var(--font-body--family);
+    font-size: clamp(0.8rem, 0.95vw, 0.9375rem);
+    font-weight: 500;
+    color: var(--nina-grafito);
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+
+  .nina-nav__link::after {
+    content: '';
+    position: absolute;
+    left: clamp(6px, 0.9vw, 14px);
+    right: clamp(6px, 0.9vw, 14px);
+    bottom: 8px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--nina-rosa);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.2s ease;
+  }
+
+  .nina-nav__item:hover > .nina-nav__link,
+  .nina-nav__item.is-open > .nina-nav__link,
+  .nina-nav__link.is-active { color: var(--nina-rosa); }
+
+  .nina-nav__item:hover > .nina-nav__link::after,
+  .nina-nav__item.is-open > .nina-nav__link::after,
+  .nina-nav__link.is-active::after { transform: scaleX(1); }
+
+  .nina-nav__item--skin:hover > .nina-nav__link,
+  .nina-nav__item--skin.is-open > .nina-nav__link,
+  .nina-nav__item--skin > .nina-nav__link.is-active { color: var(--nina-azul-osc); }
+
+  .nina-nav__item--skin > .nina-nav__link::after { background: var(--nina-azul); }
+
+  .nina-nav__caret {
+    width: 10px;
+    height: 6px;
+    transition: transform 0.2s ease;
+  }
+
+  .nina-nav__item.is-open .nina-nav__caret { transform: rotate(180deg); }
+
+  .nina-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+
+  .nina-badge--pronto { background: var(--nina-petalo); color: var(--nina-frambuesa); }
+  .nina-badge--nuevo { background: var(--nina-rosa); color: #fff; }
+
+  /* Desplegable */
+  .nina-drop {
+    position: absolute;
+    top: 100%;
+    left: -8px;
+    z-index: 60;
+    padding-top: 6px;
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
+    pointer-events: none;
+  }
+
+  .nina-nav__item.is-open > .nina-drop,
+  .nina-nav__item--drop:focus-within > .nina-drop {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s;
+    pointer-events: auto;
+  }
+
+  .nina-drop__inner {
+    background: #fff;
+    border-radius: 16px;
+    border-top: 4px solid var(--nina-rosa);
+    box-shadow: 0 18px 40px rgba(43, 43, 43, 0.14), 0 2px 6px rgba(43, 43, 43, 0.06);
+    padding: 20px 24px 18px;
+    white-space: normal;
+  }
+
+  .nina-drop--skin .nina-drop__inner { border-top-color: var(--nina-azul); }
+
+  .nina-drop--lista .nina-drop__inner { min-width: 260px; }
+  .nina-drop--contacto .nina-drop__inner { min-width: 320px; }
+
+  .nina-drop__title {
+    margin: 0 0 10px;
+    font-family: var(--font-heading--family);
+    font-size: 1.35rem;
+    font-weight: 500;
+    color: var(--nina-rosa);
+  }
+
+  .nina-drop--skin .nina-drop__title { color: var(--nina-bruma); }
+
+  .nina-drop__cols {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(190px, 1fr));
+    gap: 8px 32px;
+  }
+
+  .nina-drop__head {
+    display: block;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--nina-petalo);
+    font-family: var(--font-heading--family);
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--nina-rosa);
+    text-decoration: none;
+  }
+
+  .nina-drop ul { list-style: none; margin: 0; padding: 0; }
+
+  .nina-drop__grid { display: grid; grid-template-columns: 1fr; gap: 0 28px; }
+  .nina-drop__grid--2 { grid-template-columns: repeat(2, minmax(215px, 1fr)); }
+
+  .nina-drop__link {
+    display: block;
+    padding: 6px 8px;
+    margin-inline: -8px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: var(--nina-grafito);
+    text-decoration: none;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+
+  .nina-drop__link:hover,
+  .nina-drop__link:focus-visible { background: #fff0f4; color: var(--nina-frambuesa); }
+
+  .nina-drop--skin .nina-drop__link:hover,
+  .nina-drop--skin .nina-drop__link:focus-visible { background: #eaf7fb; color: var(--nina-azul-osc); }
+
+  .nina-drop__all {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--nina-frambuesa);
+    text-decoration: none;
+  }
+
+  .nina-drop__all:hover { text-decoration: underline; }
+  .nina-drop--skin .nina-drop__all { color: var(--nina-azul-osc); }
+
+  /* Contacto */
+  .nina-contact { display: grid; gap: 8px; }
+
+  .nina-contact__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: #fff7f9;
+    color: var(--nina-grafito);
+    text-decoration: none;
+    transition: background 0.12s ease;
+  }
+
+  .nina-contact__item:hover { background: #ffe8ee; }
+
+  .nina-contact__icon {
+    flex: 0 0 38px;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: var(--nina-rosa);
+    color: #fff;
+  }
+
+  .nina-contact__icon svg { width: 20px; height: 20px; }
+  .nina-contact__icon--wa { background: #25d366; }
+  .nina-contact__icon--form { background: var(--nina-petalo); color: var(--nina-frambuesa); }
+
+  .nina-contact__txt { display: grid; line-height: 1.3; }
+  .nina-contact__txt strong { font-size: 0.9rem; font-weight: 600; }
+  .nina-contact__txt small { font-size: 0.78rem; color: #6e6e6e; overflow-wrap: anywhere; }
+
+  /* El último (Contacto) se abre hacia la izquierda para no salirse de la pantalla */
+  .nina-nav__item:last-child .nina-drop { left: auto; right: -8px; }
+
+  @media screen and (max-width: 1100px) {
+    .nina-drop__cols { grid-template-columns: repeat(3, minmax(140px, 1fr)); gap: 8px 20px; }
+    .nina-badge { padding: 1px 5px; font-size: 0.5625rem; }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "t:names.menu",
+  "tag": null,
+  "settings": [
+    {
+      "type": "link_list",
+      "id": "menu",
+      "label": "t:settings.menu",
+      "default": "main-menu"
+    },
+    {
+      "type": "header",
+      "content": "t:content.appearance"
+    },
+    {
+      "type": "paragraph",
+      "content": "t:content.menu_appearance_paragraph"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "t:settings.background_color",
+      "default": "{{ settings.color_palette.background }}"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "t:settings.text_color",
+      "placeholder": "t:settings.default"
+    },
+    {
+      "type": "header",
+      "content": "t:content.typography"
+    },
+    {
+      "type": "select",
+      "id": "type_font_primary_size",
+      "label": "t:settings.top_level_size",
+      "options": [
+        {
+          "value": "0.625rem",
+          "label": "10px"
+        },
+        {
+          "value": "0.75rem",
+          "label": "12px"
+        },
+        {
+          "value": "0.875rem",
+          "label": "14px"
+        },
+        {
+          "value": "1rem",
+          "label": "16px"
+        },
+        {
+          "value": "1.125rem",
+          "label": "18px"
+        }
+      ],
+      "default": "1rem"
+    },
+    {
+      "type": "select",
+      "id": "menu_font_style",
+      "label": "t:settings.submenu_size",
+      "options": [
+        {
+          "value": "regular",
+          "label": "t:options.small"
+        },
+        {
+          "value": "inverse",
+          "label": "t:options.medium"
+        },
+        {
+          "value": "inverse_large",
+          "label": "t:options.large"
+        }
+      ],
+      "default": "inverse"
+    },
+    {
+      "type": "select",
+      "id": "type_font_primary_link",
+      "label": "t:settings.font",
+      "options": [
+        {
+          "value": "body",
+          "label": "t:options.body"
+        },
+        {
+          "value": "subheading",
+          "label": "t:options.subheading"
+        },
+        {
+          "value": "heading",
+          "label": "t:options.heading"
+        },
+        {
+          "value": "accent",
+          "label": "t:options.accent"
+        }
+      ],
+      "default": "heading"
+    },
+    {
+      "type": "select",
+      "id": "type_case_primary_link",
+      "label": "t:settings.text_case",
+      "options": [
+        {
+          "value": "none",
+          "label": "t:options.default"
+        },
+        {
+          "value": "uppercase",
+          "label": "t:options.uppercase"
+        }
+      ],
+      "default": "none"
+    },
+    {
+      "type": "header",
+      "content": "t:content.submenu_feature"
+    },
+    {
+      "type": "select",
+      "id": "menu_style",
+      "label": "t:settings.media_type",
+      "info": "t:info.media_type_info",
+      "options": [
+        {
+          "value": "text",
+          "label": "t:options.none"
+        },
+        {
+          "value": "collection_images",
+          "label": "t:options.collection_images"
+        },
+        {
+          "value": "featured_products",
+          "label": "t:options.featured_products"
+        },
+        {
+          "value": "featured_collections",
+          "label": "t:options.featured_collections"
+        }
+      ],
+      "default": "collection_images"
+    },
+    {
+      "type": "select",
+      "id": "featured_products_aspect_ratio",
+      "label": "t:settings.image_ratio",
+      "options": [
+        {
+          "value": "adapt",
+          "label": "t:options.auto"
+        },
+        {
+          "value": "4 / 5",
+          "label": "t:options.portrait"
+        },
+        {
+          "value": "1 / 1",
+          "label": "t:options.square"
+        }
+      ],
+      "default": "4 / 5",
+      "visible_if": "{{ block.settings.menu_style == 'featured_products' }}"
+    },
+    {
+      "type": "select",
+      "id": "featured_collections_aspect_ratio",
+      "label": "t:settings.image_ratio",
+      "options": [
+        {
+          "value": "adapt",
+          "label": "t:options.auto"
+        },
+        {
+          "value": "16 / 9",
+          "label": "t:options.landscape"
+        },
+        {
+          "value": "1 / 1",
+          "label": "t:options.square"
+        }
+      ],
+      "default": "16 / 9",
+      "visible_if": "{{ block.settings.menu_style == 'featured_collections' }}"
+    },
+    {
+      "type": "range",
+      "id": "image_border_radius",
+      "label": "t:settings.image_border_radius",
+      "min": 0,
+      "max": 32,
+      "step": 1,
+      "unit": "px",
+      "default": 0,
+      "visible_if": "{{ block.settings.menu_style != 'text' }}"
+    },
+    {
+      "type": "header",
+      "content": "t:content.mobile_layout"
+    },
+    {
+      "type": "checkbox",
+      "id": "navigation_bar",
+      "label": "t:settings.navigation_bar"
+    },
+    {
+      "type": "color",
+      "id": "background_color_navigation_bar",
+      "label": "t:settings.navigation_bar_background_color",
+      "default": "{{ settings.color_palette.background }}",
+      "visible_if": "{{ block.settings.navigation_bar }}"
+    },
+    {
+      "type": "color",
+      "id": "text_color_navigation_bar",
+      "label": "t:settings.navigation_bar_text_color",
+      "placeholder": "t:settings.default",
+      "visible_if": "{{ block.settings.navigation_bar }}"
+    },
+    {
+      "type": "checkbox",
+      "id": "drawer_accordion",
+      "label": "t:settings.accordion",
+      "default": false
+    },
+    {
+      "type": "checkbox",
+      "id": "drawer_accordion_expand_first",
+      "label": "t:settings.expand_first_group",
+      "default": false,
+      "visible_if": "{{ block.settings.drawer_accordion == true }}"
+    },
+    {
+      "type": "checkbox",
+      "id": "drawer_dividers",
+      "label": "t:settings.dividers",
+      "default": false
+    }
+  ]
+}
+{% endschema %}
