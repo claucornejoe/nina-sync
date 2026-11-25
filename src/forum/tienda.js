@@ -42,18 +42,18 @@ const CSS = `
 .nf *{box-sizing:border-box}
 .nf a{color:var(--fram)}
 .nf h1,.nf h2,.nf h3{font-family:var(--serif);font-weight:500;color:var(--graf);line-height:1.15;margin:0}
-.nf-hero{text-align:center;padding:6px 8px 0}
+.nf-hero{text-align:center;padding:0 8px}
 .nf-kicker{font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--fram);margin:0 0 8px;font-weight:600}
-.nf-hero h1{font-size:clamp(34px,5vw,48px);color:var(--rosa)}
-.nf-hero p{max-width:640px;margin:6px auto 0}
+.nf-hero h1{font-size:clamp(34px,4.4vw,42px);color:var(--rosa)}
+.nf-hero p{max-width:640px;margin:2px auto 0}
 .nf-hero .nf-kicker{margin-bottom:4px}
-.nf-banners{display:grid;gap:14px;margin-top:20px}
+.nf-banners{display:grid;gap:14px;margin-top:14px}
 @media(min-width:700px){.nf-banners{grid-template-columns:1fr 1fr}}
-.nf-banner{display:flex;align-items:center;justify-content:space-between;gap:14px;border-radius:22px;padding:18px 22px;text-decoration:none;min-height:96px;transition:transform .15s,box-shadow .15s}
+.nf-banner{display:flex;align-items:center;justify-content:space-between;gap:14px;border-radius:20px;padding:12px 20px;text-decoration:none;min-height:74px;transition:transform .15s,box-shadow .15s}
 .nf-banner:hover{transform:translateY(-1px);box-shadow:0 10px 26px rgba(201,47,96,.18)}
-.nf-banner b{display:block;font-family:var(--serif);font-weight:500;font-size:clamp(24px,3vw,30px);line-height:1.1}
-.nf-banner span{display:block;font-size:13px;margin-top:4px}
-.nf-banner i{font-style:normal;flex:0 0 auto;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-size:20px}
+.nf-banner b{display:block;font-family:var(--serif);font-weight:500;font-size:clamp(22px,2.6vw,26px);line-height:1.1}
+.nf-banner span{display:block;font-size:13px;margin-top:2px}
+.nf-banner i{font-style:normal;flex:0 0 auto;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:20px}
 .nf-banner.rosa{background:var(--rosa);color:#fff!important}.nf-banner.rosa i{background:#fff;color:var(--rosa)}
 .nf-banner.petalo{background:var(--petalo);color:var(--graf)!important}.nf-banner.petalo b{color:var(--fram)}.nf-banner.petalo i{background:var(--fram);color:#fff}
 .nf-barra{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin:28px 0 18px}
