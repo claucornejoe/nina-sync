@@ -70,3 +70,22 @@ test('las páginas de la tienda neutralizan Liquid y HTML de las clientas', () =
     assert.deepEqual([...html.matchAll(/\{\{[^}]*\}\}/g)].map((m) => m[0]).filter((x) => !x.includes('routes.')), []);
   }
 });
+
+test('buscador del foro y temas de ejemplo', async () => {
+  const { EJEMPLOS } = await import('../src/forum/ejemplos.js');
+  const porCat = EJEMPLOS.reduce((a, e) => ({ ...a, [e.categoria]: (a[e.categoria] || 0) + 1 }), {});
+  assert.deepEqual(porCat, { skincare: 2, perfumes: 3, maquillaje: 1, 'cabello-cuerpo': 1 });
+  for (const e of EJEMPLOS) {
+    assert.ok(rules.categoria(e.categoria), e.categoria);
+    assert.ok(!rules.validarTema(e).error, e.titulo);
+    assert.ok(e.respuestas.length >= 1 && e.respuestas.length <= 3, e.titulo);
+    for (const r of e.respuestas) assert.ok(r.despues < e.hace, 'la respuesta va después del tema');
+  }
+  const tema = { id: 1, categoria: 'perfumes', titulo: 'Perfume para clase', cuerpo: 'x', autor: 'Ainhoa', ejemplo: true, equipo: false, fijado: false, creado: new Date(), publicado_at: new Date(), actividad: new Date(), respuestas: 0, ayuda: 0 };
+  const html = portada({ temas: [tema], total: 1, pagina: 1, porPagina: 15, catActual: null, buscar: '"><b>', sesion: false });
+  assert.ok(html.includes('Ainhoa · ejemplo') && html.includes('Tema de ejemplo'));
+  assert.ok(html.includes('placeholder="Buscar en el foro"') && html.includes('value="&quot;&gt;&lt;b&gt;"'));
+  assert.ok(html.includes('.search-action{display:none!important}'), 'oculta la lupa de productos');
+  const pt = paginaTema({ tema, respuestas: [], sesion: false, url: 'https://www.ninabeauty.es/apps/foro/t/1' });
+  assert.ok(!pt.includes('application/ld+json'), 'los ejemplos no van a Google como conversaciones');
+});
