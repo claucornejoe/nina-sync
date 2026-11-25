@@ -104,3 +104,12 @@ Compara tus precios con Google Shopping España, buscando cada tamaño por su EA
 | `COMPETENCIA_AJUSTE_DIAS` | 30 | Días que dura un ajuste |
 | `COMPETENCIA_REVISAR_DIAS` | 30 | Días antes de volver a buscar un producto |
 | `COMPETENCIA_AUTO` | true | `false` apaga la búsqueda diaria |
+
+## Fotos con IA (`/fotos-ia`)
+
+Para los productos que solo tienen el logo de Nina: busca la foto por EAN en Google Imágenes (SerpApi, `SERPAPI_KEY`),
+la pasa por **Nano Banana 2 a 1K** en Magnific (`MAGNIFIC_API_KEY`) con un prompt que conserva frasco y etiqueta y pone
+fondo blanco, y enseña antes / foto encontrada / foto nueva. Nada se sube a Shopify hasta pulsar «Subir a Shopify»; entonces
+la foto se guarda como `marca-producto-tamano.png` y el logo se desvincula de ese producto (el archivo compartido no se borra).
+Variables opcionales: `MAGNIFIC_MODEL` (por defecto `text-to-image/nano-banana-pro-flash`), `MAGNIFIC_RESOLUTION` (`1K`),
+`MAGNIFIC_PROMPT` (prompt propio; `{producto}` = nombre y tamaño). Por la API cada foto gasta créditos de Magnific.
