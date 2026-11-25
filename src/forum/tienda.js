@@ -65,6 +65,15 @@ a.nf-card:hover{box-shadow:0 10px 26px rgba(201,47,96,.12);transform:translateY(
 .nf-pag{display:flex;justify-content:center;gap:10px;margin-top:22px}
 .nf-caja{background:#fff;border:1px solid var(--linea);border-radius:22px;padding:24px;margin-top:28px}
 .nf-caja h2{font-size:30px;color:var(--rosa);margin-bottom:6px}
+.nf-caja.rosa{background:var(--rosa);border-color:var(--rosa);color:#fff}
+.nf-caja.rosa h2,.nf-caja.rosa .nf-nota,.nf-caja.rosa label,.nf-caja.rosa a:not(.nf-btn){color:#fff}
+.nf-caja.rosa .nf-nota{font-size:14px;font-weight:500}
+.nf-caja.rosa a:not(.nf-btn){text-decoration:underline}
+.nf-caja.rosa .nf-form input[type=text],.nf-caja.rosa .nf-form select,.nf-caja.rosa .nf-form textarea{border-color:#fff}
+.nf-caja.rosa .nf-form input:focus,.nf-caja.rosa .nf-form select:focus,.nf-caja.rosa .nf-form textarea:focus{outline-color:#fff}
+.nf-caja.rosa .nf-check input{accent-color:#fff}
+.nf-caja.rosa .nf-btn{background:#fff;border-color:#fff;color:var(--fram)!important}
+.nf-caja.rosa .nf-btn:hover{background:var(--petalo);border-color:var(--petalo)}
 .nf-form{display:grid;gap:14px;margin-top:14px}
 .nf-form label{display:grid;gap:6px;font-size:13px;font-weight:600}
 .nf-form input[type=text],.nf-form select,.nf-form textarea{width:100%;border:1px solid var(--petalo);border-radius:14px;padding:12px 14px;font:15px var(--sans);color:var(--graf);background:#fff}
@@ -133,15 +142,15 @@ const casillaNormas = (perfil) =>
     : `<label class="nf-check"><input type="checkbox" name="acepto" value="1" required> <span>Tengo 14 años o más y acepto las <a href="${BASE}/normas" target="_blank">normas del foro</a> y la <a href="/policies/privacy-policy" target="_blank">política de privacidad</a>. Mi nombre en el foro y mis mensajes serán públicos.</span></label>`;
 
 function campoApodo(perfil, sugerido) {
-  return `<label>Tu nombre en el foro<input type="text" name="apodo" maxlength="30" required value="${t(perfil?.apodo || sugerido || '')}" placeholder="Por ejemplo: Laura M."></label>`;
+  return `<label>Tu nombre<input type="text" name="apodo" maxlength="30" required value="${t(perfil?.apodo || sugerido || '')}" placeholder="Por ejemplo: Laura M."></label>`;
 }
 
 function formTema({ sesion, perfil, sugerido, token, valores = {}, catActual }) {
   if (!sesion)
-    return `<div class="nf-caja" id="abrir-tema"><h2>Abre tu tema</h2><p class="nf-nota">Para escribir en el foro inicia sesión con tu cuenta de Nina Beauty (si no tienes, se crea al momento con tu correo).</p>
+    return `<div class="nf-caja rosa" id="abrir-tema"><h2>Abre tu tema</h2><p class="nf-nota">Para escribir en el foro inicia sesión con tu cuenta de Nina Beauty (si no tienes, se crea al momento con tu correo).</p>
 <p style="margin:16px 0 0"><a class="nf-btn" href="${loginUrl(`${BASE}#abrir-tema`)}">Iniciar sesión para escribir</a></p></div>`;
   const opts = CATEGORIAS.map((c) => `<option value="${c.id}"${(valores.categoria || catActual) === c.id ? ' selected' : ''}>${t(c.nombre)}</option>`).join('');
-  return `<div class="nf-caja" id="abrir-tema"><h2>Abre tu tema</h2><p class="nf-nota">Cuéntanos tu duda o tu truco. Revisamos cada mensaje antes de publicarlo.</p>
+  return `<div class="nf-caja rosa" id="abrir-tema"><h2>Abre tu tema</h2><p class="nf-nota">Cuéntanos tu duda o tu truco. Revisamos cada mensaje antes de publicarlo.</p>
 <form class="nf-form" method="post" action="${BASE}/nuevo">
   <input type="hidden" name="token" value="${t(token)}">
   <div class="nf-trampa" aria-hidden="true"><label>No rellenar<input type="text" name="web" tabindex="-1" autocomplete="off"></label></div>
