@@ -112,9 +112,10 @@
   .nbc-brands__head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px}
   .nbc-brands h2{margin:0;font-size:28px;line-height:1.1}
   .nbc-brands h2 span{color:var(--nb-title-acc);font-style:italic}
-  .nbc-brands__row{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x proximity;padding:6px 4px 12px;margin:0;list-style:none;scrollbar-width:thin}
+  .nbc-brands__row{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x proximity;padding:6px 4px 12px;margin:0;list-style:none;scrollbar-width:none}
+  .nbc-brands__row::-webkit-scrollbar{display:none}
   .nbc-brands__row li{flex:0 0 auto;scroll-snap-align:start}
-  .nbc-brand{width:112px;text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
+  .nbc-brand{width:110px;text-decoration:none;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center}
   .nbc-brand__img{width:96px;height:96px;border-radius:999px;background:#fff;box-shadow:0 0 0 3px var(--nb-ring);display:flex;align-items:center;justify-content:center;overflow:hidden;transition:box-shadow .2s,transform .2s}
   .nbc-brand__img img{width:80%;height:80%;object-fit:contain}
   .nbc-brand__ini{font-family:var(--font-heading--family);font-size:32px;font-weight:600;color:var(--nb-title-acc);letter-spacing:.02em}
@@ -313,14 +314,33 @@
         {%- for v in top limit: 10 -%}
           {%- liquid
             assign m_img = nil
-            for p in collection.products
-              if p.vendor == v.value and p.featured_image
-                assign m_src = p.featured_image.src | downcase
-                unless m_src contains 'ninabeauty' or m_src contains 'nina-beauty' or m_src contains 'nina_beauty'
-                  assign m_img = p.featured_image
+            assign m_low = v.value | downcase | strip
+            for blk in section.blocks
+              if blk.type == 'marca' and blk.settings.imagen != blank
+                assign blk_m = blk.settings.marca | downcase | strip
+                if blk_m == m_low
+                  assign m_img = blk.settings.imagen
                   break
-                endunless
+                endif
               endif
+            endfor
+            # Si no hay logo subido: foto de un producto de la marca (primero los que no son estuches)
+            for pase in (1..2)
+              if m_img
+                break
+              endif
+              for p in collection.products
+                if p.vendor == v.value and p.featured_image
+                  if pase == 1 and p.tags contains 'Estuche'
+                    continue
+                  endif
+                  assign m_src = p.featured_image.src | downcase
+                  unless m_src contains 'ninabeauty' or m_src contains 'nina-beauty' or m_src contains 'nina_beauty' or m_src contains 'sin-foto'
+                    assign m_img = p.featured_image
+                    break
+                  endunless
+                endif
+              endfor
             endfor
             assign m_pal = v.label | split: ' '
             assign m_ini = m_pal[0] | slice: 0 | upcase
@@ -715,7 +735,7 @@
         var ps = (d.resources && d.resources.results && d.resources.results.products) || [];
         for (var i = 0; i < ps.length; i++) {
           var img = ps[i].image || (ps[i].featured_image && ps[i].featured_image.url);
-          if (!img || ps[i].vendor !== marca || /nina[-_]?beauty/i.test(img)) continue;
+          if (!img || ps[i].vendor !== marca || /nina[-_]?beauty|sin-foto/i.test(img)) continue;
           var im = new Image(); im.alt = ''; im.loading = 'lazy'; im.width = 96; im.height = 96;
           im.src = img + (img.indexOf('?') > -1 ? '&' : '?') + 'width=200';
           el.innerHTML = ''; el.appendChild(im); break;
@@ -774,6 +794,14 @@
     { "type": "text", "id": "texto_envio", "label": "Plazo de envío", "default": "Envío en 24 a 72 h" }
   ],
   "blocks": [
+    {
+      "type": "marca",
+      "name": "Logo de marca",
+      "settings": [
+        { "type": "text", "id": "marca", "label": "Marca (escrita igual que en los productos)", "info": "Ej.: Carolina Herrera. Sale en el círculo de «Las marcas más buscadas»." },
+        { "type": "image_picker", "id": "imagen", "label": "Logo o foto de la marca", "info": "Cuadrado, fondo blanco o transparente." }
+      ]
+    },
     {
       "type": "promo",
       "name": "Tarjeta promocional",
