@@ -48,6 +48,8 @@ const TRIGGER = { cron: 'Automática', manual: 'Manual' };
 const I = {
   home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/>',
   tag: '<path d="M3 12V4h8l10 10-8 8L3 12Z"/><circle cx="7.5" cy="8.5" r="1.5"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
+  image: '<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="m4 18 5-5 4 4 3-3 4 4"/>',
   spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/>',
   out: '<path d="M15 4h4v16h-4"/><path d="M10 8l-4 4 4 4M6 12h10"/>',
   sync: '<path d="M20 11a8 8 0 0 0-14.5-4.5L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.5 4.5L20 16"/><path d="M20 20v-4h-4"/>',
@@ -190,6 +192,7 @@ ${refresh ? '<meta http-equiv="refresh" content="15">' : ''}
   ${link('/recien-llegados', 'nuevos', 'spark', 'Recién llegados')}
   ${link('/competencia', 'competencia', 'euro', 'Competencia')}
   ${link('/seo', 'seo', 'layers', 'Google y descripciones')}
+  ${link('/fotos-ia', 'fotosia', 'image', 'Fotos con IA')}
   ${link('/ninacash', 'ninacash', 'heart', 'NinaCash')}
   ${link('/avisos', 'avisos', 'bell', 'Avisos de stock')}
   ${link('/foro', 'foro', 'chat', 'Foro Nina')}
