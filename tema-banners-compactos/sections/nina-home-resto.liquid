@@ -149,19 +149,56 @@
   </script>
   {%- endif -%}
 
-  <div class="nh-wrap nh-sec" style="padding-top:64px">
-    <div class="nh-cashbox{% if s.cash_foto != blank or s.cash_foto_movil != blank %} nbf-on nbf--{{ s.cash_velo }}{% endif %}">
+  {%- liquid
+    assign nc_url = pages['ninacash'].url | default: '/pages/ninacash'
+    assign nc_niveles = 'Sparkle,Glow,Glam,Butterfly' | split: ','
+    assign nc_nivel = 'Glow'
+    assign nc_importe = 1240
+    assign nc_ejemplo = true
+    if customer
+      assign nc_n = customer.metafields.nina.nivel.value | default: 1 | at_least: 1 | at_most: 4 | minus: 1
+      assign nc_nivel = nc_niveles[nc_n]
+      assign nc_importe = customer.metafields.nina.ninacash.value | default: 0 | times: 100 | round
+      assign nc_ejemplo = false
+    endif
+  -%}
+  <div class="nh-wrap nh-sec nh-nc-sec">
+    <div class="nh-nc{% if s.cash_foto != blank or s.cash_foto_movil != blank %} nbf-on nbf--{{ s.cash_velo }}{% endif %}" style="--nc-mar:url('{{ 'nina-mariposa-rosa.svg' | asset_url }}')">
       {%- render 'nina-foto-fondo', foto: s.cash_foto, foto_movil: s.cash_foto_movil -%}
-      <div class="nh-center" style="margin-bottom:28px">
-        <h2 class="nh-h2 nh-serif">{{ s.cash_title }}</h2>
-        <p style="margin:0;font-size:15px;color:#4A4A4A;max-width:560px;line-height:1.6">{{ s.cash_text }}</p>
+      <i class="nh-nc__deco nh-nc__deco--a" aria-hidden="true"></i>
+      <i class="nh-nc__deco nh-nc__deco--b" aria-hidden="true"></i>
+      <div class="nh-nc__main">
+        {%- if s.cash_kicker != blank -%}<span class="nh-nc__kicker"><i class="nh-nc__mar" aria-hidden="true"></i>{{ s.cash_kicker }}</span>{%- endif -%}
+        <h2 class="nh-nc__title nh-serif">{{ s.cash_title }}</h2>
+        <p class="nh-nc__text">{{ s.cash_text }}</p>
+        <ol class="nh-nc__steps">
+          <li><b>1</b><span><strong>Crea tu cuenta</strong>Gratis, en un minuto.</span></li>
+          <li><b>2</b><span><strong>Compra y acumula</strong>{{ s.cash_step2 }}</span></li>
+          <li><b>3</b><span><strong>Úsalo al pagar</strong>{{ s.cash_step3 }}</span></li>
+        </ol>
+        <div class="nh-nc__ctas">
+          {%- if customer -%}
+            <a class="nh-nc__btn" href="{{ pages['mi-cuenta'].url | default: routes.account_url }}">Ver mi NinaCash</a>
+          {%- else -%}
+            <a class="nh-nc__btn" href="{{ routes.account_url }}">Crear mi cuenta gratis</a>
+          {%- endif -%}
+          <a class="nh-nc__more" href="{{ nc_url }}">Cómo funciona y condiciones</a>
+        </div>
       </div>
-      <div class="nh-steps">
-        <div class="nh-step"><b class="nh-serif">1</b><strong>Crea tu cuenta</strong><span>Gratis, en un minuto.</span></div>
-        <div class="nh-step"><b class="nh-serif">2</b><strong>Compra y acumula</strong><span>{{ s.cash_step2 }}</span></div>
-        <div class="nh-step"><b class="nh-serif">3</b><strong>Úsalo en tu próxima compra</strong><span>{{ s.cash_step3 }}</span></div>
+      <div class="nh-nc__side">
+        <div class="nh-nc__card">
+          <div class="nh-nc__card-top"><i class="nh-nc__mar" aria-hidden="true"></i><span class="nh-serif">NinaCash</span><em>Nivel {{ nc_nivel }}</em></div>
+          <small>{% if nc_ejemplo %}Así se ve tu saldo{% else %}Tu saldo{% endif %}</small>
+          <strong class="nh-serif">{{ nc_importe | money }}</strong>
+          <div class="nh-nc__card-foot"><span>1 NinaCash = 1 €</span><span>Válido 12 meses</span></div>
+        </div>
+        <ul class="nh-nc__levels" aria-label="Niveles Nina">
+          <li style="--c:#FFB3C6"><i class="nh-nc__mar" aria-hidden="true"></i><b>Sparkle</b><span>1 %</span></li>
+          <li style="--c:#F72E75"><i class="nh-nc__mar" aria-hidden="true"></i><b>Glow</b><span>1,5 %</span></li>
+          <li style="--c:#C92F60"><i class="nh-nc__mar" aria-hidden="true"></i><b>Glam</b><span>2 %</span></li>
+          <li style="--c:#C9A24B"><i class="nh-nc__mar" aria-hidden="true"></i><b>Butterfly</b><span>2 % + envío gratis</span></li>
+        </ul>
       </div>
-      <div style="text-align:center;padding-top:24px"><a class="nh-btn nh-btn--main" href="{{ routes.account_url }}">Crear mi cuenta</a></div>
     </div>
   </div>
 
@@ -243,10 +280,11 @@
     { "type": "range", "id": "brands_vel", "label": "Velocidad del carrusel de marcas", "min": 10, "max": 80, "step": 5, "unit": "px", "default": 30, "info": "Píxeles por segundo. Para poner el logo de cada marca: «Añadir bloque» › «Marca»." },
     { "type": "textarea", "id": "brands", "label": "Marcas (separadas por comas)", "info": "Solo se usa si no hay bloques «Marca».", "default": "Lattafa, Paco Rabanne, Givenchy, Hermès, Jean Paul Gaultier, Tous, Carolina Herrera, Al Haramain, Issey Miyake, Dior" },
     { "type": "header", "content": "NinaCash" },
+    { "type": "text", "id": "cash_kicker", "label": "Etiqueta de arriba", "default": "Tu recompensa Nina" },
     { "type": "text", "id": "cash_title", "label": "Título", "default": "NinaCash: comprar te da dinero" },
-    { "type": "text", "id": "cash_text", "label": "Texto", "default": "Por cada compra te guardamos el 1 % del precio en tu cuenta Nina." },
-    { "type": "text", "id": "cash_step2", "label": "Paso 2", "default": "Un perfume de 50 € te da 0,50 € en NinaCash." },
-    { "type": "text", "id": "cash_step3", "label": "Paso 3", "default": "Te lo descontamos en tu siguiente pedido." },
+    { "type": "text", "id": "cash_text", "label": "Texto", "default": "Hasta el 2 % de cada compra vuelve a ti en saldo para tus próximos caprichos." },
+    { "type": "text", "id": "cash_step2", "label": "Paso 2", "default": "Un perfume de 50 € te da de 0,50 € a 1 €." },
+    { "type": "text", "id": "cash_step3", "label": "Paso 3", "default": "Con tu cuenta iniciada, se descuenta del total." },
     {"type": "header", "content": "Foto: recuadro NinaCash"},
     {"type": "image_picker", "id": "cash_foto", "label": "Foto de fondo (ordenador)", "info": "Opcional. Sin foto se ve el diseño de siempre."},
     {"type": "image_picker", "id": "cash_foto_movil", "label": "Foto de fondo (móvil)", "info": "Opcional. Si la dejas vacía, en el móvil se usa la de ordenador."},
