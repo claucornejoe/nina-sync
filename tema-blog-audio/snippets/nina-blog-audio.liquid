@@ -1,0 +1,28 @@
+{%- comment -%}
+  Nina Blog · «Escuchar artículo» (2026-11-26). Solo sale si Nina Sync generó el audio del artículo
+  (metacampo nina.audio: enlace del MP3, duración y tiempos de cada palabra, de ElevenLabs).
+{%- endcomment -%}
+{%- assign nb_audio = article.metafields.nina.audio.value -%}
+{%- if nb_audio.url != blank -%}
+  {%- assign nb_audio_min = nb_audio.dur | divided_by: 60.0 | ceil -%}
+  {{ 'nina-blog-audio.css' | asset_url | stylesheet_tag }}
+  <div class="nba-audio-sitio">
+    <div class="nba-audio" data-nba-audio data-duracion="{{ nb_audio.dur }}">
+      <button type="button" class="nba-audio__play" data-nba-audio-play aria-label="Escuchar artículo" aria-pressed="false">
+        <svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 5.6v12.8a.8.8 0 0 0 1.2.7l10-6.4a.8.8 0 0 0 0-1.4l-10-6.4a.8.8 0 0 0-1.2.7Z" fill="currentColor"/></svg>
+        <svg class="i-pausa" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="5" width="4" height="14" rx="1.2" fill="currentColor"/><rect x="13.5" y="5" width="4" height="14" rx="1.2" fill="currentColor"/></svg>
+      </button>
+      <span class="nba-audio__txt">
+        <span class="nba-audio__titulo">Escuchar artículo</span>
+        <span class="nba-audio__sub"><span data-nba-audio-tiempo>{{ nb_audio_min }} min</span><span class="nba-audio__pista"> · Toca una frase para ir ahí</span></span>
+      </span>
+      <span class="nba-audio__barra" data-nba-audio-barra role="slider" tabindex="0" aria-label="Avance del audio" aria-valuemin="0" aria-valuemax="{{ nb_audio.dur | round }}" aria-valuenow="0"><i></i></span>
+      <button type="button" class="nba-audio__mini" data-nba-audio-atras aria-label="Retroceder 15 segundos">−15</button>
+      <button type="button" class="nba-audio__mini" data-nba-audio-vel aria-label="Cambiar velocidad">1×</button>
+      <button type="button" class="nba-audio__mini nba-audio__cerrar" data-nba-audio-cerrar aria-label="Dejar de escuchar">×</button>
+      <audio preload="none" src="{{ nb_audio.url }}"></audio>
+      <script type="application/json" data-nba-audio-datos>{{ nb_audio | json }}</script>
+    </div>
+  </div>
+  <script src="{{ 'nina-blog-audio.js' | asset_url }}" defer></script>
+{%- endif -%}

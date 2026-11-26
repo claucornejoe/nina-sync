@@ -113,3 +113,25 @@ fondo blanco, y enseña antes / foto encontrada / foto nueva. Nada se sube a Sho
 la foto se guarda como `marca-producto-tamano.png` y el logo se desvincula de ese producto (el archivo compartido no se borra).
 Variables opcionales: `MAGNIFIC_MODEL` (por defecto `text-to-image/nano-banana-pro-flash`), `MAGNIFIC_RESOLUTION` (`1K`),
 `MAGNIFIC_PROMPT` (prompt propio; `{producto}` = nombre y tamaño). Por la API cada foto gasta créditos de Magnific.
+
+## Escuchar artículo (`/audio-blog`)
+
+Botón «Escuchar artículo» en Nina Blog con una voz de **ElevenLabs**: mientras suena, el artículo resalta la frase y la
+palabra que se está leyendo. Desde el panel eliges la voz (y escuchas una muestra) y pulsas «Generar audio» en cada artículo:
+Nina Sync lee el título, la entradilla y el texto (no las tarjetas de productos, el índice, los botones ni las fuentes),
+lo manda a ElevenLabs por trozos con el endpoint `with-timestamps`, junta el MP3, lo sube a Contenido → Archivos y guarda
+en el artículo el metacampo `nina.audio` (JSON: enlace, duración y el milisegundo en que empieza cada palabra).
+El tema (sección `nina-blog-articulo`) solo enseña el botón si el artículo tiene ese metacampo.
+
+- Gasta créditos solo al generar: ~1 crédito por carácter con `eleven_multilingual_v2` (la mitad con `eleven_flash_v2_5`).
+  Un artículo de 10.000 caracteres son ~10.000 créditos. El panel muestra los créditos del mes y avisa si no llegan.
+- Si cambias el texto del artículo, el panel lo marca como «El texto ha cambiado» para volver a generarlo.
+- Para que no se lea una parte del artículo, ponle la clase `nba-no-leer`.
+- Permisos de la app de Shopify: `read_content`, `write_content` y `write_files`.
+
+| Variable | Por defecto | Para qué |
+|---|---|---|
+| `ELEVENLABS_API_KEY` | — | Clave de ElevenLabs (Developers → API Keys). Permisos: Text to Speech, Voices (leer) y User (leer) |
+| `ELEVENLABS_VOICE_ID` | — | Voz por defecto si no se elige en el panel |
+| `ELEVENLABS_MODEL` | `eleven_multilingual_v2` | Modelo por defecto |
+| `AUDIO_BLOG_HANDLE` | `nina-blog` | Blog cuyos artículos se leen |
