@@ -14,6 +14,7 @@ import { mountStockAlerts } from './stockAlerts/routes.js';
 import { mountForum } from './forum/routes.js';
 import { mountCompetition } from './competition/routes.js';
 import { mountFotosIa } from './fotosia/routes.js';
+import { mountAudioBlog } from './audioBlog/routes.js';
 
 if (!config.panelPassword) throw new Error('Falta PANEL_PASSWORD');
 await db.migrate();
@@ -92,6 +93,7 @@ await mountStockAlerts(app, auth); // «Agotado · Avísame»: guarda correos y 
 await mountForum(app, auth); // Foro Nina: preguntas y consejos de clientas en /apps/foro
 await mountCompetition(app, auth); // Tus precios frente a Google Shopping España
 await mountFotosIa(app, auth); // Fotos con IA (Nano Banana en Magnific) para los productos que solo tienen el logo
+await mountAudioBlog(app, auth); // «Escuchar artículo» en Nina Blog: audio de ElevenLabs con la palabra resaltada
 app.get('/recien-llegados', auth, async (_req, res) => res.send(views.newArrivalsPage(await db.activeNewArrivals())));
 
 // ---- Automática cada 4 horas ----
