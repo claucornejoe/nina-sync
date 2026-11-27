@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import { ruleCategory, PERFUME_CATEGORIES as P, googleGender, isGtin } from '../src/seo/categories.js';
 import { renderDescription, isReplaceable, cleanText, buildPrompt } from '../src/seo/describe.js';
-import { needs } from '../src/seo/worker.js';
+import { needs, priority } from '../src/seo/worker.js';
 import { verifyHmac, parseProductId } from '../src/seo/routes.js';
 import { outputText } from '../src/seo/openai.js';
 
@@ -208,4 +208,10 @@ test('Open Beauty Facts: foto grande de la portada', async () => {
   assert.equal(r.length, 1);
   assert.equal(r[0].url, 'https://images.openbeautyfacts.org/images/products/360/052/361/4462/front_fr.12.full.jpg');
   assert.equal(r[0].main, true);
+});
+
+test('Descripciones: primero calendarios de Black Friday, luego con stock', () => {
+  assert.equal(priority({ tags: ['Calendario-Adviento-BF'], totalInventory: 0 }), 0);
+  assert.equal(priority({ tags: [], totalInventory: 4 }), 1);
+  assert.equal(priority({ tags: [], totalInventory: 0 }), 2);
 });
