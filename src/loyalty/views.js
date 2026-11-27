@@ -65,7 +65,7 @@ export function ninacashPage({ active, state, hooks, totals, customers, coupons,
     (l) => `<div class="kpi"><div class="top"><span>${esc(l.name)}${l.from ? ` · acumula ${fmtUnits(l.from)}` : ''}</span><span style="width:14px;height:14px;border-radius:50%;background:${COLORS[l.n]}"></span></div><b>${totals.byLevel[l.n] || 0}</b><span class="muted">${l.rate} % NinaCash${l.from ? ` · unos ${salesFor(l.from)} € de compras` : ''}</span></div>`,
   ).join('');
   const custRows = customers
-    .map((c) => `<tr><td><div class="prod">${esc(c.name || c.customer_id)}</div></td><td>${lvlChip(c.level)}</td><td class="num"><b>${fmtUnits(toUnits(c.earned_12m))}</b></td><td class="num">${eur(c.spent_12m)}</td><td class="num">${eur(c.balance)}</td><td class="num">${eur(c.pending)}</td></tr>`)
+    .map((c) => `<tr><td><div class="prod">${esc(c.name || c.customer_id)}</div></td><td>${lvlChip(c.level)}</td><td class="num"><b>${fmtUnits(toUnits(c.earned_12m))}</b></td><td class="num">${eur(c.spent_12m)}</td><td class="num">${fmtUnits(toUnits(c.balance))}<div class="sub">${eur(c.balance)}</div></td><td class="num">${eur(c.pending)}</td></tr>`)
     .join('');
   const now = Date.now();
   const coupRows = coupons
