@@ -189,6 +189,7 @@ ${refresh ? '<meta http-equiv="refresh" content="15">' : ''}
  <a class="brand" href="/"><img src="/static/logo.svg" alt="Nina Beauty"><small>Sync</small></a>
  <nav class="nav">
   ${link('/', 'panel', 'home', 'Panel')}
+  ${link('/pedidos-bts', 'pedidosbts', 'box', 'Pedidos BTS')}
   ${link('/ofertas', 'ofertas', 'tag', 'Ofertas')}
   ${link('/recien-llegados', 'nuevos', 'spark', 'Recién llegados')}
   ${link('/competencia', 'competencia', 'euro', 'Competencia')}
