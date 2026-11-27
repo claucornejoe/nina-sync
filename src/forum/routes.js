@@ -112,6 +112,8 @@ export async function mountForum(app, auth) {
       return res.status(401).send('Esta página solo se puede ver desde la tienda de Nina Beauty.');
     }
     if (q.shop && q.shop !== config.shopify.shop()) return res.status(403).send('Otra tienda');
+    // Se guarda en la base (como mucho cada 10 min) para que el aviso del panel no vuelva tras cada despliegue.
+    if (!estado.ultimaVisita || Date.now() - estado.ultimaVisita > 10 * 60_000) store.guardarVisita().catch(() => {});
     estado.ultimaVisita = new Date();
     const id = String(q.logged_in_customer_id || '');
     req.clienteId = /^\d{1,20}$/.test(id) ? id : null;
@@ -225,7 +227,8 @@ export async function mountForum(app, auth) {
 
   // ---------- Panel: moderación ----------
   app.get('/foro', auth, safe(async (_req, res) => {
-    const [revisar, alertas, denuncias, recientes, cifras, ejemplos] = await Promise.all([store.porRevisar(), store.alertas(), store.denunciados(), store.recientes(40), store.cifras(), store.hayEjemplos()]);
+    const [revisar, alertas, denuncias, recientes, cifras, ejemplos, visita] = await Promise.all([store.porRevisar(), store.alertas(), store.denunciados(), store.recientes(40), store.cifras(), store.hayEjemplos(), estado.ultimaVisita || store.ultimaVisita()]);
+    if (visita && !estado.ultimaVisita) estado.ultimaVisita = new Date(visita);
     res.send(foroPage({ revisar, alertas, denuncias, recientes, cifras, ejemplos, estado, ajustes: { modo: ajustes.modo(), minConfianza: ajustes.minConfianza(), umbral: ajustes.umbralDenuncias() }, proxyUrl: config.publicUrl ? `${config.publicUrl.replace(/\/$/, '')}${PROXY}` : '', tiendaUrl: `${config.stockAlerts.storeUrl}${BASE}`, flash }));
     flash = null;
   }));
