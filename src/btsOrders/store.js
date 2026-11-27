@@ -22,6 +22,7 @@ export async function migrate() {
       error TEXT,
       detail JSONB                          -- líneas y dirección que se enviaron / se van a enviar
     );
+    ALTER TABLE bts_orders ADD COLUMN IF NOT EXISTS payment TEXT; -- wallet | banktransfer
     CREATE INDEX IF NOT EXISTS bts_orders_status ON bts_orders(status);
     CREATE TABLE IF NOT EXISTS bts_orders_meta (key TEXT PRIMARY KEY, value TEXT);
   `);
@@ -57,10 +58,10 @@ export async function lockForSend(id) {
   return r.rows[0] || null;
 }
 
-export async function markSent(id, { number, total, status, company, shippingCost, detail }) {
+export async function markSent(id, { number, total, status, company, shippingCost, detail, payment = null }) {
   await pool.query(
-    `UPDATE bts_orders SET status='enviado', bts_order_number=$2, bts_total=$3, bts_status=$4, shipping_company=$5, shipping_cost=$6, sent_at=now(), error=NULL, detail=$7 WHERE order_id=$1`,
-    [id, number, total, status, company, shippingCost, JSON.stringify(detail)],
+    `UPDATE bts_orders SET status='enviado', bts_order_number=$2, bts_total=$3, bts_status=$4, shipping_company=$5, shipping_cost=$6, sent_at=now(), error=NULL, detail=$7, payment=$8 WHERE order_id=$1`,
+    [id, number, total, status, company, shippingCost, JSON.stringify(detail), payment],
   );
 }
 

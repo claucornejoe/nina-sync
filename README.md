@@ -143,3 +143,4 @@ El tema (sección `nina-blog-articulo`) solo enseña el botón si el artículo t
 - Si se corta la conexión al enviar, el pedido queda en «Comprueba en BTS» y no se reintenta solo, para no duplicarlo.
 - Permisos de la app de Shopify: `read_orders`, `read_merchant_managed_fulfillment_orders`, `write_merchant_managed_fulfillment_orders` y acceso a datos protegidos de clientes (nombre, dirección y teléfono).
 - Variables opcionales: `BTS_ORDER_PAYMENT`, `BTS_ORDERS_CRON` (por defecto `*/15 * * * *`), `BTS_ORDERS_SINCE` (AAAA-MM-DD).
+- Si el monedero no tiene saldo (`no_enough_money`), el pedido se crea igualmente con `payment_method=banktransfer` (queda «Pendiente de pago» en BTS y no sale hasta la transferencia). Se desactiva con `BTS_ORDER_FALLBACK_TRANSFER=false`.
