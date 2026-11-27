@@ -88,3 +88,14 @@ test('precio con redondeo charm', () => {
   const p = computePrice(26.3, 143, { ...r, rounding: 'charm' });
   assert.equal(p.price, 50.99);
 });
+
+test('precio tachado solo si la rebaja es de al menos un 5 %', async () => {
+  const { saleCompareAt } = await import('../src/pricing.js');
+  const r = { offerMinDiscount: 0.05 };
+  assert.equal(saleCompareAt(83, 82.99, r), null); // céntimos: no es oferta
+  assert.equal(saleCompareAt(100, 96, r), null); // 4 %: no
+  assert.equal(saleCompareAt(100, 95, r), 100); // 5 %: sí
+  assert.equal(saleCompareAt(120, 79.99, r), 120);
+  assert.equal(saleCompareAt(null, 50, r), null);
+  assert.equal(saleCompareAt(40, 50, r), null);
+});

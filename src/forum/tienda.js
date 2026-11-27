@@ -209,6 +209,8 @@ a.nf-card:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--petalo
 .nf-resp{grid-template-columns:40px 1fr;border:0;background:transparent;padding:0}
 .nf-burbuja{position:relative;background:#fff;border:1.5px solid var(--linea);border-radius:4px 20px 20px 20px;padding:12px 16px}
 .nf-resp.nina{background:transparent}
+.nf-resp.pendiente .nf-burbuja{border-style:dashed;opacity:.85}
+.nf-caja .nf-aviso{margin:10px 0 0}
 .nf-resp.nina .nf-burbuja{background:var(--petalo2);border-color:var(--rosa)}
 @media(max-width:699px){
   .nf-top{padding:14px 14px 16px;gap:12px}
@@ -229,12 +231,20 @@ a.nf-card:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--petalo
   .nf-card h3{font-size:20px}
 }
 @media(min-width:900px){.nf-dos{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:start}.nf-dos .nf-caja{margin-top:0;position:sticky;top:20px}}
+/* Móvil: nada se sale de la pantalla, aunque una clienta escriba una palabra o un enlace larguísimo. */
+.nf{overflow-wrap:anywhere;word-break:break-word}
+.nf-card,.nf-resp{grid-template-columns:46px minmax(0,1fr)}
+.nf-resp{grid-template-columns:40px minmax(0,1fr)}
+.nf-card>*,.nf-resp>*,.nf-burbuja,.nf-top>*,.nf-banners>*{min-width:0}
+.nf select,.nf input,.nf textarea{max-width:100%}
+@media(max-width:699px){.nf-card{grid-template-columns:38px minmax(0,1fr)}}
 `;
 
 // Fuera de .nf: el foro es un espacio de comunidad, así que se oculta la lupa de productos de la cabecera
 // (solo en las páginas del foro) y se ponen las mariposas de marca de agua en el fondo de toda la página.
 const PAGINA = `
 search-button.search-action,.search-action{display:none!important}
+html,body{overflow-x:clip}
 body,main#MainContent{background-image:${FONDO_MARIPOSAS}!important;background-size:420px 420px!important;background-repeat:repeat!important}
 `;
 const envolver = (html, extra = '') => `<style>${PAGINA}${CSS}</style><div class="nf">${html}</div>${extra}`;
@@ -287,13 +297,13 @@ function campoApodo(perfil, sugerido) {
   return `<label>Tu nombre<input type="text" name="apodo" maxlength="30" required value="${t(perfil?.apodo || sugerido || '')}" placeholder="Por ejemplo: Laura M."></label>`;
 }
 
-function formTema({ sesion, perfil, sugerido, token, valores = {}, catActual }) {
+function formTema({ sesion, perfil, sugerido, token, valores = {}, catActual, ok, error }) {
   if (!sesion)
     return `<div class="nf-caja rosa" id="abrir-tema"><h2>Abre tu tema</h2><p class="nf-nota">Para escribir en el foro inicia sesión con tu cuenta de Nina Beauty (si no tienes, se crea al momento con tu correo).</p>
 <p style="margin:16px 0 0"><a class="nf-btn" href="${loginUrl(`${BASE}#abrir-tema`)}">Iniciar sesión para escribir</a></p></div>`;
   const opts = CATEGORIAS.map((c) => `<option value="${c.id}"${(valores.categoria || catActual) === c.id ? ' selected' : ''}>${t(c.nombre)}</option>`).join('');
   return `<div class="nf-caja rosa" id="abrir-tema"><h2>Abre tu tema</h2><p class="nf-nota">Cuéntanos tu duda o tu truco. Revisamos cada mensaje antes de publicarlo.</p>
-<form class="nf-form" method="post" action="${BASE}/nuevo">
+${aviso(ok, error)}<form class="nf-form" method="post" action="${BASE}/nuevo" onsubmit="var b=this.querySelector('button[type=submit]');if(b){b.disabled=true;b.textContent='Enviando…'}">
   <input type="hidden" name="token" value="${t(token)}">
   <div class="nf-trampa" aria-hidden="true"><label>No rellenar<input type="text" name="web" tabindex="-1" autocomplete="off"></label></div>
   ${campoApodo(perfil, sugerido)}
@@ -353,14 +363,14 @@ export function portada({ temas, total, pagina, porPagina, catActual, buscar = '
 ${aviso(ok, error)}
 <nav class="nf-cats2" aria-label="Categorías">${cats}</nav>
 <div class="nf-dos"><div><div class="nf-cabeza"><h2>${tituloLista}</h2>${buscador(buscar, catActual)}</div>${lista}</div>
-${formTema({ sesion, perfil, sugerido, token, valores, catActual })}</div>
+${formTema({ sesion, perfil, sugerido, token, valores, catActual, ok, error })}</div>
 ${PASOS}
-<a class="nf-fab" href="#abrir-tema">＋ Abrir tema</a>
+<a class="nf-fab" href="#abrir-tema">＋ Abrir tema</a><script>(function(){var f=document.querySelector('.nf-fab'),c=document.querySelector('#responder,#abrir-tema');if(!f||!c||!window.IntersectionObserver)return;new IntersectionObserver(function(e){f.style.display=e[0].isIntersecting?'none':''}).observe(c)})()</script>
 <p class="nf-legal">Los consejos del foro los escriben clientas y nuestro equipo, son orientativos y no sustituyen la opinión de un profesional. Si tienes una irritación o un problema de piel que no mejora, consulta a tu dermatólogo. <a href="${BASE}/normas">Normas del foro</a>.</p>`);
 }
 
 /** Página de un tema con sus respuestas. */
-export function paginaTema({ tema, respuestas, sesion, perfil, sugerido, token, ok, error, valores = {}, url }) {
+export function paginaTema({ tema, respuestas, enRevision = [], sesion, perfil, sugerido, token, ok, error, valores = {}, url }) {
   const cat = categoria(tema.categoria);
   const ruta = `${BASE}/${rutaTema(tema)}`;
   const votar = (tipo, id, n) =>
@@ -384,10 +394,20 @@ export function paginaTema({ tema, respuestas, sesion, perfil, sugerido, token, 
 </article>`,
     )
     .join('');
+  // Lo que ella ha enviado y aún revisamos: solo lo ve ella, para que no piense que no se ha enviado.
+  const mias = enRevision
+    .map(
+      (r) => `<article class="nf-resp pendiente" id="r${r.id}">
+  <div class="nf-av">${t((r.autor || '?').charAt(0).toUpperCase())}</div>
+  <div class="nf-burbuja"><div class="nf-meta"><b style="color:var(--graf)">${t(r.autor)}</b><span class="nf-chip ejemplo">En revisión · solo la ves tú</span></div>
+  <div class="nf-cuerpo" style="margin-top:4px;font-size:15px">${parrafos(r.cuerpo)}</div></div>
+</article>`,
+    )
+    .join('');
   const responder = !sesion
     ? `<div class="nf-caja" id="responder"><h2>Responder</h2><p class="nf-nota">Inicia sesión con tu cuenta de Nina Beauty para responder.</p><p style="margin:16px 0 0"><a class="nf-btn" href="${loginUrl(ruta + '#responder')}">Iniciar sesión para responder</a></p></div>`
-    : `<div class="nf-caja" id="responder"><h2>Responder</h2>
-<form class="nf-form" method="post" action="${BASE}/responder">
+    : `<div class="nf-caja" id="responder"><h2>Responder</h2>${aviso(ok, error)}
+<form class="nf-form" method="post" action="${BASE}/responder" onsubmit="var b=this.querySelector('button[type=submit]');if(b){b.disabled=true;b.textContent='Enviando…'}">
   <input type="hidden" name="token" value="${t(token)}"><input type="hidden" name="tema" value="${tema.id}">
   <div class="nf-trampa" aria-hidden="true"><label>No rellenar<input type="text" name="web" tabindex="-1" autocomplete="off"></label></div>
   ${campoApodo(perfil, sugerido)}
@@ -426,9 +446,9 @@ ${aviso(ok, error)}
   <div class="nf-cuerpo">${parrafos(tema.cuerpo)}</div>
   <div class="nf-pie">${votar('tema', tema.id, tema.ayuda)}<a class="nf-mini" style="text-decoration:none" href="https://wa.me/?text=${encodeURIComponent(`${tema.titulo} ${url || ''}`)}" target="_blank" rel="noopener">Compartir por WhatsApp</a>${denunciar('tema', tema.id, tema.equipo)}</div>
 </article>
-<section class="nf-resps"><h2>${respuestas.length ? plural(respuestas.length, 'respuesta', 'respuestas') : 'Aún no hay respuestas'}</h2>${resp || '<p class="nf-nota">¿Sabes algo que pueda ayudar? ¡Sé la primera en responder!</p>'}</section>
+<section class="nf-resps"><h2>${respuestas.length ? plural(respuestas.length, 'respuesta', 'respuestas') : 'Aún no hay respuestas'}</h2>${resp || (mias ? '' : '<p class="nf-nota">¿Sabes algo que pueda ayudar? ¡Sé la primera en responder!</p>')}${mias}</section>
 ${responder}
-<a class="nf-fab" href="#responder">＋ Responder</a>
+<a class="nf-fab" href="#responder">＋ Responder</a><script>(function(){var f=document.querySelector('.nf-fab'),c=document.querySelector('#responder,#abrir-tema');if(!f||!c||!window.IntersectionObserver)return;new IntersectionObserver(function(e){f.style.display=e[0].isIntersecting?'none':''}).observe(c)})()</script>
 <p class="nf-legal">Los consejos del foro son orientativos y no sustituyen la opinión de un profesional. Si tienes una irritación o un problema de piel que no mejora, consulta a tu dermatólogo. <a href="${BASE}/normas">Normas del foro</a>.</p>`,
     // Los temas de ejemplo no se marcan como conversaciones reales para Google.
     tema.ejemplo ? '' : `<script type="application/ld+json">${ldTxt}</script>`,

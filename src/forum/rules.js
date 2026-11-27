@@ -81,6 +81,59 @@ function motivoDe(re) {
   return ['Lleva un enlace', 'Menciona redes o contacto', 'Parece un teléfono', 'Lleva un correo', 'Posible insulto', 'Promesa de salud'][i];
 }
 
+// ---- Palabrotas e insultos (español de España) ----
+// Las respuestas de clientas se publican al momento; si llevan algo de esta lista, salta una alerta
+// en el panel /foro para que Clau las revise y, si hace falta, las oculte. Se compara sin tildes,
+// en minúsculas, deshaciendo trucos tipo «put4» o «putaaaa». Cada raíz admite terminaciones
+// (o/a/os/as, «-es»), así «cabrón» también pilla «cabrona» y «cabrones».
+const GROSERIAS = [
+  // palabrotas
+  'mierda', 'mierdas', 'joder', 'jodete', 'jodido', 'jodida', 'jodidos', 'jodidas', 'jodeos', 'cono', 'conazo', 'hostia', 'hostias', 'ostia', 'ostias',
+  'cojones', 'cojon', 'polla', 'pollas', 'putada', 'putadas', 'me cago en', 'cagate', 'mecagoen', 'manda huevos', 'chupapollas', 'comepollas', 'mamada',
+  // insultos
+  'puta', 'putas', 'puto', 'putos', 'puton', 'putona', 'hijo de puta', 'hija de puta', 'hijos de puta', 'hdp', 'hijoputa', 'zorra', 'zorras', 'guarra', 'guarras',
+  'furcia', 'fulana', 'golfa', 'gilipollas', 'gilipuertas', 'gilipollez', 'imbecil', 'imbeciles',
+  'subnormal', 'subnormales', 'anormal', 'anormales', 'cabron', 'cabrona', 'cabrones', 'cabronas', 'idiota', 'idiotas', 'estupido', 'estupida', 'estupidos', 'estupidas',
+  'capullo', 'capulla', 'capullos', 'pringado', 'pringada', 'pringados', 'pringadas', 'tonto del culo', 'tonta del culo', 'tontos del culo', 'tontas del culo',
+  'tonto', 'tonta', 'tontos', 'tontas', 'tontaca', 'bobo', 'boba', 'payaso', 'payasa', 'mamon', 'mamona', 'mamones', 'cretino', 'cretina', 'tarado', 'tarada',
+  'retrasado mental', 'retrasada mental', 'mongolo', 'mongola', 'mongolos', 'maricon', 'maricona', 'maricones', 'marica', 'bollera', 'tortillera', 'travelo',
+  'zorron', 'lameculos', 'pelota de mierda', 'asqueroso', 'asquerosa', 'asquerosos', 'asquerosas', 'inutil', 'inutiles', 'escoria', 'gentuza',
+  'callate', 'callaos', 'muerete', 'que te den', 'vete a la mierda', 'idos a la mierda', 'pendejo', 'pendeja', 'malparido', 'malparida', 'gorda asquerosa',
+];
+const sinTildes = (s) =>
+  String(s || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[@4]/g, 'a')
+    .replace(/0/g, 'o')
+    .replace(/3/g, 'e')
+    .replace(/[1!]/g, 'i')
+    .replace(/\$/g, 's')
+    .replace(/[*._-]/g, '')
+    .replace(/([a-z])\1{2,}/g, '$1');
+const RE_GROSERIAS = new RegExp(`(?:^|[^a-z])(${GROSERIAS.map((g) => g.replace(/ /g, '\\s+')).join('|')})(?=$|[^a-z])`, 'g');
+
+/** Palabrotas o insultos que lleva un texto (sin repetir), tal como están en la lista. */
+export function groserias(texto) {
+  const t = sinTildes(texto);
+  const out = new Set();
+  for (const m of t.matchAll(RE_GROSERIAS)) out.add(m[1].replace(/\s+/g, ' '));
+  return [...out];
+}
+
+/**
+ * Respuesta de una clienta: siempre se publica al momento (decisión de Clau, 2026-11-27).
+ * `alerta` va al panel si lleva palabrotas o insultos, o un enlace, contacto o promesa de salud.
+ */
+export function decidirRespuesta({ texto, equipo = false }) {
+  if (equipo) return { estado: 'publicado', motivo: null, alerta: null };
+  const malas = groserias(texto);
+  if (malas.length) return { estado: 'publicado', motivo: null, alerta: `Palabrotas o insultos: ${malas.slice(0, 6).join(', ')}` };
+  const marca = SOSPECHOSO.find((re) => re.test(texto));
+  return { estado: 'publicado', motivo: null, alerta: marca ? motivoDe(marca) : null };
+}
+
 /** «Qué rutina me recomendáis» → «que-rutina-me-recomendais». */
 export function slug(s) {
   return String(s || '')

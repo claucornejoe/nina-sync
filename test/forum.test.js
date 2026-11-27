@@ -47,6 +47,19 @@ test('moderación: previa, confianza y mensajes sospechosos', () => {
   assert.equal(rules.decidirEstado({ texto: 'www.x.com', equipo: true }).estado, 'publicado');
 });
 
+test('respuestas: se publican al momento y avisan si llevan palabrotas o insultos', () => {
+  assert.deepEqual(rules.decidirRespuesta({ texto: 'A mí me encantó, muy recomendable 😍' }), { estado: 'publicado', motivo: null, alerta: null });
+  const mala = rules.decidirRespuesta({ texto: 'Eres una put4 IMBÉCIL, me cago en todo' });
+  assert.equal(mala.estado, 'publicado');
+  assert.equal(mala.alerta, 'Palabrotas o insultos: puta, imbecil, me cago en');
+  assert.deepEqual(rules.groserias('vaya MIERDAAAA de gilipollas, cabronas'), ['mierda', 'gilipollas', 'cabronas']);
+  assert.deepEqual(rules.groserias('tonta del culo'), ['tonta del culo']);
+  // Palabras normales que contienen una palabrota no saltan.
+  assert.deepEqual(rules.groserias('mi computadora, el pedido retrasado, disputa, cóndor, hostelería, capullito de rosa'), []);
+  assert.equal(rules.decidirRespuesta({ texto: 'mira www.otra-tienda.com' }).alerta, 'Lleva un enlace');
+  assert.equal(rules.decidirRespuesta({ texto: 'joder', equipo: true }).alerta, null);
+});
+
 test('rutas de temas', () => {
   assert.equal(rules.rutaTema({ id: 12, titulo: '¿Qué rutina me recomendáis? Piel mixta & seca' }), 't/12-que-rutina-me-recomendais-piel-mixta-seca');
   assert.equal(rules.idDeRuta('12-que-rutina'), 12);
@@ -88,4 +101,15 @@ test('buscador del foro y temas de ejemplo', async () => {
   assert.ok(html.includes('.search-action{display:none!important}'), 'oculta la lupa de productos');
   const pt = paginaTema({ tema, respuestas: [], sesion: false, url: 'https://www.ninabeauty.es/apps/foro/t/1' });
   assert.ok(!pt.includes('application/ld+json'), 'los ejemplos no van a Google como conversaciones');
+});
+
+test('al responder, la clienta ve el aviso junto al formulario y su respuesta en revisión', () => {
+  const tema = { id: 1, categoria: 'skincare', titulo: 'Rutina de noche', cuerpo: 'x', autor: 'Ana', equipo: false, fijado: false, creado: new Date(), publicado_at: new Date(), actividad: new Date(), respuestas: 0, ayuda: 0 };
+  const html = paginaTema({ tema, respuestas: [], enRevision: [{ id: 9, cuerpo: 'Yo uso sérum', autor: 'Clau', creado: new Date() }], sesion: true, perfil: { apodo: 'Clau', acepto_normas_at: new Date() }, token: 'x', ok: 'respuesta', url: 'u' });
+  const caja = html.slice(html.indexOf('id="responder"'));
+  assert.ok(caja.includes('Tu respuesta aparecerá en cuanto la revisemos'), 'aviso dentro de la caja de responder');
+  assert.ok(html.includes('En revisión · solo la ves tú') && html.includes('Yo uso sérum'));
+  assert.ok(caja.includes("b.disabled=true"), 'el botón se bloquea para no enviar dos veces');
+  const p = portada({ temas: [], total: 0, pagina: 1, porPagina: 15, catActual: null, sesion: true, perfil: null, sugerido: 'Clau', token: 'x', ok: 'enviado' });
+  assert.ok(p.slice(p.indexOf('id="abrir-tema"')).includes('Hemos recibido tu tema'));
 });

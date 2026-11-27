@@ -4,7 +4,7 @@ import * as shopify from '../shopify.js';
 import * as store from './store.js';
 import { comp, summarizeOffers, suggest } from './engine.js';
 import { searchEan, account } from './serpapi.js';
-import { round2, profit } from '../pricing.js';
+import { round2, profit, saleCompareAt } from '../pricing.js';
 
 export const state = { running: false, done: 0, total: 0, label: '', last: null };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -133,7 +133,7 @@ export async function applyAdjustments(eans, r) {
       const s = suggest({ price, cost: x.cost, compMin: x.comp_min }, r);
       if (!s?.newPrice) { out.skipped.push({ ...x, why: 'ya no hace falta o no se puede bajar sin pasar del margen mínimo' }); continue; }
       const cmpNow = v.compareAtPrice ? Number(v.compareAtPrice) : null;
-      const cmp = cmpNow && cmpNow > s.newPrice ? cmpNow : x.rrp && x.rrp > s.newPrice ? round2(x.rrp) : null;
+      const cmp = saleCompareAt(cmpNow, s.newPrice, r) ?? saleCompareAt(x.rrp, s.newPrice, r);
       if (!byProduct.has(v.product.id)) byProduct.set(v.product.id, []);
       byProduct.get(v.product.id).push({ x, oldPrice: price, s, variant: { id: v.id, price: s.newPrice.toFixed(2), compareAtPrice: cmp ? cmp.toFixed(2) : null } });
     }

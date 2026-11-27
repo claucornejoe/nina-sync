@@ -84,8 +84,19 @@ export function computePrice(cost, rrp, r) {
   }
   const p = profit(price, cost, r);
   if (p <= 0) status = 'pierde';
-  const compareAt = rrp && rrp > price ? round2(rrp) : null;
+  const compareAt = saleCompareAt(rrp, price, r);
   return { price: round2(price), compareAt, profit: p, status };
+}
+
+/**
+ * Precio tachado (PVP) solo si la rebaja es real: al menos r.offerMinDiscount
+ * (5 % por defecto). Una diferencia de céntimos (82,99 € frente a 83,00 €)
+ * no es una oferta y no se tacha.
+ */
+export function saleCompareAt(rrp, price, r = {}) {
+  const min = r.offerMinDiscount ?? 0.05;
+  if (!rrp || !price || rrp <= price) return null;
+  return 1 - price / rrp >= min - 1e-9 ? round2(rrp) : null;
 }
 
 /** Regla de stock: menos de minStock unidades en BTS => 0. */

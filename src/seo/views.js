@@ -46,7 +46,25 @@ function icecatSection(ic) {
 ${thumbs ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:12px">${thumbs}</div>` : ''}`;
 }
 
-export function seoPage({ rows, totals, aiToday, queue, sweeping, state, settings, preview, icecat }) {
+function filenamesSection(f) {
+  if (!f) return '';
+  const when = f.endedAt ? fmtDate(f.endedAt) : '';
+  const line = f.running
+    ? `Renombrando: ${f.done} productos revisados, ${f.renamed} fotos renombradas${f.failed ? `, ${f.failed} fallos` : ''}…`
+    : f.finished
+      ? `Último repaso ${when}: ${f.renamed} fotos renombradas, ${f.skipped} ya estaban bien o son el logo de «sin foto»${f.failed ? `, <span class="chip error">${f.failed} fallos</span>` : ''}.`
+      : 'Se repasa solo a los 2 minutos de cada despliegue y cada noche.';
+  const errs = (f.errors || []).map((e) => `<li class="muted">${esc(e)}</li>`).join('');
+  return `<h2 id="nombres">Nombres de las fotos para Google</h2>
+<div class="card">
+ <p style="margin-top:0">Cada foto se llama como el producto, en minúsculas y con guiones (por ejemplo <b>paco-rabanne-black-xs-eau-de-toilette-50ml.webp</b>) en vez del código EAN. Las fotos con el logo de «sin foto» no se tocan.</p>
+ <p>${line}</p>
+ ${errs ? `<ul>${errs}</ul>` : ''}
+ <form method="post" action="/seo/fotos-nombres"><button class="btn ghost" ${f.running ? 'disabled' : ''}>Renombrar fotos ahora</button></form>
+</div>`;
+}
+
+export function seoPage({ rows, totals, aiToday, queue, sweeping, state, settings, preview, icecat, filenames }) {
   const busy = sweeping || queue.pending > 0 || queue.active > 0;
   const table = rows
     .map(
@@ -101,10 +119,12 @@ ${previewBox(preview)}
 
 ${icecatSection(icecat)}
 
+${filenamesSection(filenames)}
+
 <h2>Últimos productos</h2>
 <div class="tablecard"><div class="tablewrap"><table>
 <thead><tr><th>Fecha</th><th>Producto</th><th>Categoría</th><th>Descripción</th><th>Origen</th><th>Detalle</th></tr></thead>
 <tbody>${table || `<tr><td colspan="6"><div class="empty"><img src="/static/mariposa.svg" alt="">Todavía no se ha procesado ningún producto.</div></td></tr>`}</tbody>
 </table></div></div>`;
-  return shell('Google y descripciones', 'seo', body, { refresh: busy || (icecat?.status && !icecat.status.finished) });
+  return shell('Google y descripciones', 'seo', body, { refresh: busy || (icecat?.status && !icecat.status.finished) || filenames?.running });
 }

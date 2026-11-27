@@ -63,6 +63,17 @@ async function avisarPendientes() {
   await sendMailTo(config.mail.to, `Foro Nina: ${pendientes} ${pendientes === 1 ? 'mensaje' : 'mensajes'} por revisar`, pendientes, url).catch((e) => console.error('Foro: correo de aviso:', e.message));
 }
 
+// Aviso por correo cuando una respuesta publicada lleva palabrotas o insultos (como mucho uno cada 30 minutos).
+let ultimaAlerta = 0;
+async function avisarAlertas() {
+  if (!mailReady() || !config.mail.to || Date.now() - ultimaAlerta < 30 * 60_000) return;
+  ultimaAlerta = Date.now();
+  const { alertas } = await store.cifras();
+  if (!alertas) return;
+  const url = config.publicUrl ? `${config.publicUrl.replace(/\/$/, '')}/foro#alertas` : '';
+  await sendMailTo(config.mail.to, `Foro Nina: ${alertas} ${alertas === 1 ? 'respuesta' : 'respuestas'} con posibles insultos`, alertas, url, 'alerta').catch((e) => console.error('Foro: correo de alerta:', e.message));
+}
+
 /** Datos comunes de la clienta conectada (o null si no ha iniciado sesión). */
 async function sesionDe(req) {
   const id = req.clienteId;
@@ -123,9 +134,9 @@ export async function mountForum(app, auth) {
   async function verTema(req, res, id, extra = {}) {
     const tema = await store.tema(id);
     if (!tema || tema.estado !== 'publicado') return liquid(res, tienda.noEncontrado(), 404);
-    const [respuestas, ses] = await Promise.all([store.respuestasPublicadas(tema.id), sesionDe(req)]);
+    const [respuestas, ses, enRevision] = await Promise.all([store.respuestasPublicadas(tema.id), sesionDe(req), store.respuestasPendientesDe(tema.id, req.clienteId)]);
     const url = `${config.stockAlerts.storeUrl}${BASE}/${rules.rutaTema(tema)}`;
-    liquid(res, tienda.paginaTema({ tema, respuestas, ...ses, ok: req.query.ok, url, ...extra }));
+    liquid(res, tienda.paginaTema({ tema, respuestas, enRevision, ...ses, ok: req.query.ok, url, ...extra }));
   }
 
   proxy.get('/', safe((req, res) => verPortada(req, res)));
@@ -166,7 +177,7 @@ export async function mountForum(app, auth) {
     const tema = await store.crearTema({ ...v, clienteId: req.clienteId, autor: p.apodo, estado: d.estado, motivo: d.motivo });
     if (d.estado === 'publicado') return ir(res, `${BASE}/${rules.rutaTema(tema)}?ok=publicado`);
     avisarPendientes();
-    ir(res, `${BASE}?ok=enviado`);
+    ir(res, `${BASE}?ok=enviado#abrir-tema`);
   }));
 
   proxy.post('/responder', safe(async (req, res) => {
@@ -183,11 +194,11 @@ export async function mountForum(app, auth) {
     const p = await perfilDesdeForm(req, ses);
     if (p.error) return verTema(req, res, tema.id, { error: p.error, valores: { cuerpo: req.body.cuerpo } });
     if ((await store.enviadosHoy(req.clienteId)).respuestas >= ajustes.maxRespuestasDia) return verTema(req, res, tema.id, { ok: 'limite' });
-    const d = rules.decidirEstado({ texto: v.cuerpo, modo: ajustes.modo(), aprobados: await store.publicadosDe(req.clienteId), minConfianza: ajustes.minConfianza() });
-    const r = await store.crearRespuesta({ temaId: tema.id, cuerpo: v.cuerpo, clienteId: req.clienteId, autor: p.apodo, estado: d.estado, motivo: d.motivo });
-    if (d.estado === 'publicado') return ir(res, `${volver}?ok=respondido#r${r.id}`);
-    avisarPendientes();
-    ir(res, `${volver}?ok=respuesta#responder`);
+    // Las respuestas se publican al momento; si llevan palabrotas o insultos, alerta en el panel.
+    const d = rules.decidirRespuesta({ texto: v.cuerpo });
+    const r = await store.crearRespuesta({ temaId: tema.id, cuerpo: v.cuerpo, clienteId: req.clienteId, autor: p.apodo, estado: d.estado, motivo: d.motivo, alerta: d.alerta });
+    if (d.alerta) avisarAlertas();
+    ir(res, `${volver}?ok=respondido#r${r.id}`);
   }));
 
   const volverSeguro = (s) => (typeof s === 'string' && s.startsWith(`${BASE}/`) && !s.includes('//', 1) ? s : BASE);
@@ -214,8 +225,8 @@ export async function mountForum(app, auth) {
 
   // ---------- Panel: moderación ----------
   app.get('/foro', auth, safe(async (_req, res) => {
-    const [revisar, denuncias, recientes, cifras, ejemplos] = await Promise.all([store.porRevisar(), store.denunciados(), store.recientes(40), store.cifras(), store.hayEjemplos()]);
-    res.send(foroPage({ revisar, denuncias, recientes, cifras, ejemplos, estado, ajustes: { modo: ajustes.modo(), minConfianza: ajustes.minConfianza(), umbral: ajustes.umbralDenuncias() }, proxyUrl: config.publicUrl ? `${config.publicUrl.replace(/\/$/, '')}${PROXY}` : '', tiendaUrl: `${config.stockAlerts.storeUrl}${BASE}`, flash }));
+    const [revisar, alertas, denuncias, recientes, cifras, ejemplos] = await Promise.all([store.porRevisar(), store.alertas(), store.denunciados(), store.recientes(40), store.cifras(), store.hayEjemplos()]);
+    res.send(foroPage({ revisar, alertas, denuncias, recientes, cifras, ejemplos, estado, ajustes: { modo: ajustes.modo(), minConfianza: ajustes.minConfianza(), umbral: ajustes.umbralDenuncias() }, proxyUrl: config.publicUrl ? `${config.publicUrl.replace(/\/$/, '')}${PROXY}` : '', tiendaUrl: `${config.stockAlerts.storeUrl}${BASE}`, flash }));
     flash = null;
   }));
   const tipoDe = (s) => (s === 'respuesta' ? 'respuesta' : 'tema');
@@ -224,6 +235,11 @@ export async function mountForum(app, auth) {
     const row = await store.cambiarEstado(tipoDe(req.body.tipo), Number(req.body.id), est);
     flash = row ? { ok: true, text: est === 'publicado' ? 'Publicado.' : est === 'rechazado' ? 'Rechazado: no se mostrará en el foro.' : 'Vuelto a revisión.' } : { ok: false, text: 'No se encontró el mensaje.' };
     res.redirect('/foro');
+  }));
+  app.post('/foro/alerta', auth, safe(async (req, res) => {
+    const row = await store.quitarAlerta(Number(req.body.id));
+    flash = row ? { ok: true, text: 'Alerta quitada: la respuesta sigue publicada.' } : { ok: false, text: 'No se encontró la respuesta.' };
+    res.redirect('/foro#alertas');
   }));
   app.post('/foro/borrar', auth, safe(async (req, res) => {
     const row = await store.borrar(tipoDe(req.body.tipo), Number(req.body.id));

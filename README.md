@@ -107,12 +107,16 @@ Compara tus precios con Google Shopping España, buscando cada tamaño por su EA
 
 ## Fotos con IA (`/fotos-ia`)
 
-Para los productos que solo tienen el logo de Nina: busca la foto por EAN en Google Imágenes (SerpApi, `SERPAPI_KEY`),
-la pasa por **Nano Banana 2 a 1K** en Magnific (`MAGNIFIC_API_KEY`) con un prompt que conserva frasco y etiqueta y pone
-fondo blanco, y enseña antes / foto encontrada / foto nueva. Nada se sube a Shopify hasta pulsar «Subir a Shopify»; entonces
-la foto se guarda como `marca-producto-tamano.png` y el logo se desvincula de ese producto (el archivo compartido no se borra).
-Variables opcionales: `MAGNIFIC_MODEL` (por defecto `text-to-image/nano-banana-pro-flash`), `MAGNIFIC_RESOLUTION` (`1K`),
-`MAGNIFIC_PROMPT` (prompt propio; `{producto}` = nombre y tamaño). Por la API cada foto gasta créditos de Magnific.
+Para los productos que solo tienen el logo de Nina: busca la foto por EAN en Google Imágenes (Serper con `SERPER_API_KEY`,
+o SerpApi con `SERPAPI_KEY`), la rehace con **Nano Banana 2.1 a 1K, 1:1** en Magnific (`MAGNIFIC_API_KEY`; si la API no
+tiene la 2.1 usa la 2 y lo dice) con el prompt de Clau (fondo blanco para Google Shopping) y la guarda como
+`nombre-del-producto-tamano.png` (mismo formato que el renombrado de `src/seo/filenames.js`).
+- Si no es seguro que la foto encontrada sea el producto (no sale por EAN, o no nombra la marca o el producto), queda
+  **dudosa**: no gasta créditos ni se sube, y sale en `/fotos-ia/dudosas.csv` para buscarla a mano.
+- «Prueba con N» no sube nada. «Hacer todos los que quedan» puede subir solas las seguras.
+- El logo se desvincula del producto (el archivo compartido no se borra). Metacampo `nina_seo.foto = ia-magnific`.
+Opcionales: `MAGNIFIC_MODEL` (fija el modelo), `MAGNIFIC_RESOLUTION` (`1K`), `MAGNIFIC_PROMPT` (`{producto}` = nombre y
+tamaño), `FOTOS_IA_A_LA_VEZ` (3). Por la API cada foto gasta créditos de Magnific.
 
 ## Escuchar artículo (`/audio-blog`)
 

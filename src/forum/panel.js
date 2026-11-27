@@ -41,7 +41,26 @@ function formResponder(t, texto = 'Responder como Equipo Nina') {
 <div><button class="btn" type="submit" style="padding:10px 20px;font-size:14px">Publicar respuesta</button></div></form></details>`;
 }
 
-export function foroPage({ revisar, denuncias, recientes, cifras, ejemplos = 0, estado, ajustes, proxyUrl, tiendaUrl, flash }) {
+function tarjetaAlerta(m, tiendaUrl) {
+  const enlace = `${tiendaUrl}/${rutaTema({ id: m.tema_id, titulo: m.tema_titulo })}#r${m.id}`;
+  return `<div class="card" style="display:grid;gap:10px;border-color:#F3B4C6">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <span class="chip error">${esc(m.alerta)}</span>
+    <span class="chip ok">Publicada</span>
+    <span class="muted">${esc(m.autor)} · ${fmtDate(m.creado)}</span>
+  </div>
+  <div class="muted">En <a href="${esc(enlace)}" target="_blank" rel="noopener">«${esc(m.tema_titulo)}»</a></div>
+  <div style="background:var(--fondo);border-radius:12px;padding:12px 14px">${parr(m.cuerpo)}</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    ${boton('/foro/estado', { tipo: 'respuesta', id: m.id, estado: 'rechazado' }, 'Ocultar del foro', '')}
+    ${boton('/foro/alerta', { id: m.id }, 'Está bien, dejarla')}
+    ${boton('/foro/borrar', { tipo: 'respuesta', id: m.id }, 'Borrar', 'ghost', '¿Borrar esta respuesta para siempre?')}
+    ${m.cliente_id ? boton('/foro/bloquear', { cliente: m.cliente_id, si: '1' }, 'Bloquear a esta clienta', 'ghost', '¿Bloquear a esta clienta? No podrá publicar más en el foro.') : ''}
+  </div>
+</div>`;
+}
+
+export function foroPage({ revisar, alertas = [], denuncias, recientes, cifras, ejemplos = 0, estado, ajustes, proxyUrl, tiendaUrl, flash }) {
   const pendientes = revisar.temas.length + revisar.respuestas.length;
   const conectado = !!estado.ultimaVisita;
   const config = conectado
@@ -54,6 +73,10 @@ export function foroPage({ revisar, denuncias, recientes, cifras, ejemplos = 0, 
   const revisarHtml = pendientes
     ? `<div style="display:grid;gap:14px">${revisar.temas.map((m) => tarjetaRevisar(m, 'tema')).join('')}${revisar.respuestas.map((m) => tarjetaRevisar(m, 'respuesta')).join('')}</div>`
     : `<div class="card"><div class="empty"><img src="/static/mariposa.svg" alt="">No hay nada por revisar. ¡Todo al día!</div></div>`;
+
+  const alertasHtml = alertas.length
+    ? `<div style="display:grid;gap:14px">${alertas.map((m) => tarjetaAlerta(m, tiendaUrl)).join('')}</div>`
+    : '<p class="muted">Ninguna respuesta con palabrotas ni insultos. ¡Buen rollo!</p>';
 
   const denunciasHtml = denuncias.length
     ? `<div class="tablecard"><div class="tablewrap"><table><thead><tr><th>Mensaje</th><th>Avisos</th><th>Estado</th><th></th></tr></thead><tbody>${denuncias
@@ -79,17 +102,20 @@ export function foroPage({ revisar, denuncias, recientes, cifras, ejemplos = 0, 
   const body = `<div class="eyebrow">Comunidad</div><h1>Foro Nina</h1>
 <p class="muted" style="margin:10px 0 22px;max-width:700px">Las preguntas y consejos de tus clientas en <a href="${esc(tiendaUrl)}" target="_blank" rel="noopener">${esc(tiendaUrl.replace(/^https?:\/\//, ''))}</a>. ${
     ajustes.modo === 'previa'
-      ? 'Revisas cada mensaje antes de que se publique.'
-      : `Las clientas con ${ajustes.minConfianza} mensajes aprobados publican directamente; el resto lo revisas tú.`
-  } Con ${ajustes.umbral} avisos de clientas distintas, un mensaje se oculta hasta que lo revises.</p>
+      ? 'Los temas nuevos los revisas antes de que se publiquen.'
+      : `Las clientas con ${ajustes.minConfianza} mensajes aprobados publican temas directamente; el resto lo revisas tú.`
+  } Las respuestas se publican al momento: si llevan palabrotas o insultos, te salta una alerta aquí. Con ${ajustes.umbral} avisos de clientas distintas, un mensaje se oculta hasta que lo revises.</p>
 ${config}
 ${flash ? `<div class="card" style="background:${flash.ok ? 'var(--verde-bg);color:var(--verde)' : 'var(--rojo-bg);color:var(--rojo)'};margin-bottom:14px">${esc(flash.text)}</div>` : ''}
+${alertas.length ? `<a href="#alertas" class="card" style="display:block;background:var(--rojo-bg);color:var(--rojo);margin-bottom:14px;text-decoration:none;font-weight:600">⚠️ ${plural(alertas.length, 'respuesta publicada', 'respuestas publicadas')} con posibles palabrotas o insultos. Revísalas abajo.</a>` : ''}
 <div class="kpis">
+ <div class="kpi${alertas.length ? ' destacado' : ''}"><div class="top"><span>Alertas</span>${icon('bell', 34)}</div><b>${alertas.length}</b><span${alertas.length ? '' : ' class="muted"'}>${alertas.length ? 'respuestas con palabrotas o insultos' : 'sin palabrotas ni insultos'}</span></div>
  <div class="kpi${pendientes ? ' destacado' : ''}"><div class="top"><span>Por revisar</span>${icon('bell', 34)}</div><b>${cifras.pendientes}</b><span${pendientes ? '' : ' class="muted"'}>${pendientes ? 'esperan tu visto bueno' : 'todo al día'}</span></div>
  <div class="kpi"><div class="top"><span>Temas publicados</span>${icon('chat', 34)}</div><b>${cifras.temas}</b><span class="muted">${plural(cifras.respuestas, 'respuesta', 'respuestas')}</span></div>
  <div class="kpi"><div class="top"><span>Clientas que escriben</span>${icon('heart', 34)}</div><b>${cifras.clientas}</b><span class="muted">han escrito al menos una vez</span></div>
  <div class="kpi"><div class="top"><span>Sin respuesta de Nina</span>${icon('clock', 34)}</div><b>${cifras.sin_respuesta_nina}</b><span class="muted">temas de clientas sin respuesta del equipo</span></div>
 </div>
+<h2 id="alertas">Alertas: palabrotas e insultos</h2>${alertasHtml}
 <h2>Por revisar</h2>${revisarHtml}
 <h2>Avisos de clientas</h2>${denunciasHtml}
 <h2>Nuevo tema del equipo</h2>
