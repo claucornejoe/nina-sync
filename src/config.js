@@ -32,6 +32,7 @@ export const config = {
   // Pedidos Shopify → BTS (Clau, 2026-11-27: con botón en el panel, pago con monedero).
   btsOrders: {
     paymentMethod: process.env.BTS_ORDER_PAYMENT || 'wallet', // wallet | banktransfer | btscredit
+    fallbackTransfer: process.env.BTS_ORDER_FALLBACK_TRANSFER !== 'false', // monedero sin saldo → transferencia
     cron: process.env.BTS_ORDERS_CRON || '*/15 * * * *', // buscar pedidos y seguimientos
     since: process.env.BTS_ORDERS_SINCE || '', // por defecto: el primer arranque (no se envían pedidos antiguos)
   },
