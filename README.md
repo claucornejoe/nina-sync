@@ -114,6 +114,12 @@ tiene la 2.1 usa la 2 y lo dice) con el prompt de Clau (fondo blanco para Google
 - Si no es seguro que la foto encontrada sea el producto (no sale por EAN, o no nombra la marca o el producto), queda
   **dudosa**: no gasta créditos ni se sube, y sale en `/fotos-ia/dudosas.csv` para buscarla a mano.
 - «Prueba con N» no sube nada. «Hacer todos los que quedan» puede subir solas las seguras.
+- También es dudosa si una es estuche y la otra no (la foto es un set y el producto un frasco solo, o al revés).
+- Los enlaces de Magnific caducan: nada más hacerla, la foto se guarda en Contenido → Archivos de Shopify (sin ponerla
+  en el producto) y el panel enseña esa copia. «Subir» solo la engancha al producto; «Descartar» o «Repetir» borran la copia.
+- El tamaño del formato solo se añade al nombre si el título no trae ya un tamaño ni es un estuche
+  («1 Million 50 Eau de Toilette Sg» no pasa a llamarse «…-100ml»). Al arrancar se corrige el texto alternativo de las
+  ya subidas, y el renombrado nocturno ajusta el nombre del archivo. Las que se cortan por un reinicio quedan como «Error».
 - El logo se desvincula del producto (el archivo compartido no se borra). Metacampo `nina_seo.foto = ia-magnific`.
 Opcionales: `MAGNIFIC_MODEL` (fija el modelo), `MAGNIFIC_RESOLUTION` (`1K`), `MAGNIFIC_PROMPT` (`{producto}` = nombre y
 tamaño), `FOTOS_IA_A_LA_VEZ` (3). Por la API cada foto gasta créditos de Magnific.

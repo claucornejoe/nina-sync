@@ -1,5 +1,6 @@
 // Página «Fotos con IA» del panel.
 import { shell, esc, icon } from '../views.js';
+import { isSetTitle, looksLikeSet } from './rules.js';
 
 const STATUS = {
   pendiente: ['En cola', 'prueba'],
@@ -9,7 +10,10 @@ const STATUS = {
   error: ['Error', 'error'],
   subida: ['Subida a Shopify', 'ok'],
 };
-const img = (url, alt) => (url ? `<a href="${esc(url)}" target="_blank" rel="noopener"><img src="${esc(url)}" alt="${esc(alt)}" loading="lazy"></a>` : '<div class="vacio">—</div>');
+// Si la foto ya no carga (enlace de Magnific caducado), se dice qué hacer en vez de dejar el icono roto.
+const img = (url, alt, roto = 'Esta foto ya no se puede ver') => (url
+  ? `<a class="ph" data-roto="${esc(roto)}" href="${esc(url)}" target="_blank" rel="noopener noreferrer"><img src="${esc(url)}" alt="${esc(alt)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.classList.add('roto')"></a>`
+  : '<div class="vacio">—</div>');
 const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } };
 const n = (x) => Number(x || 0).toLocaleString('es-ES');
 
@@ -28,9 +32,9 @@ function row(r, ver) {
   <div class="cab"><div><b>${esc(r.title)}</b><div class="sub">${esc(r.vendor || '')} · EAN ${esc(r.ean || '—')} · <a href="https://admin.shopify.com/store/ikwg4h-mk/products/${esc(num)}" target="_blank" rel="noopener">abrir en Shopify</a>${r.model ? ` · ${esc(r.model)}` : ''}</div></div><span class="chip ${cls}">${label}</span></div>
   ${r.doubt ? `<div class="sub duda">${icon('search', 14)} ${esc(r.doubt)}</div>` : ''}
   <div class="tres">
-    <figure>${img(r.before_url, 'Antes')}<figcaption>Ahora en la tienda</figcaption></figure>
-    <figure>${img(r.source_url, 'Foto encontrada')}<figcaption>Foto encontrada${r.source_page ? ` · <a href="${esc(r.source_page)}" target="_blank" rel="noopener">${esc(host(r.source_page))}</a>` : ''}</figcaption></figure>
-    <figure>${img(r.result_url, 'Nueva con IA')}<figcaption>Nueva con Nano Banana</figcaption></figure>
+    <figure>${img(r.status === 'subida' ? r.shopify_url || r.kept_url || r.before_url : r.before_url, 'Antes')}<figcaption>Ahora en la tienda</figcaption></figure>
+    <figure>${img(r.source_url, 'Foto encontrada', 'La web de origen ya no deja ver esta foto')}<figcaption>Foto encontrada${r.source_page ? ` · <a href="${esc(r.source_page)}" target="_blank" rel="noopener">${esc(host(r.source_page))}</a>` : ''}</figcaption></figure>
+    <figure>${img(r.kept_url || r.shopify_url || r.result_url, 'Nueva con IA', r.status === 'subida' ? 'Ya está en la tienda: mírala en Shopify' : 'El enlace de Magnific caducó. Pulsa «Repetir» para hacerla de nuevo')}<figcaption>Nueva con Nano Banana</figcaption></figure>
   </div>
   ${r.filename ? `<div class="sub">Nombre del archivo: <code>${esc(r.filename)}</code></div>` : ''}
   ${r.error ? `<div class="sub err">${esc(r.error)}</div>` : ''}
@@ -44,7 +48,7 @@ export function fotosPage({ rows, ver = '', counts, models = {}, state, keys, mo
   const css = `<style>
 .foto{margin-top:18px}.foto .cab{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
 .tres{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:16px 0 10px}
-.tres figure{margin:0}.tres img,.tres .vacio{width:100%;aspect-ratio:1;object-fit:contain;background:#fff;border:1px solid var(--linea);border-radius:14px;display:flex;align-items:center;justify-content:center;color:var(--gris)}
+.tres figure{margin:0}.ph{display:block;position:relative}.ph.roto img{display:none}.ph.roto::before{content:attr(data-roto);display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;aspect-ratio:1;border:1px dashed var(--linea);border-radius:14px;color:var(--gris);font-size:.9em;background:#fff}.tres img,.tres .vacio{width:100%;aspect-ratio:1;object-fit:contain;background:#fff;border:1px solid var(--linea);border-radius:14px;display:flex;align-items:center;justify-content:center;color:var(--gris)}
 .tres figcaption{font-size:12px;color:var(--gris);margin-top:6px;text-align:center}
 .acc{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;align-items:center}.acc form{margin:0}
 .otra{display:flex;gap:8px;flex:1;min-width:240px}.otra input,.lote input{flex:1;min-width:0;border:1px solid var(--petalo);border-radius:999px;padding:10px 16px;font:14px var(--sans)}
@@ -85,6 +89,7 @@ ${faltan.length ? `<div class="card" style="margin-top:14px">Falta ${faltan.join
     ${c('lista') > 1 ? `<form method="post" action="/fotos-ia/subir-todas"><button class="btn ghost">Subir las ${n(c('lista'))} que están listas</button></form>` : ''}
     <form method="post" action="/fotos-ia/contar"><button class="btn ghost" ${state.counting ? 'disabled' : ''}>Contar productos con logo</button></form>
     ${c('dudosa') ? `<a class="btn ghost" href="/fotos-ia/dudosas.csv">${icon('download', 16)} Listado de dudosas (${n(c('dudosa'))})</a>` : ''}
+    ${c('subida') ? `<a class="btn ghost" href="/fotos-ia/revisar.csv">${icon('download', 16)} Subidas que conviene mirar</a>` : ''}
   </div>
 </div>
 <div class="filtros">${FILTROS.map(([k, l]) => `<a href="/fotos-ia${k ? `?ver=${k}` : ''}" class="${ver === k ? 'on' : ''}">${l}${k && c(k) ? ` (${n(c(k))})` : ''}</a>`).join('')}</div>
@@ -98,4 +103,19 @@ export function doubtfulCsv(rows) {
   const head = ['Marca', 'Producto', 'EAN', 'Por qué es dudosa', 'Foto que encontré', 'Página de esa foto', 'Abrir en Shopify'];
   const lines = rows.map((r) => [r.vendor, r.title, r.ean, r.doubt, r.source_url, r.source_page, `https://admin.shopify.com/store/ikwg4h-mk/products/${r.product_id.split('/').pop()}`].map(csvCell).join(';'));
   return '﻿' + [head.map(csvCell).join(';'), ...lines].join('\n');
+}
+
+/**
+ * Fotos ya subidas en las que una es estuche y la otra no (subidas antes de que eso las marcara como dudosas).
+ * Las primeras no guardaban el título de la foto encontrada: se mira solo su enlace, así que puede faltar alguna.
+ */
+export function toReview(rows) {
+  const out = [];
+  for (const r of rows) {
+    const photoSet = looksLikeSet({ title: r.source_title || '', link: r.source_page || r.source_url || '' });
+    const productSet = isSetTitle(r.title);
+    if (photoSet && !productSet) out.push({ ...r, doubt: 'La foto de partida parece un estuche y el producto es un frasco solo' });
+    else if (productSet && !photoSet) out.push({ ...r, doubt: 'El producto es un estuche y la foto de partida puede ser solo el frasco' });
+  }
+  return out;
 }

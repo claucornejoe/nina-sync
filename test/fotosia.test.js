@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { isPlaceholder, needsPhoto, fileName, sizeOf, pickImage, buildPrompt, extFor, confidence, keyWords } from '../src/fotosia/rules.js';
-import { doubtfulCsv } from '../src/fotosia/views.js';
+import { isPlaceholder, needsPhoto, fileName, sizeOf, altOf, isSetTitle, looksLikeSet, pickImage, buildPrompt, extFor, confidence, keyWords } from '../src/fotosia/rules.js';
+import { doubtfulCsv, toReview } from '../src/fotosia/views.js';
 
 const p = { title: "Givenchy L'Interdit Élixir Eau de Parfum", vendor: 'Givenchy', variants: [{ title: '80ml', sku: '3274872511798' }] };
 
@@ -65,4 +65,47 @@ test('listado de dudosas en CSV para Excel', () => {
   assert.ok(csv.startsWith('﻿"Marca";'));
   assert.match(csv, /"X ""Y"""/);
   assert.match(csv, /products\/123"/);
+});
+
+test('no añade el tamaño del formato si el nombre ya lo trae o es un estuche', () => {
+  const sg = { title: 'Paco Rabanne 1 Million 50 Eau de Toilette Sg', vendor: 'Paco Rabanne', variants: [{ title: '100ml' }] };
+  assert.equal(altOf(sg), 'Paco Rabanne 1 Million 50 Eau de Toilette Sg');
+  assert.equal(fileName(sg), 'paco-rabanne-1-million-50-eau-de-toilette-sg.png');
+  assert.equal(altOf({ title: 'Dicora Urban Fit Paris For Her 150 Eau de Toilette', variants: [{ title: '150ml' }] }), 'Dicora Urban Fit Paris For Her 150 Eau de Toilette');
+  assert.equal(altOf({ title: 'Tous Touch Estuche 2 Piezas', variants: [{ title: '100ml' }] }), 'Tous Touch Estuche 2 Piezas');
+  assert.equal(altOf({ title: 'Lancôme Idôle Eau de Parfum 50ml', variants: [{ title: '50ml' }] }), 'Lancôme Idôle Eau de Parfum 50ml');
+  // Números que son parte del nombre, no tamaño: sí se añade el formato.
+  assert.equal(altOf({ title: 'Maison Alhambra La Rouge Baroque 540 Eau de Parfum', variants: [{ title: '100ml' }] }), 'Maison Alhambra La Rouge Baroque 540 Eau de Parfum 100ml');
+  assert.equal(altOf({ title: 'Carolina Herrera 212 VIP Rose', variants: [{ title: '80ml' }] }), 'Carolina Herrera 212 VIP Rose 80ml');
+  assert.equal(altOf(p), "Givenchy L'Interdit Élixir Eau de Parfum 80ml");
+});
+
+test('reconoce estuches en el producto y en la foto encontrada', () => {
+  for (const t of ['Set Lattafa Pride Collection N4 Eau de Parfum 5 X 20ml', 'Tous Touch Estuche 2 Piezas', 'Paco Rabanne 1 Million 50 Eau de Toilette Sg',
+    'Davidoff Cool Water e T 125v Gel75 Et15', 'Givenchy Mini Set', 'Jean Paul Gaultier Le Male Eau de Toilette 75v Desodorante S']) assert.ok(isSetTitle(t), t);
+  for (const t of ['Victoria\'s Secret Bare Vanilla Body Mist', 'Gucci Rush Eau de Toilette Sp', "Givenchy L'Interdit Élixir Eau de Parfum", 'Lattafa Pride Collection N4']) assert.ok(!isSetTitle(t), t);
+  assert.ok(looksLikeSet({ title: 'Paco Rabanne 1 Million Coffret EDT 50 ml + Gel', link: 'https://x.es/p' }));
+  assert.ok(looksLikeSet({ title: '1 Million', link: 'https://bixoto.com/paco-rabanne-1-million-gift-set' }));
+  assert.ok(!looksLikeSet({ title: 'Paco Rabanne 1 Million Eau de Toilette 50 ml', link: 'https://x.es/1-million-edt' }));
+});
+
+test('dudosa si la foto es un estuche y el producto un frasco solo (y al revés)', () => {
+  const bottle = { title: 'Paco Rabanne 1 Million Eau de Toilette', vendor: 'Paco Rabanne', variants: [{ title: '50ml' }] };
+  const setPhoto = { original: 'https://x.es/a.jpg', title: 'Paco Rabanne 1 Million gift set EDT 50ml + shower gel', link: 'https://x.es/p', viaEan: true };
+  assert.match(confidence(setPhoto, bottle).why, /estuche.*frasco solo/);
+  const sg = { title: 'Paco Rabanne 1 Million 50 Eau de Toilette Sg', vendor: 'Paco Rabanne', variants: [{ title: '100ml' }] };
+  assert.equal(confidence(setPhoto, sg).ok, true);
+  assert.match(confidence({ ...setPhoto, title: 'Paco Rabanne 1 Million Eau de Toilette 50ml' }, sg).why, /producto es un estuche/);
+  // Entre dos resultados por EAN, elige el que cuadra (estuche con estuche).
+  const r = pickImage([{ ...setPhoto, title: 'Paco Rabanne 1 Million EDT 50ml', width: 1500, height: 1500 }, { ...setPhoto, width: 700, height: 700 }], sg, true);
+  assert.match(r.title, /gift set/);
+});
+
+test('lista de subidas que conviene mirar (estuche contra frasco)', () => {
+  const rows = toReview([
+    { title: 'Paco Rabanne 1 Million Eau de Toilette', source_page: 'https://bixoto.com/paco-rabanne-1-million-gift-set', product_id: 'gid://shopify/Product/1' },
+    { title: 'Tous Touch Estuche 2 Piezas', source_page: 'https://x.es/tous-touch-edt', product_id: 'gid://shopify/Product/2' },
+    { title: 'Gucci Rush Eau de Toilette Sp', source_page: 'https://x.es/gucci-rush-edt', product_id: 'gid://shopify/Product/3' },
+  ]);
+  assert.deepEqual(rows.map((r) => r.product_id.split('/').pop()), ['1', '2']);
 });

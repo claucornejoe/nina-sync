@@ -17,14 +17,32 @@ export async function migrate() {
     ALTER TABLE fotos_ia ADD COLUMN IF NOT EXISTS model TEXT;
     ALTER TABLE fotos_ia ADD COLUMN IF NOT EXISTS doubt TEXT;
     ALTER TABLE fotos_ia ADD COLUMN IF NOT EXISTS vendor TEXT;
+    ALTER TABLE fotos_ia ADD COLUMN IF NOT EXISTS file_id TEXT;     -- copia en Archivos de Shopify (no caduca)
+    ALTER TABLE fotos_ia ADD COLUMN IF NOT EXISTS kept_url TEXT;    -- su URL en el CDN de Shopify
+    ALTER TABLE fotos_ia ADD COLUMN IF NOT EXISTS shopify_url TEXT; -- foto que quedó en el producto
+    ALTER TABLE fotos_ia ADD COLUMN IF NOT EXISTS source_title TEXT; -- título de la foto encontrada (para ver si es estuche)
   `);
 }
+
+/** Las que se quedaron a medias porque Nina Sync se reinició (un despliegue corta la tanda). */
+export async function failInterrupted() {
+  const r = await pool.query(
+    `UPDATE fotos_ia SET status='error', error='Se cortó porque Nina Sync se reinició; pulsa «Repetir» o vuelve a «Hacer todos»', updated_at=now()
+     WHERE status IN ('generando','pendiente')`,
+  );
+  return r.rowCount;
+}
+
+/** Subidas a las que aún no les hemos guardado la URL de Shopify (las de antes de guardar copia). */
+export const uploadedWithoutUrl = async () =>
+  (await pool.query(`SELECT * FROM fotos_ia WHERE status='subida' AND shopify_url IS NULL ORDER BY updated_at`)).rows;
 
 export async function upsert(r) {
   await pool.query(
     `INSERT INTO fotos_ia(product_id, title, ean, handle, before_url, vendor, status) VALUES ($1,$2,$3,$4,$5,$6,'pendiente')
      ON CONFLICT (product_id) DO UPDATE SET title=EXCLUDED.title, ean=EXCLUDED.ean, handle=EXCLUDED.handle, before_url=EXCLUDED.before_url,
-       vendor=EXCLUDED.vendor, status='pendiente', error=NULL, doubt=NULL, updated_at=now()`,
+       vendor=EXCLUDED.vendor, status='pendiente', error=NULL, doubt=NULL, result_url=NULL, model=NULL, file_id=NULL, kept_url=NULL,
+       updated_at=now()`,
     [r.productId, r.title, r.ean, r.handle, r.beforeUrl, r.vendor || null],
   );
 }

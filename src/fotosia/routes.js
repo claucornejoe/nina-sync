@@ -1,7 +1,7 @@
 // Rutas de «Fotos con IA».
 import * as store from './store.js';
-import { state, runBatch, redo, upload, refs, stop, countPending } from './worker.js';
-import { fotosPage, doubtfulCsv } from './views.js';
+import { state, runBatch, redo, upload, discard, refs, stop, countPending, repairUploaded } from './worker.js';
+import { fotosPage, doubtfulCsv, toReview } from './views.js';
 import { magnificKey, currentModel } from './magnific.js';
 import { searchProvider } from './source.js';
 import { esc } from '../views.js';
@@ -17,6 +17,9 @@ const later = (res, to = '/fotos-ia') => setTimeout(() => res.redirect(to), 1500
 
 export async function mountFotosIa(app, auth) {
   await store.migrate();
+  const cut = await store.failInterrupted();
+  if (cut) console.log(`Fotos IA: ${cut} fotos se quedaron a medias por un reinicio; quedan como «Error» para repetirlas.`);
+  setTimeout(() => repairUploaded().catch((e) => console.error('Fotos IA (repaso de subidas):', e.message)), 30_000).unref?.();
 
   // Foto de partida servida a Magnific (sin contraseña, con token aleatorio y solo 15 minutos).
   app.get('/fotos-ia/ref/:token', (req, res) => {
@@ -39,6 +42,12 @@ export async function mountFotosIa(app, auth) {
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="nina-fotos-dudosas.csv"');
     res.send(doubtfulCsv(await store.byStatus('dudosa')));
+  }));
+
+  app.get('/fotos-ia/revisar.csv', auth, safe(async (_req, res) => {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="nina-fotos-subidas-para-mirar.csv"');
+    res.send(doubtfulCsv(toReview(await store.byStatus('subida'))));
   }));
 
   app.post('/fotos-ia/probar', auth, safe(async (req, res) => {
@@ -92,7 +101,7 @@ export async function mountFotosIa(app, auth) {
   }));
 
   app.post('/fotos-ia/descartar', auth, safe(async (req, res) => {
-    await store.set(idOf(req.body.id), { status: 'descartada' });
+    await discard(idOf(req.body.id));
     res.redirect('/fotos-ia' + (req.body.ver ? `?ver=${encodeURIComponent(req.body.ver)}` : ''));
   }));
 }
