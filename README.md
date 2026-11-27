@@ -135,3 +135,11 @@ El tema (sección `nina-blog-articulo`) solo enseña el botón si el artículo t
 | `ELEVENLABS_VOICE_ID` | — | Voz por defecto si no se elige en el panel |
 | `ELEVENLABS_MODEL` | `eleven_multilingual_v2` | Modelo por defecto |
 | `AUDIO_BLOG_HANDLE` | `nina-blog` | Blog cuyos artículos se leen |
+
+## Pedidos BTS (botón «Enviar a BTS»)
+- Cada 15 minutos Nina Sync busca los pedidos pagados y sin enviar de Shopify y los muestra en **Pedidos BTS**. No se envía nada a BTS hasta pulsar «Enviar a BTS» (Clau, 2026-11-27).
+- Al pulsarlo: elige el envío más barato de `getShippingPrices` y crea el pedido con `setCreateOrder` (dropshipping=1, pago `BTS_ORDER_PAYMENT`, por defecto `wallet`). BTS no tiene modo de prueba: es un pedido real.
+- Cuando BTS da el seguimiento (`getTrackings`), marca el pedido como enviado en Shopify con el número y el enlace, y Shopify manda el correo a la clienta.
+- Si se corta la conexión al enviar, el pedido queda en «Comprueba en BTS» y no se reintenta solo, para no duplicarlo.
+- Permisos de la app de Shopify: `read_orders`, `read_merchant_managed_fulfillment_orders`, `write_merchant_managed_fulfillment_orders` y acceso a datos protegidos de clientes (nombre, dirección y teléfono).
+- Variables opcionales: `BTS_ORDER_PAYMENT`, `BTS_ORDERS_CRON` (por defecto `*/15 * * * *`), `BTS_ORDERS_SINCE` (AAAA-MM-DD).
