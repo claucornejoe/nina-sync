@@ -8,10 +8,11 @@ const order = (o = {}) => ({ displayFinancialStatus: 'PAID', cancelledAt: null, 
 
 test('niveles por compras de 12 meses', () => {
   assert.equal(r.levelFor(0).name, 'Sparkle');
-  assert.equal(r.levelFor(99.99).name, 'Sparkle');
-  assert.equal(r.levelFor(100).name, 'Glow');
-  assert.equal(r.levelFor(250).name, 'Glam');
-  assert.equal(r.levelFor(1200).name, 'Butterfly');
+  assert.equal(r.levelFor(149).name, 'Sparkle');
+  assert.equal(r.levelFor(150).name, 'Glow');
+  assert.equal(r.levelFor(400).name, 'Glam');
+  assert.equal(r.levelFor(799).name, 'Glam');
+  assert.equal(r.levelFor(800).name, 'Butterfly');
   assert.deepEqual(r.LEVELS.map((l) => l.rate), [1, 1.5, 2, 2]);
 });
 
@@ -89,4 +90,13 @@ test('avisos de caducidad: agrupa por día lo que queda y elige el aviso', () =>
   const m = reminderEmail({ name: 'Ana', amount: 2, day: '2026-11-20', stage: 7 });
   assert.match(m.subject, /2,00 €/);
   assert.match(m.html, /20 de noviembre/);
+});
+
+test('puntos: 1 por euro (hacia abajo) más extras', () => {
+  assert.equal(r.pointsFor(0, 0), 0);
+  assert.equal(r.pointsFor(129.99, 20), 149);
+  assert.equal(r.levelFor(r.pointsFor(130, 20)).name, 'Glow');
+  assert.equal(r.pointsFor(380, 20), 400);
+  assert.equal(r.eurosFor(800), 800);
+  assert.equal(r.BONUS.cuenta.points, 20);
 });

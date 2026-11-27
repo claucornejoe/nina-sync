@@ -20,11 +20,21 @@ export async function migrate() {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
     CREATE INDEX IF NOT EXISTS nc_orders_customer ON nc_orders(customer_id);
+    CREATE TABLE IF NOT EXISTS nc_points (
+      id SERIAL PRIMARY KEY,
+      customer_id TEXT NOT NULL,
+      reason TEXT NOT NULL,    -- cuenta | resena | cumple | amiga
+      points INT NOT NULL,
+      once_key TEXT,           -- evita repetir «cuenta» o el cumpleaños del mismo año
+      at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS nc_points_once ON nc_points(customer_id, once_key) WHERE once_key IS NOT NULL;
     CREATE TABLE IF NOT EXISTS nc_customers (
       customer_id TEXT PRIMARY KEY,
       name TEXT,
       level INT NOT NULL DEFAULT 1,
       spent_12m NUMERIC NOT NULL DEFAULT 0,
+      points INT NOT NULL DEFAULT 0,
       balance NUMERIC NOT NULL DEFAULT 0,
       pending NUMERIC NOT NULL DEFAULT 0,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -38,6 +48,7 @@ export async function migrate() {
       note TEXT,
       dry_run BOOLEAN NOT NULL DEFAULT false
     );
+    ALTER TABLE nc_customers ADD COLUMN IF NOT EXISTS points INT NOT NULL DEFAULT 0;
     CREATE INDEX IF NOT EXISTS nc_log_at ON nc_log(at DESC);
     CREATE TABLE IF NOT EXISTS nc_monthly (
       customer_id TEXT NOT NULL,
@@ -95,6 +106,21 @@ export async function spent12m(customerId, exceptOrderId = null) {
   return r.rows[0].s;
 }
 
+/** Puntos extra de los últimos 12 meses. */
+export async function bonus12m(customerId) {
+  const r = await pool.query(`SELECT COALESCE(SUM(points),0)::int AS s FROM nc_points WHERE customer_id=$1 AND at > now() - interval '365 days'`, [customerId]);
+  return r.rows[0].s;
+}
+
+/** Suma puntos extra. Devuelve false si ya se dieron (once_key repetido). */
+export async function addPoints({ customerId, reason, points, onceKey = null }) {
+  const r = await pool.query(
+    `INSERT INTO nc_points(customer_id, reason, points, once_key) VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING RETURNING id`,
+    [customerId, reason, points, onceKey],
+  );
+  return r.rowCount > 0;
+}
+
 export async function pendingFor(customerId) {
   const r = await pool.query(`SELECT COALESCE(SUM(earned),0)::float AS s FROM nc_orders WHERE customer_id=$1 AND status='pendiente'`, [customerId]);
   return r.rows[0].s;
@@ -113,13 +139,13 @@ export async function getCustomer(id) {
 }
 export async function saveCustomer(c) {
   await pool.query(
-    `INSERT INTO nc_customers(customer_id,name,level,spent_12m,balance,pending,updated_at) VALUES ($1,$2,$3,$4,$5,$6,now())
-     ON CONFLICT (customer_id) DO UPDATE SET name=COALESCE($2,nc_customers.name), level=$3, spent_12m=$4, balance=$5, pending=$6, updated_at=now()`,
-    [c.customer_id, c.name || null, c.level, c.spent_12m, c.balance, c.pending],
+    `INSERT INTO nc_customers(customer_id,name,level,spent_12m,balance,pending,points,updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,now())
+     ON CONFLICT (customer_id) DO UPDATE SET name=COALESCE($2,nc_customers.name), level=$3, spent_12m=$4, balance=$5, pending=$6, points=$7, updated_at=now()`,
+    [c.customer_id, c.name || null, c.level, c.spent_12m, c.balance, c.pending, c.points || 0],
   );
 }
 export async function allCustomers() {
-  return (await pool.query('SELECT * FROM nc_customers ORDER BY spent_12m DESC')).rows;
+  return (await pool.query('SELECT * FROM nc_customers ORDER BY points DESC, spent_12m DESC')).rows;
 }
 export async function customersAtLevel(level) {
   return (await pool.query('SELECT * FROM nc_customers WHERE level=$1', [level])).rows;

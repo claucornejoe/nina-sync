@@ -2,13 +2,32 @@
 
 const num = (name, def) => (process.env[name] ? Number(process.env[name]) : def);
 
-/** Niveles por compras de los últimos 12 meses. Ventajas acordadas con Clau el 2026-11-14. */
+/**
+ * Niveles por PUNTOS Nina de los últimos 12 meses (Clau, 2026-11-27): 1 punto por euro comprado
+ * más puntos extra (cuenta nueva, reseña, cumpleaños, amiga). `from` son puntos.
+ */
 export const LEVELS = [
   { n: 1, key: 'sparkle', name: 'Sparkle', from: 0, rate: num('NINACASH_PCT_1', 1) },
-  { n: 2, key: 'glow', name: 'Glow', from: num('NIVEL_GLOW_DESDE', 100), rate: num('NINACASH_PCT_2', 1.5) },
-  { n: 3, key: 'glam', name: 'Glam', from: num('NIVEL_GLAM_DESDE', 250), rate: num('NINACASH_PCT_3', 2) },
-  { n: 4, key: 'butterfly', name: 'Butterfly', from: num('NIVEL_BUTTERFLY_DESDE', 500), rate: num('NINACASH_PCT_4', 2) },
+  { n: 2, key: 'glow', name: 'Glow', from: num('NIVEL_GLOW_PUNTOS', 150), rate: num('NINACASH_PCT_2', 1.5) },
+  { n: 3, key: 'glam', name: 'Glam', from: num('NIVEL_GLAM_PUNTOS', 400), rate: num('NINACASH_PCT_3', 2) },
+  { n: 4, key: 'butterfly', name: 'Butterfly', from: num('NIVEL_BUTTERFLY_PUNTOS', 800), rate: num('NINACASH_PCT_4', 2) },
 ];
+
+export const POINTS_PER_EURO = num('PUNTOS_POR_EURO', 1);
+
+/** Puntos extra que no son compras. `once`: solo una vez por clienta (o una vez al año en el cumpleaños). */
+export const BONUS = {
+  cuenta: { name: 'Crear la cuenta', points: num('PUNTOS_CUENTA', 20), once: true },
+  resena: { name: 'Reseña con foto', points: num('PUNTOS_RESENA', 15) },
+  cumple: { name: 'Cumpleaños', points: num('PUNTOS_CUMPLE', 25), yearly: true },
+  amiga: { name: 'Amiga que compra', points: num('PUNTOS_AMIGA', 50) },
+};
+
+/** Puntos de compras: 1 por euro (redondeado hacia abajo) + puntos extra. */
+export const pointsFor = (spent, bonus = 0) => Math.max(0, Math.floor(Number(spent || 0) * POINTS_PER_EURO + 1e-9) + Math.round(Number(bonus || 0)));
+
+/** Euros aproximados para llegar a un nivel solo con compras. */
+export const eurosFor = (points) => Math.ceil(points / (POINTS_PER_EURO || 1));
 
 export const LEVEL_TAGS = LEVELS.map((l) => `nivel-${l.key}`);
 export const tagFor = (n) => `nivel-${LEVELS[n - 1].key}`;
@@ -22,10 +41,10 @@ export const EXPIRY_DAYS = num('NINACASH_CADUCIDAD_DIAS', 365);
 
 export const round2 = (x) => Math.round((Number(x) + Number.EPSILON) * 100) / 100;
 
-/** Nivel (1-4) según lo comprado en los últimos 12 meses. */
-export function levelFor(spent12m) {
+/** Nivel (1-4) según los puntos de los últimos 12 meses. */
+export function levelFor(points) {
   let lvl = LEVELS[0];
-  for (const l of LEVELS) if (Number(spent12m) >= l.from) lvl = l;
+  for (const l of LEVELS) if (Number(points) >= l.from) lvl = l;
   return lvl;
 }
 
