@@ -127,6 +127,7 @@
   .nbc-bar__count{margin:0;font-size:13px;font-weight:600}
   .nbc-chips{display:flex;flex-wrap:wrap;gap:8px;flex:1 1 300px}
   .nbc-chip{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:0 12px;border-radius:999px;background:var(--nb-dark);color:#fff !important;font-size:12px;font-weight:600;text-decoration:none}
+  #nbc-resultados{scroll-margin-top:96px}
   .nbc-clear{font-size:12px;font-weight:700;text-decoration:underline;align-self:center}
   .nbc-sort{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600}
   .nbc-sort select{height:44px;border:1px solid #DDD3D6;border-radius:10px;padding:0 12px;font:inherit;font-size:13px;background:#fff;color:#111}
@@ -350,7 +351,7 @@
             endif
           -%}
           <li>
-            <a class="nbc-brand" href="{{ v.url_to_add }}">
+            <a class="nbc-brand" href="{{ v.url_to_add }}#nbc-resultados">
               <span class="nbc-brand__img" aria-hidden="true"{% unless m_img %} data-nbc-marca="{{ v.value | escape }}"{% endunless %}>
                 {%- if m_img -%}
                   {{ m_img | image_url: width: 200 | image_tag: loading: 'lazy', alt: '', width: 96, height: 96 }}
@@ -376,16 +377,16 @@
     <div class="nbc-chips">
       {%- for f in collection.filters -%}
         {%- for v in f.active_values -%}
-          <a class="nbc-chip" href="{{ v.url_to_remove }}">{{ v.label }} <span aria-hidden="true">✕</span><span class="visually-hidden">Quitar filtro</span></a>
+          <a class="nbc-chip" href="{{ v.url_to_remove }}#nbc-resultados">{{ v.label }} <span aria-hidden="true">✕</span><span class="visually-hidden">Quitar filtro</span></a>
         {%- endfor -%}
         {%- if f.type == 'price_range' -%}
           {%- if f.min_value.value != blank or f.max_value.value != blank -%}
-            <a class="nbc-chip" href="{{ f.url_to_remove }}">{{ f.min_value.value | default: 0 | money_without_trailing_zeros }} – {{ f.max_value.value | default: f.range_max | money_without_trailing_zeros }} <span aria-hidden="true">✕</span></a>
+            <a class="nbc-chip" href="{{ f.url_to_remove }}#nbc-resultados">{{ f.min_value.value | default: 0 | money_without_trailing_zeros }} – {{ f.max_value.value | default: f.range_max | money_without_trailing_zeros }} <span aria-hidden="true">✕</span></a>
           {%- endif -%}
         {%- endif -%}
       {%- endfor -%}
       {%- if hay_filtros -%}
-        <a class="nbc-clear" href="{{ collection.url }}?sort_by={{ collection.sort_by }}">Borrar todo</a>
+        <a class="nbc-clear" href="{{ collection.url }}?sort_by={{ collection.sort_by }}#nbc-resultados">Borrar todo</a>
       {%- endif -%}
     </div>
     <label class="nbc-sort">Ordenar por
@@ -399,7 +400,7 @@
   </div>
 
   <div class="nbc-layout">
-    <form class="nbc-aside" id="nbc-filtros" aria-label="Filtros" action="{{ collection.url }}" method="get">
+    <form class="nbc-aside" id="nbc-filtros" aria-label="Filtros" action="{{ collection.url }}#nbc-resultados" method="get">
       {%- for pase in (1..2) -%}
       {%- for f in collection.filters -%}
         {%- liquid
@@ -652,6 +653,14 @@
     var fmt = function (c) { return (c / 100).toFixed(2).replace('.', ',') + ' €'; };
 
     var form = root.querySelector('#nbc-filtros');
+    // Al ordenar o filtrar, la página vuelve a cargarse: quedarse en los productos, no arriba del todo (Clau, 2026-11-27)
+    var bar = root.querySelector('#nbc-resultados');
+    if (bar && /[?&](sort_by|filter\.|page)=/.test(location.search)) {
+      var irResultados = function () { bar.scrollIntoView({ block: 'start' }); };
+      if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+      irResultados();
+      window.addEventListener('load', irResultados, { once: true });
+    }
     root.querySelectorAll('[data-nbc-autosubmit]').forEach(function (el) {
       el.addEventListener('change', function () { if (form) form.submit(); });
     });
