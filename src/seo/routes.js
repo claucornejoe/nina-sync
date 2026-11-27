@@ -10,6 +10,7 @@ import { enqueue, sweep, processProduct, queueStatus, isSweeping } from './worke
 import { seoPage } from './views.js';
 import { aiPaused } from './openai.js';
 import * as icecat from './icecat.js';
+import { renameAll, filenamesStatus, filenamesAuto, filenamesCron } from './filenames.js';
 
 const WEBHOOK_PATH = '/webhooks/products-create';
 const state = { webhook: 'sin comprobar', lastSweep: null, preview: null };
@@ -62,6 +63,7 @@ export async function mountSeo(app, auth) {
         settings: { aiPaused: aiPaused(), hasKey: !!seo.openaiKey(), model: seo.model, webSearch: seo.webSearch, auto: seo.auto, maxPerDay: seo.maxPerDay, publicUrl: publicBase() },
         preview,
         icecat: { status: icecat.icecatStatus(), summary: await icecat.summary(), samples: await icecat.samples() },
+        filenames: filenamesStatus(),
       }),
     );
   });
@@ -83,6 +85,12 @@ export async function mountSeo(app, auth) {
     setTimeout(() => res.redirect('/seo#fotos'), 1500);
   });
 
+  // Nombres de archivo de las fotos para Google (marca-producto-tamano.webp).
+  app.post('/seo/fotos-nombres', auth, (_req, res) => {
+    renameAll('manual').catch((e) => console.error('Nombres de fotos:', e.message));
+    setTimeout(() => res.redirect('/seo#nombres'), 1500);
+  });
+
   // Un producto: «Ver sin guardar» o «Rehacer y guardar».
   app.post('/seo/producto', auth, async (req, res) => {
     const id = parseProductId(req.body.producto);
@@ -95,6 +103,13 @@ export async function mountSeo(app, auth) {
     state.preview = { ...r, saved: save };
     res.redirect('/seo');
   });
+
+  // Nombres de fotos: un repaso a los 2 minutos de arrancar y otro cada noche (fotos de productos nuevos).
+  // FOTOS_NOMBRE_AUTO=false lo apaga (el botón del panel sigue funcionando).
+  if (filenamesAuto()) {
+    setTimeout(() => renameAll('arranque').catch((e) => console.error('Nombres de fotos:', e.message)), 120_000);
+    cron.schedule(filenamesCron(), () => renameAll('noche').catch((e) => console.error('Nombres de fotos:', e.message)), { timezone: config.timezone });
+  }
 
   if (seo.auto) {
     // Suscripción al webhook (necesita PUBLIC_URL).
