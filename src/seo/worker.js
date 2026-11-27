@@ -210,6 +210,14 @@ function pump() {
 
 export const queueStatus = () => ({ pending: queue.length, active });
 
+// Orden del repaso: primero los calendarios de Black Friday, luego lo que tiene stock, y al final el resto.
+const PRIORITY_TAGS = ['calendario-adviento-bf'];
+export function priority(p) {
+  const tags = (p.tags || []).map((t) => t.toLowerCase());
+  if (tags.some((t) => PRIORITY_TAGS.includes(t))) return 0;
+  return (p.totalInventory || 0) > 0 ? 1 : 2;
+}
+
 let sweeping = false;
 /** Repaso: mete en la cola los productos a los que les falta algo. */
 export async function sweep(origin = 'repaso') {
@@ -220,13 +228,16 @@ export async function sweep(origin = 'repaso') {
     let total = 0;
     let missing = 0;
     const capReached = (await store.aiCallsToday()) >= seo.maxPerDay;
+    const pending = [];
     for await (const p of sh.allProducts()) {
       total++;
-      if (needs(p, { capReached }).any) {
-        missing++;
-        enqueue(p.id, origin);
-      }
+      if (needs(p, { capReached }).any) pending.push(p);
     }
+    missing = pending.length;
+    pending
+      .map((p, i) => ({ p, i, k: priority(p) }))
+      .sort((a, b) => a.k - b.k || a.i - b.i)
+      .forEach(({ p }) => enqueue(p.id, origin));
     console.log(`Google y descripciones: repaso ${origin} · ${total} productos · ${missing} con algo pendiente${capReached ? ' · tope diario de IA alcanzado' : ''}${aiPaused() ? ' · IA en pausa: ' + aiPaused() : ''}`);
     return { total, missing };
   } finally {
