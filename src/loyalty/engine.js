@@ -130,7 +130,7 @@ export async function refreshCustomer(customerId, name = null) {
     if (!(cust.tags || []).includes(want)) await sh.addTags(customerId, [want]);
   }
   if (before && before.level !== lvl.n) {
-    await store.log({ customerId, kind: 'nivel', note: `${rules.LEVELS[before.level - 1].name} → ${lvl.name} (${earned.toFixed(2).replace('.', ',')} € de NinaCash ganado en 12 meses)`, dryRun: dry });
+    await store.log({ customerId, kind: 'nivel', note: `${rules.LEVELS[before.level - 1].name} → ${lvl.name} (${rules.fmtUnits(rules.toUnits(earned))} ganados en 12 meses)`, dryRun: dry });
   }
   await store.saveCustomer({ customer_id: customerId, name: name || cust.displayName, level: lvl.n, spent_12m: spent, earned_12m: earned, balance, pending });
 
@@ -147,7 +147,7 @@ async function writeCustomerMetafields(customerId, { level, earned, spent, balan
   }));
   await sh.setMetafields([
     { ownerId: customerId, key: 'nivel', type: 'number_integer', value: level },
-    { ownerId: customerId, key: 'ninacash_ganado', type: 'number_decimal', value: earned.toFixed(2) },
+    { ownerId: customerId, key: 'ninacash_ganado', type: 'number_integer', value: String(rules.toUnits(earned)) },
     { ownerId: customerId, key: 'nivel_siguiente', type: 'json', value: JSON.stringify(rules.nextLevel(earned) || {}) },
     { ownerId: customerId, key: 'gasto_12m', type: 'number_decimal', value: spent.toFixed(2) },
     { ownerId: customerId, key: 'ninacash', type: 'number_decimal', value: balance.toFixed(2) },
@@ -184,9 +184,9 @@ export async function setup() {
   const def = (key, name, type, description) => ({ key, name, type, description, ownerType: 'CUSTOMER' });
   await sh.ensureDefinitions([
     def('nivel', 'Nivel Nina', 'number_integer', '1 Sparkle, 2 Glow, 3 Glam, 4 Butterfly (lo pone Nina Sync)'),
-    def('ninacash_ganado', 'NinaCash ganado 12 meses', 'number_decimal', 'NinaCash ganado en los últimos 12 meses: sube el nivel (lo pone Nina Sync)'),
-    def('nivel_siguiente', 'Siguiente nivel Nina', 'json', '{nivel, nombre, falta}: euros de NinaCash que faltan para el siguiente nivel ({} si es Butterfly)'),
-    { key: 'niveles', name: 'Niveles Nina', type: 'json', ownerType: 'SHOP', description: '[{nivel, nombre, ninacash, compras, porcentaje}] umbrales de NinaCash para cada nivel' },
+    def('ninacash_ganado', 'NinaCash ganado 12 meses', 'number_integer', 'NinaCash ganados en 12 meses (1 NinaCash = 1 céntimo): suben el nivel (lo pone Nina Sync)'),
+    def('nivel_siguiente', 'Siguiente nivel Nina', 'json', '{nivel, nombre, falta}: NinaCash que faltan para el siguiente nivel ({} si es Butterfly)'),
+    { key: 'niveles', name: 'Niveles Nina', type: 'json', ownerType: 'SHOP', description: '[{nivel, nombre, ninacash, compras, porcentaje}] NinaCash (1 = 1 céntimo) para cada nivel' },
     def('gasto_12m', 'Compras últimos 12 meses', 'number_decimal', 'Euros comprados en los últimos 12 meses (lo pone Nina Sync)'),
     def('ninacash', 'Saldo NinaCash', 'number_decimal', 'Saldo disponible en euros (crédito en tienda)'),
     def('ninacash_pendiente', 'NinaCash pendiente', 'number_decimal', 'Se suma 14 días después de la entrega'),

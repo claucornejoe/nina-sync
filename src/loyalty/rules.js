@@ -4,14 +4,14 @@ const num = (name, def) => (process.env[name] ? Number(process.env[name]) : def)
 
 /**
  * Niveles por NinaCash GANADO en los últimos 12 meses (Clau, 2026-11-27: «acumula X NinaCash para subir de nivel»).
- * `from` son euros de NinaCash ganado (gastarlo no baja de nivel). Con el 1 / 1,5 / 2 % equivalen a unos
- * 150, 400 y 800 € de compras. Se cambian en Railway con NIVEL_*_NINACASH.
+ * `from` son NinaCash (1 NinaCash = 1 céntimo de saldo) ganados; gastarlo no baja de nivel. Con el 1 / 1,5 / 2 %
+ * equivalen a unos 150, 400 y 800 € de compras. Se cambian en Railway con NIVEL_*_NINACASH.
  */
 export const LEVELS = [
   { n: 1, key: 'sparkle', name: 'Sparkle', from: 0, rate: num('NINACASH_PCT_1', 1) },
-  { n: 2, key: 'glow', name: 'Glow', from: num('NIVEL_GLOW_NINACASH', 1.5), rate: num('NINACASH_PCT_2', 1.5) },
-  { n: 3, key: 'glam', name: 'Glam', from: num('NIVEL_GLAM_NINACASH', 5.25), rate: num('NINACASH_PCT_3', 2) },
-  { n: 4, key: 'butterfly', name: 'Butterfly', from: num('NIVEL_BUTTERFLY_NINACASH', 13.25), rate: num('NINACASH_PCT_4', 2) },
+  { n: 2, key: 'glow', name: 'Glow', from: num('NIVEL_GLOW_NINACASH', 150), rate: num('NINACASH_PCT_2', 1.5) },
+  { n: 3, key: 'glam', name: 'Glam', from: num('NIVEL_GLAM_NINACASH', 525), rate: num('NINACASH_PCT_3', 2) },
+  { n: 4, key: 'butterfly', name: 'Butterfly', from: num('NIVEL_BUTTERFLY_NINACASH', 1325), rate: num('NINACASH_PCT_4', 2) },
 ];
 
 export const LEVEL_TAGS = LEVELS.map((l) => `nivel-${l.key}`);
@@ -26,32 +26,37 @@ export const EXPIRY_DAYS = num('NINACASH_CADUCIDAD_DIAS', 365);
 
 export const round2 = (x) => Math.round((Number(x) + Number.EPSILON) * 100) / 100;
 
-/** Nivel (1-4) según el NinaCash ganado en los últimos 12 meses. */
+/** 1 NinaCash = 1 céntimo de saldo (Clau, 2026-11-27: «debe decir 150 NinaCash, no céntimos»). */
+export const toUnits = (euros) => Math.round(Number(euros || 0) * 100);
+export const fmtUnits = (u) => `${String(Math.round(u)).replace(/\B(?=(\d{3})+(?!\d))/g, '.')} NinaCash`;
+
+/** Nivel (1-4) según el NinaCash ganado en los últimos 12 meses (en euros de saldo). */
 export function levelFor(earned12m) {
+  const u = toUnits(earned12m);
   let lvl = LEVELS[0];
-  for (const l of LEVELS) if (Number(earned12m) + 1e-9 >= l.from) lvl = l;
+  for (const l of LEVELS) if (u >= l.from) lvl = l;
   return lvl;
 }
 
-/** Compras aproximadas (€) para ganar `target` € de NinaCash, subiendo el % al cambiar de nivel. */
+/** Compras aproximadas (€) para ganar `target` NinaCash, subiendo el % al cambiar de nivel. */
 export function salesFor(target) {
   let sales = 0;
   let earned = 0;
   for (let i = 0; i < LEVELS.length && earned + 1e-9 < target; i++) {
     const cap = Math.min(target, LEVELS[i + 1]?.from ?? Infinity);
     if (cap > earned) {
-      sales += ((cap - earned) * 100) / LEVELS[i].rate;
+      sales += (cap - earned) / LEVELS[i].rate;
       earned = cap;
     }
   }
   return Math.round(sales);
 }
 
-/** Lo que le falta para el siguiente nivel: { nivel, nombre, falta } o null si ya es Butterfly. */
+/** Lo que le falta para el siguiente nivel, en NinaCash: { nivel, nombre, falta } o null si ya es Butterfly. */
 export function nextLevel(earned12m) {
   const now = levelFor(earned12m);
   const next = LEVELS[now.n];
-  return next ? { nivel: next.n, nombre: next.name, falta: round2(next.from - Number(earned12m)) } : null;
+  return next ? { nivel: next.n, nombre: next.name, falta: next.from - toUnits(earned12m) } : null;
 }
 
 const isStoreCredit = (t) => /store.?credit|cr[eé]dito/i.test(`${t.gateway || ''} ${t.formattedGateway || ''}`);

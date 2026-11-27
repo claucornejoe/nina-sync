@@ -93,10 +93,11 @@ test('avisos de caducidad: agrupa por día lo que queda y elige el aviso', () =>
 });
 
 test('nivel por NinaCash ganado: equivalencia en compras y lo que falta', () => {
-  assert.equal(r.salesFor(1.5), 150);
-  assert.equal(r.salesFor(5.25), 400);
-  assert.equal(r.salesFor(13.25), 800);
-  assert.equal(r.salesFor(50), 2638);
-  assert.deepEqual(r.nextLevel(4), { nivel: 3, nombre: 'Glam', falta: 1.25 });
+  assert.equal(r.salesFor(150), 150);
+  assert.equal(r.salesFor(525), 400);
+  assert.equal(r.salesFor(1325), 800);
+  assert.equal(r.salesFor(5000), 2638);
+  assert.deepEqual(r.nextLevel(4), { nivel: 3, nombre: 'Glam', falta: 125 });
+  assert.equal(r.fmtUnits(1325), '1.325 NinaCash');
   assert.equal(r.nextLevel(20), null);
 });
