@@ -231,12 +231,20 @@ a.nf-card:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--petalo
   .nf-card h3{font-size:20px}
 }
 @media(min-width:900px){.nf-dos{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:start}.nf-dos .nf-caja{margin-top:0;position:sticky;top:20px}}
+/* Móvil: nada se sale de la pantalla, aunque una clienta escriba una palabra o un enlace larguísimo. */
+.nf{overflow-wrap:anywhere;word-break:break-word}
+.nf-card,.nf-resp{grid-template-columns:46px minmax(0,1fr)}
+.nf-resp{grid-template-columns:40px minmax(0,1fr)}
+.nf-card>*,.nf-resp>*,.nf-burbuja,.nf-top>*,.nf-banners>*{min-width:0}
+.nf select,.nf input,.nf textarea{max-width:100%}
+@media(max-width:699px){.nf-card{grid-template-columns:38px minmax(0,1fr)}}
 `;
 
 // Fuera de .nf: el foro es un espacio de comunidad, así que se oculta la lupa de productos de la cabecera
 // (solo en las páginas del foro) y se ponen las mariposas de marca de agua en el fondo de toda la página.
 const PAGINA = `
 search-button.search-action,.search-action{display:none!important}
+html,body{overflow-x:clip}
 body,main#MainContent{background-image:${FONDO_MARIPOSAS}!important;background-size:420px 420px!important;background-repeat:repeat!important}
 `;
 const envolver = (html, extra = '') => `<style>${PAGINA}${CSS}</style><div class="nf">${html}</div>${extra}`;
