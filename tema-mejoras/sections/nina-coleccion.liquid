@@ -477,29 +477,8 @@
       {%- endif -%}
     </form>
 
-    {%- liquid
-      assign nbc_av = collection.filters | where: 'param_name', 'filter.v.availability' | first
-      assign nbc_in = 0
-      assign nbc_out = 0
-      assign nbc_av_on = false
-      if nbc_av
-        for av in nbc_av.values
-          if av.value == '1'
-            assign nbc_in = av.count
-          elsif av.value == '0'
-            assign nbc_out = av.count
-          endif
-          if av.active
-            assign nbc_av_on = true
-          endif
-        endfor
-      endif
-      assign nbc_fase = false
-      if nbc_av and nbc_av_on == false and nbc_in > 0 and nbc_out > 0 and paginate.current_page == 1 and paginate.pages > 1
-        assign nbc_fase = true
-      endif
-    -%}
-    <section class="nbc-main" aria-label="Productos"{% if nbc_fase %} data-nbc-fase data-in="{{ nbc_in }}" data-out="{{ nbc_out }}" data-por="{{ section.settings.por_pagina }}" data-total="{{ paginate.items }}" data-sec="{{ section.id }}"{% endif %}>
+    {%- comment -%} 2026-11-27 (Clau): agotados al final en toda la colección. El filtro filter.v.availability funciona por URL aunque no salga en el lateral. {%- endcomment -%}
+    <section class="nbc-main" aria-label="Productos" data-pags="{{ paginate.pages }}"{% if paginate.current_page == 1 and paginate.pages > 1 %} data-nbc-fase data-por="{{ section.settings.por_pagina }}" data-total="{{ paginate.items }}" data-sec="{{ section.id }}"{% endif %}>
       {%- if collection.products.size == 0 -%}
         <div class="nbc-empty">
           <p class="nbc-serif">No hay productos con estos filtros</p>
@@ -839,16 +818,16 @@
     /* 2026-11-27 (Clau): agotados al final en toda la colección, no solo en cada página.
        Primero se cargan todas las páginas con stock (filtro de disponibilidad) y después las agotadas. */
     var fase = root.querySelector('[data-nbc-fase]');
-    if (fase && window.fetch && window.DOMParser) {
+    if (fase && window.fetch && window.DOMParser && !/[?&]filter\.v\.availability=/.test(location.search)) {
       var grid = fase.querySelector('.nbc-grid');
       var pager = fase.querySelector('.nbc-more');
-      var por = +fase.dataset.por || 24, total = +fase.dataset.total || 0;
-      var fases = [{ v: '1', pags: Math.ceil((+fase.dataset.in) / por) }, { v: '0', pags: Math.ceil((+fase.dataset.out) / por) }];
+      var total = +fase.dataset.total || 0;
+      var fases = [{ v: '1', pags: null }, { v: '0', pags: null }];
       var fi = 0, pag = 0, vistos = {}, nVistos = 0, ocupado = false;
       var promos = Array.prototype.map.call(grid.children, function (li, idx) { return li.querySelector('.nbc-promo') ? { li: li, idx: idx } : null; }).filter(Boolean);
       var urlDe = function (v, p) {
         var u = new URL(location.href); u.hash = '';
-        u.searchParams.delete('page'); u.searchParams.delete('filter.v.availability');
+        u.searchParams.delete('page');
         u.searchParams.set('filter.v.availability', v);
         if (p > 1) u.searchParams.set('page', p);
         u.searchParams.set('section_id', fase.dataset.sec);
@@ -857,33 +836,51 @@
       var siguiente = function () {
         if (fi >= fases.length) return null;
         pag++;
-        while (fi < fases.length && pag > fases[fi].pags) { fi++; pag = 1; }
+        while (fi < fases.length && fases[fi].pags !== null && pag > fases[fi].pags) { fi++; pag = 1; }
         return fi < fases.length ? urlDe(fases[fi].v, pag) : null;
       };
-      var quedan = function () { return fi < fases.length && !(fi === fases.length - 1 && pag >= fases[fi].pags); };
+      var quedan = function () {
+        if (fi >= fases.length) return false;
+        if (fi < fases.length - 1) return true;
+        return fases[fi].pags === null || pag < fases[fi].pags;
+      };
       var pintarPager = function () {
         if (!pager) return;
         var pct = total ? Math.min(100, Math.round(nVistos * 100 / total)) : 100;
-        pager.innerHTML = '<p>Has visto ' + nVistos + ' de ' + total + ' productos</p><div class="nbc-progress" aria-hidden="true"><div style="width:' + pct + '%"></div></div>' +
+        pager.innerHTML = '<p>Has visto ' + Math.min(nVistos, total || nVistos) + ' de ' + total + ' productos</p><div class="nbc-progress" aria-hidden="true"><div style="width:' + pct + '%"></div></div>' +
           (quedan() ? '<button type="button" class="nbc-btn nbc-btn--line" data-nbc-mas>Ver más productos</button>' : '');
       };
-      var cargar = function (primera) {
+      var traer = function (primera) {
         var url = siguiente();
-        if (!url || ocupado) return Promise.resolve();
-        ocupado = true; grid.classList.add('is-cargando');
+        if (!url) return Promise.resolve(0);
         return fetch(url).then(function (r) { if (!r.ok) throw r; return r.text(); }).then(function (html) {
           var doc = new DOMParser().parseFromString(html, 'text/html');
+          var m = doc.querySelector('.nbc-main');
+          if (m) fases[fi].pags = +m.dataset.pags || 0;
           var items = Array.prototype.filter.call(doc.querySelectorAll('.nbc-grid > li'), function (li) { return !li.querySelector('.nbc-promo'); });
-          if (primera) { grid.innerHTML = ''; }
+          if (primera) grid.innerHTML = '';
+          var nuevos = 0;
           items.forEach(function (li) {
-            var a = li.querySelector('.nbc-card__title'); var k = a ? a.getAttribute('href').split('?')[0] : Math.random();
-            if (vistos[k]) return; vistos[k] = 1; nVistos++;
+            var a = li.querySelector('.nbc-card__title'); var k = a ? a.getAttribute('href').split('?')[0] : String(Math.random());
+            if (vistos[k]) return; vistos[k] = 1; nVistos++; nuevos++;
             grid.appendChild(document.importNode(li, true));
           });
           if (primera) promos.forEach(function (p) { grid.insertBefore(p.li, grid.children[p.idx] || null); });
           ligarTarjetas(grid); ligarCestas(grid);
-          if (primera && items.length < por / 2 && quedan()) { ocupado = false; return cargar(false); }
-        }).catch(function () { fases = []; }).then(function () { ocupado = false; grid.classList.remove('is-cargando'); pintarPager(); });
+          return nuevos;
+        });
+      };
+      var cargar = function (primera) {
+        if (ocupado) return;
+        ocupado = true; grid.classList.add('is-cargando');
+        var intentos = 0;
+        var paso = function (prim) {
+          return traer(prim).then(function (n) {
+            intentos++;
+            if (n < 6 && quedan() && intentos < 6) return paso(false);
+          });
+        };
+        paso(primera).catch(function () { fases = []; }).then(function () { ocupado = false; grid.classList.remove('is-cargando'); pintarPager(); });
       };
       if (pager) pager.addEventListener('click', function (e) { var b = e.target.closest('[data-nbc-mas]'); if (b) { b.disabled = true; b.textContent = 'Cargando…'; cargar(false); } });
       cargar(true);
