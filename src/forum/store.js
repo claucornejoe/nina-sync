@@ -56,6 +56,7 @@ export async function migrate() {
     ALTER TABLE foro_temas ADD COLUMN IF NOT EXISTS ejemplo BOOLEAN NOT NULL DEFAULT false;
     ALTER TABLE foro_respuestas ADD COLUMN IF NOT EXISTS ejemplo BOOLEAN NOT NULL DEFAULT false;
     ALTER TABLE foro_respuestas ADD COLUMN IF NOT EXISTS alerta TEXT;
+    CREATE TABLE IF NOT EXISTS foro_ajustes (clave TEXT PRIMARY KEY, valor TEXT NOT NULL);
   `);
 }
 
@@ -192,6 +193,21 @@ export async function borrarEjemplos() {
   const sueltas = await pool.query('DELETE FROM foro_respuestas WHERE ejemplo RETURNING tema_id');
   for (const x of sueltas.rows) await recontar(x.tema_id);
   return r.rowCount;
+}
+
+// ---- Última visita desde la tienda (sobrevive a los despliegues) ----
+export async function guardarVisita(fecha = new Date()) {
+  await pool.query(
+    `INSERT INTO foro_ajustes (clave, valor) VALUES ('ultima_visita', $1) ON CONFLICT (clave) DO UPDATE SET valor = EXCLUDED.valor`,
+    [fecha.toISOString()],
+  );
+}
+export async function ultimaVisita() {
+  const r = await pool.query(`SELECT valor FROM foro_ajustes WHERE clave='ultima_visita'`);
+  if (r.rows[0]) return new Date(r.rows[0].valor);
+  // Antes de guardar visitas: si ya hay mensajes de clientas, el proxy funciona.
+  const c = await pool.query(`SELECT max(creado) AS f FROM (SELECT creado FROM foro_temas WHERE cliente_id IS NOT NULL UNION ALL SELECT creado FROM foro_respuestas WHERE cliente_id IS NOT NULL) x`);
+  return c.rows[0]?.f || null;
 }
 
 // ---- Moderación ----

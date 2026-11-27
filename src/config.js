@@ -83,5 +83,6 @@ export const config = {
     maxPerRun: num('ALERT_MAX_PER_RUN', 400), // Gmail/Workspace admite unos 2.000 al día
     expireDays: num('ALERT_EXPIRE_DAYS', 180), // sin reposición en 6 meses: se borra el correo
   },
-  publicUrl: process.env.PUBLIC_URL || '',
+  // Con o sin https:// en Railway, siempre se usa con https:// (Shopify lo exige en el proxy).
+  publicUrl: (process.env.PUBLIC_URL || '').trim().replace(/^(?!https?:\/\/)(?=.)/, 'https://'),
 };
