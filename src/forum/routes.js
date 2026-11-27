@@ -123,9 +123,9 @@ export async function mountForum(app, auth) {
   async function verTema(req, res, id, extra = {}) {
     const tema = await store.tema(id);
     if (!tema || tema.estado !== 'publicado') return liquid(res, tienda.noEncontrado(), 404);
-    const [respuestas, ses] = await Promise.all([store.respuestasPublicadas(tema.id), sesionDe(req)]);
+    const [respuestas, ses, enRevision] = await Promise.all([store.respuestasPublicadas(tema.id), sesionDe(req), store.respuestasPendientesDe(tema.id, req.clienteId)]);
     const url = `${config.stockAlerts.storeUrl}${BASE}/${rules.rutaTema(tema)}`;
-    liquid(res, tienda.paginaTema({ tema, respuestas, ...ses, ok: req.query.ok, url, ...extra }));
+    liquid(res, tienda.paginaTema({ tema, respuestas, enRevision, ...ses, ok: req.query.ok, url, ...extra }));
   }
 
   proxy.get('/', safe((req, res) => verPortada(req, res)));
@@ -166,7 +166,7 @@ export async function mountForum(app, auth) {
     const tema = await store.crearTema({ ...v, clienteId: req.clienteId, autor: p.apodo, estado: d.estado, motivo: d.motivo });
     if (d.estado === 'publicado') return ir(res, `${BASE}/${rules.rutaTema(tema)}?ok=publicado`);
     avisarPendientes();
-    ir(res, `${BASE}?ok=enviado`);
+    ir(res, `${BASE}?ok=enviado#abrir-tema`);
   }));
 
   proxy.post('/responder', safe(async (req, res) => {
