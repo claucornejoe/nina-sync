@@ -1,0 +1,184 @@
+{% comment %}
+  Nina Favoritos: corazón «me gusta» en todas las tarjetas de producto (Horizon product-card,
+  colecciones Nina .nbc-card, portada .nh-card) y en la ficha.
+  Al guardar, un corazón vuela hasta el corazón de la cabecera (junto al carrito), que late y
+  muestra el número. Ese corazón abre el panel «Mis favoritos».
+  Se guardan en este navegador (localStorage «ninaFavs»: lista de handles).
+  Mi cuenta (sección nina-mi-cuenta) los muestra también en «Mis favoritos».
+{%- endcomment -%}
+{%- liquid
+  assign nf_skin = false
+  if collection.handle contains 'skin-care' or page.handle == 'skin-care'
+    assign nf_skin = true
+  endif
+  if template.name == 'product' and product.tags contains 'skin-care'
+    assign nf_skin = true
+  endif
+-%}
+{{ 'nina-favoritos.css' | asset_url | stylesheet_tag }}
+{%- if nf_skin %}<style>:root { --nf-c: #4F8496; --nf-fill: #89D3E9; --nf-soft: #CDEBF4; --nf-btn: #4F8496; }</style>{%- endif %}
+
+<div class="nf-panel" id="nina-favs-panel" role="dialog" aria-modal="true" aria-labelledby="nf-title" hidden>
+  <div class="nf-panel__bg" data-nf-close></div>
+  <div class="nf-panel__box">
+    <div class="nf-panel__head">
+      <h2 id="nf-title"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg>Mis favoritos</h2>
+      <button type="button" class="nf-panel__x" data-nf-close aria-label="Cerrar">&times;</button>
+    </div>
+    <ul class="nf-panel__list" data-nf-list></ul>
+    <div class="nf-panel__empty" data-nf-empty hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg>
+      <p>Aún no tienes favoritos. Toca el corazón de cualquier producto y lo guardamos aquí para ti.</p>
+    </div>
+    <div class="nf-panel__foot">
+      <a href="{{ pages['mi-cuenta'].url | default: routes.account_url }}#mis-favoritos">Ver Mi cuenta</a>
+      <small>{% if customer %}También los tienes en Mi cuenta.{% else %}Se guardan en este dispositivo.{% endif %}</small>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    if (window.NinaFavs) return;
+    var KEY = 'ninaFavs';
+    var PATH = 'M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z';
+    var heart = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' + PATH + '"/></svg>';
+    var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function read() { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch (e) { return []; } }
+    function write(list) { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {} document.dispatchEvent(new CustomEvent('nina:favs', { detail: list })); }
+    function has(h) { return read().indexOf(h) > -1; }
+    function toggle(h) { var l = read(), i = l.indexOf(h); if (i > -1) l.splice(i, 1); else l.unshift(h); write(l); return i === -1; }
+    function paint(btn) { var on = has(btn.dataset.handle); btn.classList.toggle('is-fav', on); btn.setAttribute('aria-pressed', on); btn.setAttribute('aria-label', on ? 'Quitar de Mis favoritos' : 'Guardar en Mis favoritos'); }
+    function makeBtn(h, extra) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'nina-fav' + (extra ? ' ' + extra : ''); b.dataset.handle = h; b.innerHTML = heart; paint(b); return b;
+    }
+    function handleFrom(href) { var m = (href || '').match(/\/products\/([^/?#]+)/); return m ? decodeURIComponent(m[1]) : null; }
+    function scan(root) {
+      (root || document).querySelectorAll('product-card:not([data-nina-fav]), .nbc-card:not([data-nina-fav]), .nh-card:not([data-nina-fav])').forEach(function (card) {
+        if (card.querySelector('.nina-fav')) { card.setAttribute('data-nina-fav', ''); return; }
+        var a = card.querySelector('a.product-card__link, a[href*="/products/"]'); var h = a && handleFrom(a.getAttribute('href'));
+        if (!h) return; card.setAttribute('data-nina-fav', ''); card.appendChild(makeBtn(h));
+      });
+    }
+
+    /* Cabecera */
+    function headerLinks() { return Array.prototype.filter.call(document.querySelectorAll('[data-nina-favs-open]'), function (el) { return el.offsetParent !== null || el.getClientRects().length; }); }
+    function count() {
+      var n = read().length;
+      document.querySelectorAll('[data-nina-favs-open]').forEach(function (el) {
+        el.classList.toggle('has-favs', n > 0);
+        var c = el.querySelector('.nina-favs-link__n'); if (c) c.textContent = n > 0 ? (n > 99 ? '99+' : n) : '';
+        el.setAttribute('aria-label', 'Mis favoritos' + (n ? ' (' + n + ')' : ''));
+      });
+    }
+    function beat() {
+      headerLinks().forEach(function (el) { el.classList.remove('nf-beat'); void el.offsetWidth; el.classList.add('nf-beat'); setTimeout(function () { el.classList.remove('nf-beat'); }, 800); });
+    }
+    function fly(fromBtn) {
+      fromBtn.classList.remove('nf-pop'); void fromBtn.offsetWidth; fromBtn.classList.add('nf-pop');
+      var target = headerLinks()[0];
+      if (reduce || !target || !fromBtn.animate) { count(); beat(); return; }
+      var a = fromBtn.getBoundingClientRect(), b = target.getBoundingClientRect();
+      if (b.bottom < 0 || b.top > innerHeight) { count(); beat(); return; }
+      var x0 = a.left + a.width / 2, y0 = a.top + a.height / 2, x1 = b.left + b.width / 2, y1 = b.top + b.height / 2;
+      var mx = (x0 + x1) / 2 + (x1 > x0 ? -60 : 60), my = Math.min(y0, y1) - 90;
+      var el = document.createElement('span'); el.className = 'nf-fly'; el.innerHTML = heart; document.body.appendChild(el);
+      var frames = [], steps = 14;
+      for (var i = 0; i <= steps; i++) {
+        var t = i / steps, u = 1 - t;
+        var x = u * u * x0 + 2 * u * t * mx + t * t * x1, y = u * u * y0 + 2 * u * t * my + t * t * y1;
+        var s = i === 0 ? 0.6 : (t < 0.25 ? 1.5 : 1.5 - (t - 0.25) * 1.2);
+        frames.push({ transform: 'translate(' + x + 'px,' + y + 'px) scale(' + s + ') rotate(' + (Math.sin(t * Math.PI * 2) * 14) + 'deg)', opacity: t > 0.92 ? 0.4 : 1, offset: t });
+      }
+      var anim = el.animate(frames, { duration: 650, easing: 'cubic-bezier(.45,.05,.55,.95)' });
+      anim.onfinish = function () { el.remove(); count(); beat(); };
+    }
+
+    /* Corazón de la cabecera, junto al carrito */
+    function addHeaderHeart() {
+      var added = false;
+      document.querySelectorAll('header-actions').forEach(function (ha) {
+        if (ha.querySelector('[data-nina-favs-open]')) return;
+        added = true;
+        var l = document.createElement('a'); l.href = {{ pages['mi-cuenta'].url | default: routes.account_url | append: '#mis-favoritos' | json }};
+        l.className = 'header-actions__action nina-favs-link'; l.setAttribute('data-nina-favs-open', ''); l.setAttribute('aria-haspopup', 'dialog');
+        l.innerHTML = heart + '<span class="nina-favs-link__n" aria-hidden="true"></span>';
+        var cart = ha.querySelector('[aria-controls="cart-drawer"], .action__cart');
+        ha.insertBefore(l, cart || null);
+      });
+      return added;
+    }
+    addHeaderHeart();
+
+    /* Panel */
+    var cache = {};
+    function money(c) { return (c / 100).toFixed(2).replace('.', ',') + ' €'; }
+    function renderPanel() {
+      var list = read(), box = document.querySelector('[data-nf-list]'), empty = document.querySelector('[data-nf-empty]');
+      if (!box) return;
+      empty.hidden = list.length > 0;
+      if (!list.length) { box.innerHTML = ''; return; }
+      Promise.all(list.map(function (h) {
+        return cache[h] || (cache[h] = fetch('/products/' + encodeURIComponent(h) + '.js').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }));
+      })).then(function (items) {
+        box.innerHTML = '';
+        items.forEach(function (p, i) {
+          if (!p) return;
+          var li = document.createElement('li'); li.className = 'nf-item';
+          var img = p.featured_image ? p.featured_image + (p.featured_image.indexOf('?') > -1 ? '&' : '?') + 'width=200' : '';
+          li.innerHTML = '<a href="' + p.url + '" tabindex="-1">' + (img ? '<img src="' + img + '" alt="" loading="lazy">' : '<span class="nf-item__ph"></span>') + '</a>' +
+            '<div><p class="nf-item__b"></p><a class="nf-item__t" href="' + p.url + '"></a><div class="nf-item__p">' + money(p.price) +
+            (p.compare_at_price > p.price ? '<s>' + money(p.compare_at_price) + '</s>' : '') + '</div></div>';
+          li.querySelector('.nf-item__b').textContent = p.vendor || '';
+          li.querySelector('.nf-item__t').textContent = p.title;
+          li.appendChild(makeBtn(list[i]));
+          box.appendChild(li);
+        });
+      });
+    }
+    var panel, lastFocus;
+    function openPanel() {
+      panel = panel || document.getElementById('nina-favs-panel'); if (!panel) return false;
+      lastFocus = document.activeElement; panel.hidden = false; renderPanel();
+      requestAnimationFrame(function () { panel.classList.add('is-open'); panel.querySelector('.nf-panel__x').focus(); });
+      document.documentElement.style.overflow = 'hidden'; return true;
+    }
+    function closePanel() {
+      if (!panel || panel.hidden) return;
+      panel.classList.remove('is-open'); document.documentElement.style.overflow = '';
+      setTimeout(function () { panel.hidden = true; }, 300); if (lastFocus) lastFocus.focus();
+    }
+
+    document.addEventListener('click', function (e) {
+      var b = e.target.closest('.nina-fav');
+      if (b) {
+        e.preventDefault(); e.stopPropagation();
+        var added = toggle(b.dataset.handle);
+        if (added) fly(b); else count();
+        return;
+      }
+      var o = e.target.closest('[data-nina-favs-open]');
+      if (o && openPanel()) { e.preventDefault(); return; }
+      if (e.target.closest('[data-nf-close]')) closePanel();
+    }, true);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closePanel(); });
+    document.addEventListener('nina:favs', function () {
+      document.querySelectorAll('.nina-fav').forEach(paint);
+      if (panel && !panel.hidden) renderPanel();
+    });
+    window.addEventListener('storage', function (e) { if (e.key === KEY) { document.querySelectorAll('.nina-fav').forEach(paint); count(); } });
+    window.NinaFavs = { read: read, write: write, toggle: toggle, has: has, open: openPanel };
+
+    function init() {
+      addHeaderHeart(); scan(); count();
+      {%- if template.name == 'product' %}
+      var t = document.querySelector('main .product-details h1, main h1');
+      if (t && !document.querySelector('.nina-fav--ficha')) t.appendChild(makeBtn({{ product.handle | json }}, 'nina-fav--ficha'));
+      {%- endif %}
+      if (location.hash === '#favoritos') openPanel();
+      new MutationObserver(function () { scan(); if (addHeaderHeart()) count(); }).observe(document.body, { childList: true, subtree: true });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+  })();
+</script>
+{% render 'nina-ninacash-aviso' %}

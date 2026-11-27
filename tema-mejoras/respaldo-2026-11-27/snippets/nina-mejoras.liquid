@@ -1,0 +1,66 @@
+{%- comment -%}
+  Nina Beauty · Mejoras móvil y escritorio (Clau, 2026-11-27). Se renderiza al final de layout/theme.liquid.
+  - Búsquedas: los productos agotados salen al final (options[unavailable_products]=last en todos los formularios y enlaces de búsqueda).
+  - Ficha: corazón de favoritos y botón Compartir sobre la foto (esquina superior derecha).
+  Los estilos (buscador fijo, botones del móvil, fondo navideño, etc.) están en assets/nina-mejoras.css.
+{%- endcomment -%}
+{{ 'nina-mejoras.css' | asset_url | stylesheet_tag }}
+<script>
+  (function () {
+    /* Búsquedas: agotados al final */
+    var P = 'options[unavailable_products]';
+    function esBusqueda(url) { try { var u = new URL(url, location.href); return u.origin === location.origin && /\/search\/?$/.test(u.pathname); } catch (e) { return false; } }
+    document.addEventListener('submit', function (e) {
+      var f = e.target;
+      if (!f || f.tagName !== 'FORM' || !esBusqueda(f.getAttribute('action') || '')) return;
+      if (f.querySelector('[name="' + P + '"]')) return;
+      var i = document.createElement('input'); i.type = 'hidden'; i.name = P; i.value = 'last'; f.appendChild(i);
+    }, true);
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest && e.target.closest('a[href]');
+      if (!a || !esBusqueda(a.href)) return;
+      var u = new URL(a.href, location.href);
+      if (!u.searchParams.has(P)) { u.searchParams.set(P, 'last'); a.href = u.toString(); }
+    }, true);
+    {%- if template.name == 'search' %}
+    if (!new URLSearchParams(location.search).has(P) && new URLSearchParams(location.search).get('q')) {
+      var u = new URL(location.href); u.searchParams.set(P, 'last'); location.replace(u.toString());
+    }
+    {%- endif %}
+
+    {%- if template.name == 'product' and product %}
+    /* Ficha: corazón + compartir sobre la foto */
+    var HANDLE = {{ product.handle | json }}, TITULO = {{ product.title | json }};
+    var HEART = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7-4.4-9-9a4.8 4.8 0 0 1 9-3 4.8 4.8 0 0 1 9 3c-2 4.6-9 9-9 9z"/></svg>';
+    var SHARE = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="M8.3 10.8l7.4-4.3M8.3 13.2l7.4 4.3"/></svg>';
+    function pintar(b) {
+      var on = !!(window.NinaFavs && window.NinaFavs.has(HANDLE));
+      b.classList.toggle('is-fav', on); b.setAttribute('aria-pressed', on);
+      b.setAttribute('aria-label', on ? 'Quitar de Mis favoritos' : 'Guardar en Mis favoritos');
+    }
+    function montar() {
+      if (document.querySelector('.nfa')) return true;
+      var g = document.querySelector('main media-gallery');
+      if (!g) return false;
+      var box = document.createElement('div'); box.className = 'nfa';
+      var fav = document.createElement('button'); fav.type = 'button'; fav.className = 'nina-fav'; fav.dataset.handle = HANDLE; fav.innerHTML = HEART; pintar(fav);
+      var sh = document.createElement('button'); sh.type = 'button'; sh.className = 'nfa__share'; sh.setAttribute('aria-label', 'Compartir este producto'); sh.innerHTML = SHARE;
+      var ok = document.createElement('span'); ok.className = 'nfa__ok'; ok.setAttribute('role', 'status'); ok.textContent = 'Enlace copiado';
+      sh.addEventListener('click', function (e) {
+        e.preventDefault(); e.stopPropagation();
+        var url = location.origin + location.pathname;
+        if (navigator.share) { navigator.share({ title: TITULO, text: TITULO + ' en Nina Beauty', url: url }).catch(function () {}); return; }
+        var avisar = function () { ok.classList.add('is-on'); setTimeout(function () { ok.classList.remove('is-on'); }, 1800); };
+        if (navigator.clipboard) navigator.clipboard.writeText(url).then(avisar, function () { window.prompt('Copia este enlace:', url); });
+        else window.prompt('Copia este enlace:', url);
+      });
+      box.appendChild(fav); box.appendChild(sh); box.appendChild(ok);
+      g.appendChild(box);
+      document.addEventListener('nina:favs', function () { pintar(fav); });
+      return true;
+    }
+    function init() { if (!montar()) setTimeout(montar, 600); }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+    {%- endif %}
+  })();
+</script>

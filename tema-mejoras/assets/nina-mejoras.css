@@ -1,0 +1,106 @@
+/* Nina Beauty · Mejoras móvil y escritorio (Clau, 2026-11-27). Lo carga snippets/nina-mejoras.liquid desde layout/theme.liquid.
+   Quitar esa línea de layout/theme.liquid deshace todo lo de este archivo. */
+
+/* 1 · Buscador siempre visible al hacer scroll (debajo de la cabecera fija) */
+#header-group > .shopify-section.nina-buscador{position:sticky;top:calc(var(--header-height, 60px) - 2px);z-index:17}
+#header-group > .shopify-section.nina-buscador .nbq{box-shadow:0 6px 14px -12px rgba(43,43,43,.35)}
+@media screen and (max-width:749px){
+  #header-group > .shopify-section.nina-buscador .nbq__in{padding:6px 12px 8px}
+  #header-group > .shopify-section.nina-buscador .nbq__input{height:40px;font-size:16px}
+  #header-group > .shopify-section.nina-buscador .nbq__btn{height:32px;padding:0 14px}
+  /* Sin lupa en la cabecera del móvil: ya está la barra de búsqueda */
+  #header-component .search-action{display:none !important}
+}
+#header-component[data-menu-style='drawer'] .search-action{display:none !important}
+
+/* 2 · Corazón de favoritos en la esquina superior derecha de la foto de todas las tarjetas */
+.nh-pc{position:relative}
+.nh-pc > .nina-fav{top:16px;right:16px;width:32px;height:32px}
+.nh-pc > .nina-fav svg{width:18px;height:18px}
+.nh-pc .nh-pc__new{top:auto;bottom:8px;right:8px}
+.nbc-card > .nina-fav{top:10px;right:10px}
+@media screen and (max-width:749px){
+  .nina-fav{width:32px;height:32px;top:8px;right:8px}
+  .nina-fav svg{width:18px;height:18px}
+  .nh-pc > .nina-fav{top:12px;right:12px;width:30px;height:30px}
+}
+
+/* 3 · Ficha de producto: corazón y compartir sobre la foto */
+.nina-fav--ficha{display:none !important}
+.nfa{position:absolute;top:12px;right:12px;z-index:4;display:flex;flex-direction:column;gap:8px}
+.nfa .nina-fav,.nfa__share{position:static;width:42px;height:42px;border-radius:50%;border:0;padding:0;background:rgba(255,255,255,.96);box-shadow:0 2px 10px rgba(43,43,43,.14);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--nf-c,#F72E75);-webkit-tap-highlight-color:transparent}
+.nfa .nina-fav svg{width:22px;height:22px}
+.nfa__share svg{width:20px;height:20px;fill:none;stroke:#2B2B2B;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nfa__share:hover{transform:scale(1.08)}
+.nfa__ok{position:absolute;right:52px;top:56px;white-space:nowrap;background:#2B2B2B;color:#fff;font:600 12px Montserrat,var(--font-body--family),sans-serif;padding:6px 10px;border-radius:999px;opacity:0;transition:opacity .2s;pointer-events:none}
+.nfa__ok.is-on{opacity:1}
+@media screen and (max-width:749px){
+  .nfa{top:10px;right:10px;gap:6px}
+  .nfa .nina-fav,.nfa__share{width:38px;height:38px}
+}
+
+/* 4 · Móvil: «Comprar ahora» en negro y «Añadir a la cesta» en verde Nina */
+@media screen and (max-width:749px){
+  .product-form-buttons .add-to-cart-button,
+  .product-form-buttons button[name="add"]:not(.quantity-minus):not(.quantity-plus):not([disabled]){
+    background:#14A97A !important;border-color:#14A97A !important;color:#fff !important;
+    box-shadow:0 8px 18px -8px rgba(20,169,122,.6);font-weight:700}
+  .product-form-buttons .add-to-cart-button:hover{background:#0E8C64 !important;border-color:#0E8C64 !important}
+  .product-form-buttons .add-to-cart-button svg,.product-form-buttons .add-to-cart-button .svg-wrapper{color:#fff}
+  .shopify-payment-button__button--unbranded,
+  .shopify-payment-button .shopify-payment-button__button--unbranded,
+  shopify-buy-it-now-button button{
+    background:#111 !important;background-color:#111 !important;color:#fff !important;border-color:#111 !important}
+  .shopify-payment-button__button--unbranded:hover{background:#2B2B2B !important}
+}
+
+/* 5 · Portada: «Regalos según tu presupuesto» con fondo navideño elegante y más compacto */
+html body .nh .nh-band--petalo{position:relative;overflow:hidden;isolation:isolate;
+  background:
+    radial-gradient(ellipse at 15% 0%,rgba(232,201,137,.22),rgba(232,201,137,0) 55%),
+    radial-gradient(ellipse at 85% 100%,rgba(247,46,117,.35),rgba(247,46,117,0) 60%),
+    linear-gradient(160deg,#3B0A1E 0%,#6E1236 48%,#9E2149 100%);
+  color:#fff}
+html body .nh .nh-band--petalo::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.55;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='160' viewBox='0 0 220 160'%3E%3Cg fill='none' stroke='%23E8C989' stroke-width='1.1' stroke-linecap='round'%3E%3Cg transform='translate(30 34)'%3E%3Cpath d='M0-9V9M-8-4.5L8 4.5M-8 4.5L8-4.5'/%3E%3Cpath d='M-2-7L0-5L2-7M-2 7L0 5L2 7' /%3E%3C/g%3E%3Cg transform='translate(150 98) scale(.7)'%3E%3Cpath d='M0-9V9M-8-4.5L8 4.5M-8 4.5L8-4.5'/%3E%3C/g%3E%3C/g%3E%3Cg fill='%23E8C989'%3E%3Ccircle cx='96' cy='22' r='1.4'/%3E%3Ccircle cx='190' cy='40' r='1'/%3E%3Ccircle cx='62' cy='122' r='1.2'/%3E%3Ccircle cx='200' cy='140' r='1.4'/%3E%3Cpath d='M112 70l2 5 5 2-5 2-2 5-2-5-5-2 5-2z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:220px 160px}
+html body .nh .nh-band--petalo::after{content:"";position:absolute;left:0;right:0;top:0;height:3px;z-index:-1;
+  background:linear-gradient(90deg,rgba(232,201,137,0),#E8C989 20%,#F5E3B8 50%,#E8C989 80%,rgba(232,201,137,0))}
+html body .nh .nh-band--petalo:not(.nbf-on) .nh-kicker{color:#E8C989}
+html body .nh .nh-band--petalo:not(.nbf-on) .nh-center .nh-h2{color:#fff}
+html body .nh .nh-band--petalo .nh-gift{border:1px solid rgba(232,201,137,.55);box-shadow:0 14px 30px -18px rgba(0,0,0,.55);background:#fff}
+html body .nh .nh-band--petalo .nh-gift__a{color:#9E2149}
+html body .nh .nh-band--petalo .nh-gift .nh-arrow{color:#C92F60}
+html body .nh .nh-band--petalo .nh-center .nh-h2{font-size:38px !important}
+@container (max-width: 900px){
+  html body .nh .nh-band--petalo{margin-top:24px;padding:18px 0 16px}
+  html body .nh .nh-band--petalo .nh-center{margin-bottom:10px;gap:2px}
+  html body .nh .nh-band--petalo .nh-kicker{font-size:9.5px}
+  html body .nh .nh-band--petalo .nh-center .nh-h2{font-size:22px !important}
+  html body .nh .nh-band--petalo .nh-gifts{gap:8px;padding-bottom:2px}
+  html body .nh .nh-band--petalo .nh-gift{flex:0 0 44%;padding:11px 12px;gap:4px;border-radius:14px}
+  html body .nh .nh-band--petalo .nh-gift__k{font-size:10.5px}
+  html body .nh .nh-band--petalo .nh-gift__a{font-size:24px}
+  html body .nh .nh-band--petalo .nh-gift p{display:none}
+  html body .nh .nh-band--petalo .nh-gift .nh-arrow{font-size:11.5px}
+}
+
+/* 6 · Ofertas de la semana: botón «Ver más» debajo del carrusel */
+.nh-top__foot{position:relative;z-index:1;display:flex;justify-content:center;padding-top:14px}
+.nh-top__foot a{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 26px;border-radius:999px;background:#2B2B2B;color:#fff !important;font-size:13px;font-weight:700;letter-spacing:.1em;text-decoration:none;transition:background .2s}
+.nh-top__foot a:hover{background:#C92F60}
+@container (max-width: 900px){
+  .nh-top__foot{padding-top:10px}
+  .nh-top__foot a{width:100%;justify-content:center;min-height:42px;font-size:12px}
+}
+
+/* 7 · Cabecera de colección con foto: la foto completa, sin recuadros encima */
+html body .nbc-hero.nbc-hero--solo{display:block;background:transparent;border-radius:18px;overflow:hidden;padding:0}
+html body .nbc-hero--solo picture,html body .nbc-hero--solo img{display:block;width:100%;height:auto;max-width:none}
+html body .nbc-hero--solo .nbc-hero__sr{position:absolute !important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* 8 · Colecciones: carga de «agotados al final» */
+.nbc-grid.is-cargando{opacity:.45;transition:opacity .2s}
+.nbc-sep{grid-column:1/-1;display:flex;align-items:center;gap:12px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#8A7A80;padding:6px 0}
+.nbc-sep::before,.nbc-sep::after{content:"";flex:1;height:1px;background:#EADDE1}
+@media screen and (max-width:749px){ main media-gallery{position:relative} }

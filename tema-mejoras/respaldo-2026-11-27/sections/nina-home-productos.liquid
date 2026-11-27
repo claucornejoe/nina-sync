@@ -1,0 +1,152 @@
+{%- render 'nina-cesta' -%}
+{{ 'nina-home.css' | asset_url | stylesheet_tag }}
+{%- liquid
+  assign limit = section.settings.limit
+  assign col = blank
+  for block in section.blocks
+    assign c = block.settings.collection
+    if c != blank and c.products_count > 0
+      assign col = c
+      break
+    endif
+  endfor
+-%}
+{%- if col != blank -%}
+{%- liquid
+  assign max_off = 0
+  for product in col.products limit: limit
+    assign v = product.selected_or_first_available_variant
+    if v.compare_at_price > v.price
+      assign diff = v.compare_at_price | minus: v.price | times: 100.0
+      assign o = diff | divided_by: v.compare_at_price | round
+      if o > max_off
+        assign max_off = o
+      endif
+    endif
+  endfor
+-%}
+<div class="nh nh-sec nh-top">
+  <div class="nh-wrap">
+    <div class="nh-top__box">
+      <div class="nh-top__head">
+        <div class="nh-top__tit">
+          <span class="nh-top__kicker"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l2.4 6.6L21 9.3l-5.1 4.4L17.5 21 12 17.3 6.5 21l1.6-7.3L3 9.3l6.6-.7z"/></svg>{{ section.settings.kicker }}</span>
+          <h2 class="nh-h2 nh-serif">{{ section.settings.title }}</h2>
+          {%- if max_off >= 10 -%}<span class="nh-top__hasta">Hasta <b>−{{ max_off }} %</b> en marcas que te encantan</span>{%- endif -%}
+        </div>
+        <a class="nh-top__more" href="{{ col.url }}">{{ section.settings.button | default: 'VER MÁS' }} <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+      <div class="nh-top__rail">
+        <button type="button" class="nh-top__arr nh-top__arr--prev" data-dir="-1" aria-label="Anteriores"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <div class="nh-top__track" data-nh-track>
+          {%- for product in col.products limit: limit -%}
+            {%- liquid
+              assign v = product.selected_or_first_available_variant
+              assign off = 0
+              if v.compare_at_price > v.price
+                assign diff = v.compare_at_price | minus: v.price | times: 100.0
+                assign off = diff | divided_by: v.compare_at_price | round
+              endif
+              assign cash = v.price | times: 1.0 | divided_by: 100 | round
+            -%}
+            <article class="nh-pc">
+              <a class="nh-pc__img" href="{{ product.url }}">
+                {%- if product.featured_image -%}
+                  {{ product.featured_image | image_url: width: 400 | image_tag: loading: 'lazy', alt: product.title, widths: '200, 300, 400', sizes: '(min-width: 900px) 210px, 130px' }}
+                {%- else -%}
+                  {{ 'product-1' | placeholder_svg_tag: 'nh-ph' }}
+                {%- endif -%}
+                {%- if off >= 5 -%}<span class="nh-pc__off">−{{ off }} %</span>{%- endif -%}
+                {%- if product.tags contains 'recien-llegado' -%}<span class="nh-pc__new">Nuevo</span>{%- endif -%}
+              </a>
+              <div class="nh-pc__body">
+                <span class="nh-pc__brand">{{ product.vendor }}</span>
+                <a class="nh-pc__t" href="{{ product.url }}">{{ product.title }}</a>
+                <div class="nh-pc__p">
+                  {%- if product.price_varies -%}<span class="nh-pc__desde">Desde</span>{%- endif -%}
+                  <strong{% if off < 5 %} class="is-plain"{% endif %}>{{ v.price | money }}</strong>
+                  {%- if off >= 5 -%}<s>{{ v.compare_at_price | money }}</s>{%- endif -%}
+                </div>
+                <span class="nh-pc__cash">+{{ cash }} NinaCash</span>
+                {%- if v.available -%}
+                  <form method="post" action="{{ routes.cart_add_url }}" data-nh-add>
+                    <input type="hidden" name="id" value="{{ v.id }}">
+                    <input type="hidden" name="quantity" value="1">
+                    <button type="submit" class="nh-pc__add">Añadir a la cesta</button>
+                  </form>
+                {%- else -%}
+                  <form><button type="button" class="nh-pc__add" disabled>Agotado</button></form>
+                {%- endif -%}
+              </div>
+            </article>
+          {%- endfor -%}
+        </div>
+        <button type="button" class="nh-top__arr nh-top__arr--next" data-dir="1" aria-label="Siguientes"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  (function () {
+    var root = document.currentScript.previousElementSibling;
+    if (!root || !root.classList || !root.classList.contains('nh-top')) return;
+    var track = root.querySelector('[data-nh-track]');
+    root.querySelectorAll('.nh-top__arr').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var card = track.querySelector('.nh-pc');
+        var w = card ? card.getBoundingClientRect().width + 14 : 220;
+        track.scrollBy({ left: (+b.dataset.dir) * w * 2, behavior: 'smooth' });
+      });
+    });
+    root.querySelectorAll('[data-nh-add]').forEach(function (f) {
+      f.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var b = f.querySelector('button');
+        var txt = b.textContent;
+        b.disabled = true;
+        var id = f.querySelector('[name="id"]').value;
+        if (!window.NinaCesta) { f.submit(); return; }
+        b.textContent = 'Añadiendo…';
+        window.NinaCesta.add(id, 1, f)
+          .then(function (r) {
+            if (!r.updated) { window.location.href = '{{ routes.cart_url }}'; return; }
+            b.textContent = 'Añadido ✓';
+            setTimeout(function () { b.disabled = false; b.textContent = txt; }, 2000);
+          })
+          .catch(function (err) {
+            if (!err || !err.data) { f.submit(); return; }
+            b.textContent = 'Sin stock suficiente';
+            setTimeout(function () { b.disabled = false; b.textContent = txt; }, 2500);
+          });
+      });
+    });
+  })();
+</script>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Nina · Lo que más gusta",
+  "tag": "section",
+  "class": "nina-home-productos",
+  "settings": [
+    { "type": "text", "id": "kicker", "label": "Antetítulo", "default": "Ofertas de la semana" },
+    { "type": "text", "id": "title", "label": "Título", "default": "Lo que más gusta esta semana" },
+    { "type": "text", "id": "button", "label": "Texto del botón", "default": "VER MÁS" },
+    { "type": "range", "id": "limit", "label": "Productos", "min": 4, "max": 16, "step": 1, "default": 10 },
+    { "type": "paragraph", "content": "Se muestran los productos del primer bloque «Colección» que tenga productos. El botón lleva a esa colección." }
+  ],
+  "blocks": [
+    {
+      "type": "pestana",
+      "name": "Colección",
+      "settings": [
+        { "type": "text", "id": "label", "label": "Nombre" },
+        { "type": "collection", "id": "collection", "label": "Colección" }
+      ]
+    }
+  ],
+  "max_blocks": 5,
+  "presets": [{ "name": "Nina · Lo que más gusta" }]
+}
+{% endschema %}
