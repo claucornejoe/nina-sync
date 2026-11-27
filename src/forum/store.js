@@ -55,6 +55,7 @@ export async function migrate() {
     );
     ALTER TABLE foro_temas ADD COLUMN IF NOT EXISTS ejemplo BOOLEAN NOT NULL DEFAULT false;
     ALTER TABLE foro_respuestas ADD COLUMN IF NOT EXISTS ejemplo BOOLEAN NOT NULL DEFAULT false;
+    ALTER TABLE foro_respuestas ADD COLUMN IF NOT EXISTS alerta TEXT;
   `);
 }
 
@@ -137,10 +138,10 @@ export async function respuestasPendientesDe(temaId, clienteId) {
   const r = await pool.query(`SELECT * FROM foro_respuestas WHERE tema_id=$1 AND cliente_id=$2 AND estado='pendiente' ORDER BY id`, [temaId, String(clienteId)]);
   return r.rows;
 }
-export async function crearRespuesta({ temaId, cuerpo, clienteId = null, autor, equipo = false, estado, motivo = null }) {
+export async function crearRespuesta({ temaId, cuerpo, clienteId = null, autor, equipo = false, estado, motivo = null, alerta = null }) {
   const r = await pool.query(
-    `INSERT INTO foro_respuestas (tema_id, cuerpo, cliente_id, autor, equipo, estado, motivo) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
-    [temaId, cuerpo, clienteId && String(clienteId), autor, equipo, estado, motivo],
+    `INSERT INTO foro_respuestas (tema_id, cuerpo, cliente_id, autor, equipo, estado, motivo, alerta) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
+    [temaId, cuerpo, clienteId && String(clienteId), autor, equipo, estado, motivo, alerta],
   );
   if (estado === 'publicado') await recontar(temaId);
   return r.rows[0];
@@ -223,6 +224,17 @@ export async function porRevisar() {
   );
   return { temas: temas.rows, respuestas: resp.rows };
 }
+/** Respuestas publicadas con alerta (palabrotas, insultos, enlaces...) que Clau aún no ha mirado. */
+export async function alertas() {
+  const r = await pool.query(
+    `SELECT r.*, t.titulo AS tema_titulo, t.id AS tema_id FROM foro_respuestas r JOIN foro_temas t ON t.id=r.tema_id WHERE r.alerta IS NOT NULL AND r.estado='publicado' ORDER BY r.id DESC`,
+  );
+  return r.rows;
+}
+export async function quitarAlerta(id) {
+  const r = await pool.query('UPDATE foro_respuestas SET alerta=NULL WHERE id=$1 RETURNING *', [id]);
+  return r.rows[0] || null;
+}
 export async function recientes(limite = 30) {
   const r = await pool.query(`SELECT * FROM foro_temas WHERE estado='publicado' ORDER BY fijado DESC, actividad DESC LIMIT $1`, [limite]);
   return r.rows;
@@ -232,6 +244,7 @@ export async function cifras() {
     (SELECT count(*) FROM foro_temas WHERE estado='publicado')::int AS temas,
     (SELECT count(*) FROM foro_respuestas WHERE estado='publicado')::int AS respuestas,
     (SELECT count(*) FROM foro_temas WHERE estado='pendiente')::int + (SELECT count(*) FROM foro_respuestas WHERE estado='pendiente')::int AS pendientes,
+    (SELECT count(*) FROM foro_respuestas WHERE alerta IS NOT NULL AND estado='publicado')::int AS alertas,
     (SELECT count(DISTINCT cliente_id) FROM (SELECT cliente_id FROM foro_temas UNION ALL SELECT cliente_id FROM foro_respuestas) x WHERE cliente_id IS NOT NULL)::int AS clientas,
     (SELECT count(*) FROM foro_temas t WHERE estado='publicado' AND NOT equipo AND NOT EXISTS (SELECT 1 FROM foro_respuestas r WHERE r.tema_id=t.id AND r.equipo))::int AS sin_respuesta_nina`);
   return r.rows[0];

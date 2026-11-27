@@ -47,6 +47,19 @@ test('moderación: previa, confianza y mensajes sospechosos', () => {
   assert.equal(rules.decidirEstado({ texto: 'www.x.com', equipo: true }).estado, 'publicado');
 });
 
+test('respuestas: se publican al momento y avisan si llevan palabrotas o insultos', () => {
+  assert.deepEqual(rules.decidirRespuesta({ texto: 'A mí me encantó, muy recomendable 😍' }), { estado: 'publicado', motivo: null, alerta: null });
+  const mala = rules.decidirRespuesta({ texto: 'Eres una put4 IMBÉCIL, me cago en todo' });
+  assert.equal(mala.estado, 'publicado');
+  assert.equal(mala.alerta, 'Palabrotas o insultos: puta, imbecil, me cago en');
+  assert.deepEqual(rules.groserias('vaya MIERDAAAA de gilipollas, cabronas'), ['mierda', 'gilipollas', 'cabronas']);
+  assert.deepEqual(rules.groserias('tonta del culo'), ['tonta del culo']);
+  // Palabras normales que contienen una palabrota no saltan.
+  assert.deepEqual(rules.groserias('mi computadora, el pedido retrasado, disputa, cóndor, hostelería, capullito de rosa'), []);
+  assert.equal(rules.decidirRespuesta({ texto: 'mira www.otra-tienda.com' }).alerta, 'Lleva un enlace');
+  assert.equal(rules.decidirRespuesta({ texto: 'joder', equipo: true }).alerta, null);
+});
+
 test('rutas de temas', () => {
   assert.equal(rules.rutaTema({ id: 12, titulo: '¿Qué rutina me recomendáis? Piel mixta & seca' }), 't/12-que-rutina-me-recomendais-piel-mixta-seca');
   assert.equal(rules.idDeRuta('12-que-rutina'), 12);
