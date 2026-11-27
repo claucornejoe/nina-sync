@@ -107,39 +107,13 @@ Compara tus precios con Google Shopping España, buscando cada tamaño por su EA
 
 ## Fotos con IA (`/fotos-ia`)
 
-Para los productos que solo tienen el logo de Nina: busca la foto por EAN en Google Imágenes (SerpApi, `SERPAPI_KEY`),
-la pasa por **Nano Banana 2 a 1K** en Magnific (`MAGNIFIC_API_KEY`) con un prompt que conserva frasco y etiqueta y pone
-fondo blanco, y enseña antes / foto encontrada / foto nueva. Nada se sube a Shopify hasta pulsar «Subir a Shopify»; entonces
-la foto se guarda como `marca-producto-tamano.png` y el logo se desvincula de ese producto (el archivo compartido no se borra).
-Variables opcionales: `MAGNIFIC_MODEL` (por defecto `text-to-image/nano-banana-pro-flash`), `MAGNIFIC_RESOLUTION` (`1K`),
-`MAGNIFIC_PROMPT` (prompt propio; `{producto}` = nombre y tamaño). Por la API cada foto gasta créditos de Magnific.
-
-## Escuchar artículo (`/audio-blog`)
-
-Botón «Escuchar artículo» en Nina Blog con una voz de **ElevenLabs**: mientras suena, el artículo resalta la frase y la
-palabra que se está leyendo. Desde el panel eliges la voz (y escuchas una muestra) y pulsas «Generar audio» en cada artículo:
-Nina Sync lee el título, la entradilla y el texto (no las tarjetas de productos, el índice, los botones ni las fuentes),
-lo manda a ElevenLabs por trozos con el endpoint `with-timestamps`, junta el MP3, lo sube a Contenido → Archivos y guarda
-en el artículo el metacampo `nina.audio` (JSON: enlace, duración y el milisegundo en que empieza cada palabra).
-El tema (sección `nina-blog-articulo`) solo enseña el botón si el artículo tiene ese metacampo.
-
-- Gasta créditos solo al generar: ~1 crédito por carácter con `eleven_multilingual_v2` (la mitad con `eleven_flash_v2_5`).
-  Un artículo de 10.000 caracteres son ~10.000 créditos. El panel muestra los créditos del mes y avisa si no llegan.
-- Si cambias el texto del artículo, el panel lo marca como «El texto ha cambiado» para volver a generarlo.
-- Para que no se lea una parte del artículo, ponle la clase `nba-no-leer`.
-- Permisos de la app de Shopify: `read_content`, `write_content` y `write_files`.
-
-| Variable | Por defecto | Para qué |
-|---|---|---|
-| `ELEVENLABS_API_KEY` | — | Clave de ElevenLabs (Developers → API Keys). Permisos: Text to Speech, Voices (leer) y User (leer) |
-| `ELEVENLABS_VOICE_ID` | — | Voz por defecto si no se elige en el panel |
-| `ELEVENLABS_MODEL` | `eleven_multilingual_v2` | Modelo por defecto |
-| `AUDIO_BLOG_HANDLE` | `nina-blog` | Blog cuyos artículos se leen |
-
-## Pedidos BTS (botón «Enviar a BTS»)
-- Cada 15 minutos Nina Sync busca los pedidos pagados y sin enviar de Shopify y los muestra en **Pedidos BTS**. No se envía nada a BTS hasta pulsar «Enviar a BTS» (Clau, 2026-11-27).
-- Al pulsarlo: elige el envío más barato de `getShippingPrices` y crea el pedido con `setCreateOrder` (dropshipping=1, pago `BTS_ORDER_PAYMENT`, por defecto `wallet`). BTS no tiene modo de prueba: es un pedido real.
-- Cuando BTS da el seguimiento (`getTrackings`), marca el pedido como enviado en Shopify con el número y el enlace, y Shopify manda el correo a la clienta.
-- Si se corta la conexión al enviar, el pedido queda en «Comprueba en BTS» y no se reintenta solo, para no duplicarlo.
-- Permisos de la app de Shopify: `read_orders`, `read_merchant_managed_fulfillment_orders`, `write_merchant_managed_fulfillment_orders` y acceso a datos protegidos de clientes (nombre, dirección y teléfono).
-- Variables opcionales: `BTS_ORDER_PAYMENT`, `BTS_ORDERS_CRON` (por defecto `*/15 * * * *`), `BTS_ORDERS_SINCE` (AAAA-MM-DD).
+Para los productos que solo tienen el logo de Nina: busca la foto por EAN en Google Imágenes (Serper con `SERPER_API_KEY`,
+o SerpApi con `SERPAPI_KEY`), la rehace con **Nano Banana 2.1 a 1K, 1:1** en Magnific (`MAGNIFIC_API_KEY`; si la API no
+tiene la 2.1 usa la 2 y lo dice) con el prompt de Clau (fondo blanco para Google Shopping) y la guarda como
+`nombre-del-producto-tamano.png` (mismo formato que el renombrado de `src/seo/filenames.js`).
+- Si no es seguro que la foto encontrada sea el producto (no sale por EAN, o no nombra la marca o el producto), queda
+  **dudosa**: no gasta créditos ni se sube, y sale en `/fotos-ia/dudosas.csv` para buscarla a mano.
+- «Prueba con N» no sube nada. «Hacer todos los que quedan» puede subir solas las seguras.
+- El logo se desvincula del producto (el archivo compartido no se borra). Metacampo `nina_seo.foto = ia-magnific`.
+Opcionales: `MAGNIFIC_MODEL` (fija el modelo), `MAGNIFIC_RESOLUTION` (`1K`), `MAGNIFIC_PROMPT` (`{producto}` = nombre y
+tamaño), `FOTOS_IA_A_LA_VEZ` (3). Por la API cada foto gasta créditos de Magnific.
