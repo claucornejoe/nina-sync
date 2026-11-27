@@ -1,6 +1,6 @@
 // Página «NinaCash y niveles» del panel, con el diseño de Nina Sync.
 import { shell, esc, fmtDate, icon } from '../views.js';
-import { LEVELS, BONUS, POINTS_PER_EURO, eurosFor } from './rules.js';
+import { LEVELS, salesFor } from './rules.js';
 
 const eur = (x) => `${Number(x || 0).toFixed(2).replace('.', ',')} €`;
 const COLORS = { 1: '#FFB3C6', 2: '#F7A1BC', 3: '#F72E75', 4: '#C92F60' };
@@ -12,7 +12,6 @@ const KIND = {
   'envio-glam': ['Envío gratis Glam', 'nuevo'],
   obsequio: ['Obsequio', 'oferta'],
   cupon: ['Cupón', 'nuevo'],
-  puntos: ['Puntos extra', 'ok'],
   caduca: ['Aviso de caducidad', 'running'],
   error: ['Error', 'error'],
 };
@@ -61,20 +60,12 @@ function couponForm(form = {}) {
 </form>`;
 }
 
-const pointsForm = (id) => `<form method="post" action="/ninacash/puntos" style="display:flex;gap:6px;align-items:center">
- <input type="hidden" name="cliente" value="${esc(id)}">
- <select name="motivo" style="padding:7px 10px;border:1px solid var(--linea);border-radius:10px;font:inherit;font-size:13px">${Object.entries(BONUS)
-   .filter(([k]) => k !== 'cuenta')
-   .map(([k, b]) => `<option value="${k}">${esc(b.name)} (+${b.points})</option>`)
-   .join('')}</select>
- <button class="btn ghost" type="submit" style="padding:7px 12px">Sumar</button></form>`;
-
 export function ninacashPage({ active, state, hooks, totals, customers, coupons, gifts, log, flash }) {
   const lvlKpis = LEVELS.map(
-    (l) => `<div class="kpi"><div class="top"><span>${esc(l.name)} · desde ${l.from} puntos</span><span style="width:14px;height:14px;border-radius:50%;background:${COLORS[l.n]}"></span></div><b>${totals.byLevel[l.n] || 0}</b><span class="muted">${l.rate} % NinaCash${l.from ? ` · unos ${eurosFor(l.from)} € al año` : ''}</span></div>`,
+    (l) => `<div class="kpi"><div class="top"><span>${esc(l.name)}${l.from ? ` · acumula ${eur(l.from)}` : ''}</span><span style="width:14px;height:14px;border-radius:50%;background:${COLORS[l.n]}"></span></div><b>${totals.byLevel[l.n] || 0}</b><span class="muted">${l.rate} % NinaCash${l.from ? ` · unos ${salesFor(l.from)} € de compras` : ''}</span></div>`,
   ).join('');
   const custRows = customers
-    .map((c) => `<tr><td><div class="prod">${esc(c.name || c.customer_id)}</div></td><td>${lvlChip(c.level)}</td><td class="num"><b>${Number(c.points || 0)}</b></td><td class="num">${eur(c.spent_12m)}</td><td class="num">${eur(c.balance)}</td><td class="num">${eur(c.pending)}</td><td>${pointsForm(c.customer_id)}</td></tr>`)
+    .map((c) => `<tr><td><div class="prod">${esc(c.name || c.customer_id)}</div></td><td>${lvlChip(c.level)}</td><td class="num"><b>${eur(c.earned_12m)}</b></td><td class="num">${eur(c.spent_12m)}</td><td class="num">${eur(c.balance)}</td><td class="num">${eur(c.pending)}</td></tr>`)
     .join('');
   const now = Date.now();
   const coupRows = coupons
@@ -93,7 +84,7 @@ export function ninacashPage({ active, state, hooks, totals, customers, coupons,
   const empty = (n, t) => `<tr><td colspan="${n}"><div class="empty"><img src="/static/mariposa.svg" alt="">${t}</div></td></tr>`;
 
   const body = `<div class="eyebrow">Fidelidad</div><h1>NinaCash y niveles</h1>
-<p class="muted" style="margin:10px 0 22px;max-width:680px">Cada compra pagada suma NinaCash (1 %, 1,5 % o 2 % según el nivel). Se suma al saldo de la clienta al momento de pagar, como crédito en tienda de Shopify, y se resta si el pedido se cancela o se devuelve: lo ve en su cuenta y lo usa al pagar. El nivel sale de los <b>puntos Nina</b> de los últimos 12 meses: ${POINTS_PER_EURO} punto por euro comprado, más ${BONUS.cuenta.points} al crear la cuenta y los extras que sumes aquí (reseña con foto, cumpleaños, amiga que compra).</p>
+<p class="muted" style="margin:10px 0 22px;max-width:680px">Cada compra pagada suma NinaCash (1 %, 1,5 % o 2 % según el nivel). Se suma al saldo de la clienta al momento de pagar, como crédito en tienda de Shopify, y se resta si el pedido se cancela o se devuelve: lo ve en su cuenta y lo usa al pagar. El nivel sale del <b>NinaCash ganado</b> en los últimos 12 meses (gastarlo no baja de nivel): ${LEVELS.slice(1).map((l) => `acumula ${eur(l.from)} para llegar a ${esc(l.name)}`).join(', ')}.</p>
 ${flash?.error ? `<div class="alert">${icon('alert')}<div>${esc(flash.error)}</div></div>` : ''}
 ${flash?.ok ? `<div class="card" style="background:var(--verde-bg);color:var(--verde);margin-bottom:14px">${esc(flash.ok)}</div>` : ''}
 ${statusCard({ active, state, hooks })}
@@ -107,8 +98,8 @@ ${couponForm(flash?.form)}
 <h2>Obsequios Butterfly de este mes</h2>
 <p class="muted" style="margin-top:-6px">Estos pedidos llevan la etiqueta «obsequio-butterfly»: añade una muestra o un mini al prepararlos.</p>
 <div class="tablecard"><div class="tablewrap"><table><thead><tr><th>Pedido</th><th>Clienta</th></tr></thead><tbody>${giftRows || empty(2, 'Ninguno este mes.')}</tbody></table></div></div>
-<h2 id="clientas">Clientas</h2>
-<div class="tablecard"><div class="tablewrap"><table><thead><tr><th>Clienta</th><th>Nivel</th><th>Puntos</th><th>Compras 12 meses</th><th>Saldo</th><th>Pendiente</th><th>Puntos extra</th></tr></thead><tbody>${custRows || empty(7, 'Todavía no hay compras con cuenta.')}</tbody></table></div></div>
+<h2>Clientas</h2>
+<div class="tablecard"><div class="tablewrap"><table><thead><tr><th>Clienta</th><th>Nivel</th><th>NinaCash ganado (12 meses)</th><th>Compras (12 meses)</th><th>Saldo</th><th>Pendiente</th></tr></thead><tbody>${custRows || empty(6, 'Todavía no hay compras con cuenta.')}</tbody></table></div></div>
 <h2>Movimientos</h2>
 <div class="tablecard"><div class="tablewrap"><table><thead><tr><th>Fecha</th><th>Tipo</th><th>Clienta</th><th>Importe</th><th>Detalle</th></tr></thead><tbody>${logRows || empty(5, 'Sin movimientos todavía.')}</tbody></table></div></div>`;
   return shell('NinaCash', 'ninacash', body);

@@ -8,11 +8,11 @@ const order = (o = {}) => ({ displayFinancialStatus: 'PAID', cancelledAt: null, 
 
 test('niveles por compras de 12 meses', () => {
   assert.equal(r.levelFor(0).name, 'Sparkle');
-  assert.equal(r.levelFor(149).name, 'Sparkle');
-  assert.equal(r.levelFor(150).name, 'Glow');
-  assert.equal(r.levelFor(400).name, 'Glam');
-  assert.equal(r.levelFor(799).name, 'Glam');
-  assert.equal(r.levelFor(800).name, 'Butterfly');
+  assert.equal(r.levelFor(1.49).name, 'Sparkle');
+  assert.equal(r.levelFor(1.5).name, 'Glow');
+  assert.equal(r.levelFor(5.25).name, 'Glam');
+  assert.equal(r.levelFor(13.24).name, 'Glam');
+  assert.equal(r.levelFor(13.25).name, 'Butterfly');
   assert.deepEqual(r.LEVELS.map((l) => l.rate), [1, 1.5, 2, 2]);
 });
 
@@ -92,11 +92,11 @@ test('avisos de caducidad: agrupa por día lo que queda y elige el aviso', () =>
   assert.match(m.html, /20 de noviembre/);
 });
 
-test('puntos: 1 por euro (hacia abajo) más extras', () => {
-  assert.equal(r.pointsFor(0, 0), 0);
-  assert.equal(r.pointsFor(129.99, 20), 149);
-  assert.equal(r.levelFor(r.pointsFor(130, 20)).name, 'Glow');
-  assert.equal(r.pointsFor(380, 20), 400);
-  assert.equal(r.eurosFor(800), 800);
-  assert.equal(r.BONUS.cuenta.points, 20);
+test('nivel por NinaCash ganado: equivalencia en compras y lo que falta', () => {
+  assert.equal(r.salesFor(1.5), 150);
+  assert.equal(r.salesFor(5.25), 400);
+  assert.equal(r.salesFor(13.25), 800);
+  assert.equal(r.salesFor(50), 2638);
+  assert.deepEqual(r.nextLevel(4), { nivel: 3, nombre: 'Glam', falta: 1.25 });
+  assert.equal(r.nextLevel(20), null);
 });

@@ -84,21 +84,6 @@ export async function mountLoyalty(app, auth) {
     setTimeout(() => res.redirect('/ninacash'), 800);
   });
 
-  app.post('/ninacash/puntos', auth, async (req, res) => {
-    const id = String(req.body.cliente || '');
-    if (!id.startsWith('gid://shopify/Customer/')) {
-      flash = { error: 'Clienta no válida.' };
-      return res.redirect('/ninacash#clientas');
-    }
-    try {
-      const r = await engine.givePoints(id, String(req.body.motivo || ''), String(req.body.nota || '').slice(0, 80));
-      flash = r.already ? { error: `Ya tenía los puntos de «${r.name}».` } : { ok: `+${r.points} puntos (${r.name}).` };
-    } catch (e) {
-      flash = { error: e.message.slice(0, 300) };
-    }
-    res.redirect('/ninacash#clientas');
-  });
-
   app.post('/ninacash/cupon', auth, async (req, res) => {
     const c = parseCouponForm(req.body);
     if (c.error) {
