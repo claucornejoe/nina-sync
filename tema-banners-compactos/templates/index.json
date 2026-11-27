@@ -1,0 +1,213 @@
+{
+  "sections": {
+    "nina_hero": {
+      "type": "nina-home-hero",
+      "blocks": {
+        "cat_1": {
+          "type": "categoria",
+          "settings": {
+            "label": "Perfumes mujer",
+            "link": "/collections/perfumes-mujer",
+            "ini": "M",
+            "bg": "#F72E75",
+            "fg": "#ffffff"
+          }
+        },
+        "cat_2": {
+          "type": "categoria",
+          "settings": {
+            "label": "Perfumes hombre",
+            "link": "/collections/perfumes-hombre",
+            "ini": "H",
+            "bg": "#F72E75",
+            "fg": "#ffffff"
+          }
+        },
+        "cat_3": {
+          "type": "categoria",
+          "settings": {
+            "label": "Unisex",
+            "link": "/collections/perfumes-unisex",
+            "ini": "U",
+            "bg": "#F72E75",
+            "fg": "#ffffff"
+          }
+        },
+        "cat_4": {
+          "type": "categoria",
+          "settings": {
+            "label": "Árabes",
+            "link": "/collections/perfumes-arabes",
+            "ini": "Á",
+            "bg": "#F72E75",
+            "fg": "#ffffff"
+          }
+        },
+        "cat_5": {
+          "type": "categoria",
+          "settings": {
+            "label": "Estuches y sets",
+            "link": "/collections/estuches",
+            "ini": "E",
+            "bg": "#F72E75",
+            "fg": "#ffffff"
+          }
+        },
+        "cat_6": {
+          "type": "categoria",
+          "settings": {
+            "label": "Maquillaje",
+            "link": "/collections/maquillaje",
+            "ini": "Mq",
+            "bg": "#F72E75",
+            "fg": "#ffffff"
+          }
+        },
+        "cat_7": {
+          "type": "categoria",
+          "settings": {
+            "label": "Nina Skin Care",
+            "link": "/pages/skin-care",
+            "ini": "Sk",
+            "bg": "#89D3E9",
+            "fg": "#1F3A43"
+          }
+        },
+        "cat_8": {
+          "type": "categoria",
+          "settings": {
+            "label": "Ofertas",
+            "link": "/collections/ofertas-de-la-semana",
+            "ini": "%",
+            "bg": "#F72E75",
+            "fg": "#ffffff"
+          }
+        }
+      },
+      "block_order": [
+        "cat_1",
+        "cat_2",
+        "cat_3",
+        "cat_4",
+        "cat_5",
+        "cat_6",
+        "cat_7",
+        "cat_8"
+      ],
+      "settings": {
+        "link": "shopify://collections/ideas-para-navidad",
+        "sc_link": "shopify://pages/skin-care",
+        "b2_link": "shopify://pages/probador-virtual"
+      }
+    },
+    "nina_probador": {
+      "type": "nina-probador",
+      "settings": {
+        "padding_top": 24,
+        "padding_bottom": 24
+      }
+    },
+    "nina_productos": {
+      "type": "nina-home-productos",
+      "blocks": {
+        "tab_1": {
+          "type": "pestana",
+          "settings": {
+            "label": "Ofertas de la semana",
+            "collection": "ofertas-de-la-semana"
+          }
+        }
+      },
+      "block_order": [
+        "tab_1"
+      ],
+      "settings": {
+        "limit": 10
+      }
+    },
+    "nina_resto": {
+      "type": "nina-home-resto",
+      "blocks": {
+        "marca_1": {
+          "type": "marca",
+          "settings": {
+            "nombre": "Lattafa"
+          }
+        },
+        "marca_2": {
+          "type": "marca",
+          "settings": {
+            "nombre": "Paco Rabanne"
+          }
+        },
+        "marca_3": {
+          "type": "marca",
+          "settings": {
+            "nombre": "Givenchy"
+          }
+        },
+        "marca_4": {
+          "type": "marca",
+          "settings": {
+            "nombre": "Hermès"
+          }
+        },
+        "marca_5": {
+          "type": "marca",
+          "settings": {
+            "nombre": "Jean Paul Gaultier"
+          }
+        },
+        "marca_6": {
+          "type": "marca",
+          "settings": {
+            "nombre": "Tous"
+          }
+        },
+        "marca_7": {
+          "type": "marca",
+          "settings": {
+            "nombre": "Carolina Herrera"
+          }
+        },
+        "marca_8": {
+          "type": "marca",
+          "settings": {
+            "nombre": "Al Haramain"
+          }
+        },
+        "marca_9": {
+          "type": "marca",
+          "settings": {
+            "nombre": "Issey Miyake"
+          }
+        },
+        "marca_10": {
+          "type": "marca",
+          "settings": {
+            "nombre": "Dior"
+          }
+        }
+      },
+      "block_order": [
+        "marca_1",
+        "marca_2",
+        "marca_3",
+        "marca_4",
+        "marca_5",
+        "marca_6",
+        "marca_7",
+        "marca_8",
+        "marca_9",
+        "marca_10"
+      ],
+      "settings": {}
+    }
+  },
+  "order": [
+    "nina_hero",
+    "nina_probador",
+    "nina_productos",
+    "nina_resto"
+  ]
+}

@@ -1,0 +1,314 @@
+{{ 'nina-home.css' | asset_url | stylesheet_tag }}
+{%- liquid
+  assign s = section.settings
+  assign nav = '/collections/ideas-para-navidad'
+  assign sc_logo = 'nina-skincare-logo-azul.svg' | asset_url
+  assign arrow = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>'
+-%}
+<div class="nh">
+
+  {%- if s.show_gifts -%}
+  <section class="nh-band nh-band--petalo{% if s.gifts_foto != blank or s.gifts_foto_movil != blank %} nbf-on nbf--{{ s.gifts_velo }}{% endif %}">
+    {%- render 'nina-foto-fondo', foto: s.gifts_foto, foto_movil: s.gifts_foto_movil -%}
+    <div class="nh-wrap">
+      <div class="nh-center">
+        <span class="nh-kicker">{{ s.gifts_kicker }}</span>
+        <h2 class="nh-h2 nh-serif" style="font-size:44px">{{ s.gifts_title }}</h2>
+      </div>
+      <div class="nh-gifts">
+        <a class="nh-gift{% if s.g1_foto != blank %} nbf-on nbf--{{ s.g1_velo }}{% endif %}" href="{{ nav }}?filter.v.price.lte=30">
+          {%- render 'nina-foto-fondo', foto: s.g1_foto -%}
+          <div><span class="nh-gift__k">Detalles</span><div class="nh-gift__a nh-serif">Hasta 30 €</div></div>
+          <p>Minis, colonias y sets pequeños para el amigo invisible y los compromisos.</p>
+          <span class="nh-arrow">Ver regalos {{ arrow }}</span>
+        </a>
+        <a class="nh-gift{% if s.g2_foto != blank %} nbf-on nbf--{{ s.g2_velo }}{% endif %}" href="{{ nav }}?filter.v.price.gte=30&amp;filter.v.price.lte=60">
+          {%- render 'nina-foto-fondo', foto: s.g2_foto -%}
+          <div><span class="nh-gift__k">Los más regalados</span><div class="nh-gift__a nh-serif">30–60 €</div></div>
+          <p>Estuches de perfume con loción o miniatura de regalo.</p>
+          <span class="nh-arrow">Ver regalos {{ arrow }}</span>
+        </a>
+        <a class="nh-gift{% if s.g3_foto != blank %} nbf-on nbf--{{ s.g3_velo }}{% endif %}" href="{{ nav }}?filter.v.price.gte=60">
+          {%- render 'nina-foto-fondo', foto: s.g3_foto -%}
+          <div><span class="nh-gift__k">Para quedar genial</span><div class="nh-gift__a nh-serif">Más de 60 €</div></div>
+          <p>Grandes fragancias y sets de lujo para alguien especial.</p>
+          <span class="nh-arrow">Ver regalos {{ arrow }}</span>
+        </a>
+      </div>
+    </div>
+  </section>
+  {%- endif -%}
+
+  <div class="nh-wrap">
+    <div class="nh-duo">
+      <div class="nh-split nh-arab nh-duo__item">
+        <div class="nh-arab__txt">
+          <span class="nh-kicker" style="color:#E8C989">Perfumes árabes</span>
+          <h2 class="nh-h2 nh-serif">{{ s.arab_title }}</h2>
+          <p>{{ s.arab_text }}</p>
+          <a class="nh-btn nh-btn--line" href="/collections/perfumes-arabes">Ver perfumes árabes</a>
+        </div>
+        <div class="nh-arab__art">
+          {%- if s.arab_image != blank or s.arab_image_movil != blank -%}
+            {%- assign arab_img = s.arab_image | default: s.arab_image_movil -%}
+            <picture>
+              {%- if s.arab_image_movil != blank -%}<source media="(max-width: 749px)" srcset="{{ s.arab_image_movil | image_url: width: 900 }} 900w, {{ s.arab_image_movil | image_url: width: 1200 }} 1200w" sizes="100vw">{%- endif -%}
+              {{ arab_img | image_url: width: 900 | image_tag: loading: 'lazy', alt: '' }}
+            </picture>
+          {%- else -%}
+            <svg width="110" height="220" viewBox="0 0 110 220" aria-hidden="true"><path d="M55 0l14 22H41z" fill="#E8C989"/><rect x="45" y="22" width="20" height="24" fill="#C9A35C"/><path d="M55 46c38 18 52 52 52 94 0 50-26 78-52 78S3 190 3 140c0-42 14-76 52-94z" fill="#6B2E3A" stroke="#E8C989" stroke-width="2"/></svg>
+            <svg width="90" height="180" viewBox="0 0 90 180" aria-hidden="true"><rect x="30" y="0" width="30" height="30" rx="15" fill="#E8C989"/><rect x="38" y="30" width="14" height="14" fill="#C9A35C"/><rect x="3" y="44" width="84" height="134" rx="10" fill="#1E1A16" stroke="#E8C989" stroke-width="2"/><path d="M25 90h40M25 100h40" stroke="#E8C989" stroke-width="1.5"/></svg>
+          {%- endif -%}
+        </div>
+      </div>
+      <div class="nh-scbox nh-duo__item{% if s.scb_foto != blank or s.scb_foto_movil != blank %} nbf-on nbf--{{ s.scb_velo }}{% endif %}">
+        {%- render 'nina-foto-fondo', foto: s.scb_foto, foto_movil: s.scb_foto_movil -%}
+        <div class="nh-scbox__head">
+          <img src="{{ sc_logo }}" alt="Nina Skin Care" class="nh-scbox__logo" loading="lazy">
+          <a class="nh-btn nh-scbox__btn" href="/pages/skin-care">Entrar {{ arrow }}</a>
+        </div>
+        <p class="nh-scbox__p">{{ s.sc_text }}</p>
+        <div class="nh-sc nh-sc--mini">
+          <a class="{% if s.sc1_foto != blank %} nbf-on nbf--{{ s.sc1_velo }}{% endif %}" href="/collections/skin-care-limpieza" style="background:#DDF1F7">{%- render 'nina-foto-fondo', foto: s.sc1_foto -%}<span>Paso 1</span><span class="nh-serif">Limpieza</span></a>
+          <a class="{% if s.sc2_foto != blank %} nbf-on nbf--{{ s.sc2_velo }}{% endif %}" href="/collections/skin-care-serums" style="background:#CDEAF3">{%- render 'nina-foto-fondo', foto: s.sc2_foto -%}<span>Paso 2</span><span class="nh-serif">Sérums y ampollas</span></a>
+          <a class="{% if s.sc3_foto != blank %} nbf-on nbf--{{ s.sc3_velo }}{% endif %}" href="/collections/skin-care-cremas" style="background:#CDEAF3">{%- render 'nina-foto-fondo', foto: s.sc3_foto -%}<span>Paso 3</span><span class="nh-serif">Cremas</span></a>
+          <a class="{% if s.sc4_foto != blank %} nbf-on nbf--{{ s.sc4_velo }}{% endif %}" href="/collections/skin-care-solar" style="background:#DDF1F7">{%- render 'nina-foto-fondo', foto: s.sc4_foto -%}<span>Cada día</span><span class="nh-serif">Protección solar</span></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {%- liquid
+    assign brand_list = s.brands | split: ','
+    assign n_marcas = 0
+    for b in section.blocks
+      if b.type == 'marca'
+        assign n_marcas = n_marcas | plus: 1
+      endif
+    endfor
+  -%}
+  {%- if n_marcas > 0 or brand_list.size > 0 -%}
+  <div class="nh-wrap nh-sec nh-marcas">
+    <div class="nh-marcas__head">
+      <h2 class="nh-h2 nh-serif">{{ s.brands_title }}</h2>
+      <div class="nh-marcas__nav">
+        <button type="button" class="nh-marcas__btn" data-dir="-1" aria-label="Marcas anteriores"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <button type="button" class="nh-marcas__btn" data-dir="1" aria-label="Más marcas"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
+    </div>
+    <div class="nh-marcas__track" data-nh-marcas data-vel="{{ s.brands_vel | default: 30 }}">
+      {%- for vuelta in (1..2) -%}
+        {%- if n_marcas > 0 -%}
+          {%- for block in section.blocks -%}
+            {%- unless block.type == 'marca' -%}{%- continue -%}{%- endunless -%}
+            {%- assign bn = block.settings.nombre | strip -%}
+            {%- capture bl -%}{% if block.settings.link != blank %}{{ block.settings.link }}{% else %}{{ routes.collections_url }}/vendors?q={{ bn | url_encode }}{% endif %}{%- endcapture -%}
+            <a class="nh-marca{% if block.settings.logo == blank %} nh-marca--txt{% endif %}" href="{{ bl }}"{% if vuelta == 2 %} aria-hidden="true" tabindex="-1"{% else %} {{ block.shopify_attributes }}{% endif %}>
+              <span class="nh-marca__c">
+                {%- if block.settings.logo != blank -%}
+                  {{ block.settings.logo | image_url: width: 240 | image_tag: loading: 'lazy', alt: bn, widths: '120, 240' }}
+                {%- else -%}
+                  <span class="nh-marca__ini nh-serif">{{ bn }}</span>
+                {%- endif -%}
+              </span>
+              <span class="nh-marca__n">{{ bn }}</span>
+            </a>
+          {%- endfor -%}
+        {%- else -%}
+          {%- for b in brand_list -%}
+            {%- assign bn = b | strip -%}
+            <a class="nh-marca nh-marca--txt" href="{{ routes.collections_url }}/vendors?q={{ bn | url_encode }}"{% if vuelta == 2 %} aria-hidden="true" tabindex="-1"{% endif %}>
+              <span class="nh-marca__c"><span class="nh-marca__ini nh-serif">{{ bn }}</span></span>
+              <span class="nh-marca__n">{{ bn }}</span>
+            </a>
+          {%- endfor -%}
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
+  </div>
+  <script>
+  (function(){
+    document.querySelectorAll('[data-nh-marcas]').forEach(function(tr){
+      if(tr.dataset.ok) return; tr.dataset.ok='1';
+      var vel=(parseFloat(tr.dataset.vel)||30)/60, pausa=false, raf=null, x=tr.scrollLeft;
+      var quieto=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      function mitad(){ return tr.scrollWidth/2; }
+      function paso(){ if(!pausa){ x+=vel; if(x>=mitad()) x-=mitad(); tr.scrollLeft=x; } raf=requestAnimationFrame(paso); }
+      function para(){ pausa=true; } function sigue(){ x=tr.scrollLeft; pausa=false; }
+      ['mouseenter','touchstart','focusin'].forEach(function(e){ tr.addEventListener(e,para,{passive:true}); });
+      tr.addEventListener('mouseleave',sigue); tr.addEventListener('focusout',sigue);
+      tr.addEventListener('touchend',function(){ setTimeout(sigue,2500); },{passive:true});
+      tr.addEventListener('scroll',function(){ if(pausa){ if(tr.scrollLeft>=mitad()) tr.scrollLeft-=mitad(); else if(tr.scrollLeft<=0) tr.scrollLeft+=mitad(); } },{passive:true});
+      var caja=tr.closest('.nh-marcas');
+      caja.querySelectorAll('.nh-marcas__btn').forEach(function(btn){
+        btn.addEventListener('click',function(){ para(); var item=tr.querySelector('.nh-marca'); var w=item?item.getBoundingClientRect().width+16:140; tr.scrollBy({left:(+btn.dataset.dir)*w*3,behavior:'smooth'}); setTimeout(sigue,3000); });
+      });
+      if(!quieto) raf=requestAnimationFrame(paso);
+    });
+  })();
+  </script>
+  {%- endif -%}
+
+  {%- liquid
+    assign nc_url = pages['ninacash'].url | default: '/pages/ninacash'
+    assign nc_niveles = 'Sparkle,Glow,Glam,Butterfly' | split: ','
+    assign nc_nivel = 'Glow'
+    assign nc_importe = 1240
+    assign nc_ejemplo = true
+    if customer
+      assign nc_n = customer.metafields.nina.nivel.value | default: 1 | at_least: 1 | at_most: 4 | minus: 1
+      assign nc_nivel = nc_niveles[nc_n]
+      assign nc_importe = customer.metafields.nina.ninacash.value | default: 0 | times: 100 | round
+      assign nc_ejemplo = false
+    endif
+  -%}
+  <div class="nh-wrap nh-sec nh-nc-sec">
+    <div class="nh-nc{% if s.cash_foto != blank or s.cash_foto_movil != blank %} nbf-on nbf--{{ s.cash_velo }}{% endif %}" style="--nc-mar:url('{{ 'nina-mariposa-rosa.svg' | asset_url }}')">
+      {%- render 'nina-foto-fondo', foto: s.cash_foto, foto_movil: s.cash_foto_movil -%}
+      <i class="nh-nc__deco nh-nc__deco--a" aria-hidden="true"></i>
+      <i class="nh-nc__deco nh-nc__deco--b" aria-hidden="true"></i>
+      <div class="nh-nc__main">
+        {%- if s.cash_kicker != blank -%}<span class="nh-nc__kicker"><i class="nh-nc__mar" aria-hidden="true"></i>{{ s.cash_kicker }}</span>{%- endif -%}
+        <h2 class="nh-nc__title nh-serif">{{ s.cash_title }}</h2>
+        <p class="nh-nc__text">{{ s.cash_text }}</p>
+        <ol class="nh-nc__steps">
+          <li><b>1</b><span><strong>Crea tu cuenta</strong>Gratis, en un minuto.</span></li>
+          <li><b>2</b><span><strong>Compra y acumula</strong>{{ s.cash_step2 }}</span></li>
+          <li><b>3</b><span><strong>Úsalo al pagar</strong>{{ s.cash_step3 }}</span></li>
+        </ol>
+        <div class="nh-nc__ctas">
+          {%- if customer -%}
+            <a class="nh-nc__btn" href="{{ pages['mi-cuenta'].url | default: routes.account_url }}">Ver mi NinaCash</a>
+          {%- else -%}
+            <a class="nh-nc__btn" href="{{ routes.account_url }}">Crear mi cuenta gratis</a>
+          {%- endif -%}
+          <a class="nh-nc__more" href="{{ nc_url }}">Cómo funciona y condiciones</a>
+        </div>
+      </div>
+      <div class="nh-nc__side">
+        <div class="nh-nc__card">
+          <div class="nh-nc__card-top"><i class="nh-nc__mar" aria-hidden="true"></i><span class="nh-serif">NinaCash</span><em>Nivel {{ nc_nivel }}</em></div>
+          <small>{% if nc_ejemplo %}Así se ve tu saldo{% else %}Tu saldo{% endif %}</small>
+          <strong class="nh-serif">{{ nc_importe | money }}</strong>
+          <div class="nh-nc__card-foot"><span>1 NinaCash = 1 €</span><span>Válido 12 meses</span></div>
+        </div>
+        <ul class="nh-nc__levels" aria-label="Niveles Nina">
+          <li style="--c:#FFB3C6"><i class="nh-nc__mar" aria-hidden="true"></i><b>Sparkle</b><span>1 %</span></li>
+          <li style="--c:#F72E75"><i class="nh-nc__mar" aria-hidden="true"></i><b>Glow</b><span>1,5 %</span></li>
+          <li style="--c:#C92F60"><i class="nh-nc__mar" aria-hidden="true"></i><b>Glam</b><span>2 %</span></li>
+          <li style="--c:#C9A24B"><i class="nh-nc__mar" aria-hidden="true"></i><b>Butterfly</b><span>2 % + envío gratis</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <section class="nh-band nh-band--suave{% if s.club_foto != blank or s.club_foto_movil != blank %} nbf-on nbf--{{ s.club_velo }}{% endif %}">
+    {%- render 'nina-foto-fondo', foto: s.club_foto, foto_movil: s.club_foto_movil -%}
+    <div class="nh-wrap nh-split">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <h2 class="nh-h2 nh-serif">{{ s.club_title }}</h2>
+        <p style="margin:0;font-size:15px;line-height:1.6;color:#4A4A4A">{{ s.club_text }}</p>
+      </div>
+      {%- form 'customer', id: 'nh-club' -%}
+        <input type="hidden" name="contact[tags]" value="newsletter, club-nina">
+        {%- if form.posted_successfully? -%}
+          <p class="nh-ok">¡Listo! Ya eres parte del Club Nina.</p>
+        {%- else -%}
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <label for="nh-club-mail" style="font-size:13px;font-weight:600">Tu correo electrónico</label>
+            <div class="nh-news">
+              <input id="nh-club-mail" type="email" name="contact[email]" required autocomplete="email" placeholder="nombre@correo.es">
+              <button class="nh-btn nh-btn--main" type="submit">Suscribirme</button>
+            </div>
+            {%- if form.errors -%}<span class="nh-note" style="color:#C92F60">Revisa el correo e inténtalo de nuevo.</span>{%- endif -%}
+            <span class="nh-note">Puedes darte de baja cuando quieras. Consulta la <a href="{{ shop.privacy_policy.url | default: '/policies/privacy-policy' }}" style="text-decoration:underline">política de privacidad</a>.</span>
+          </div>
+        {%- endif -%}
+      {%- endform -%}
+    </div>
+  </section>
+</div>
+
+{% schema %}
+{
+  "name": "Nina · Portada resto",
+  "tag": "section",
+  "class": "nina-home-resto",
+  "settings": [
+    { "type": "header", "content": "Regalos por presupuesto" },
+    { "type": "checkbox", "id": "show_gifts", "label": "Mostrar", "default": true },
+    { "type": "text", "id": "gifts_kicker", "label": "Antetítulo", "default": "Navidad 2026" },
+    { "type": "text", "id": "gifts_title", "label": "Título", "default": "Regalos según tu presupuesto" },
+    {"type": "header", "content": "Foto: fondo de toda la franja de regalos"},
+    {"type": "image_picker", "id": "gifts_foto", "label": "Foto de fondo (ordenador)", "info": "Opcional. Sin foto se ve el diseño de siempre."},
+    {"type": "image_picker", "id": "gifts_foto_movil", "label": "Foto de fondo (móvil)", "info": "Opcional. Si la dejas vacía, en el móvil se usa la de ordenador."},
+    {"type": "select", "id": "gifts_velo", "label": "Para que se lea el texto sobre la foto", "options": [{"value": "ninguno", "label": "Sin velo (foto tal cual)"}, {"value": "claro", "label": "Velo blanco y texto oscuro"}, {"value": "oscuro", "label": "Velo negro y texto blanco"}], "default": "claro"},
+    {"type": "header", "content": "Foto: tarjeta «Hasta 30 €»"},
+    {"type": "image_picker", "id": "g1_foto", "label": "Foto de fondo (ordenador)", "info": "Opcional. Sin foto se ve el diseño de siempre."},
+    {"type": "select", "id": "g1_velo", "label": "Para que se lea el texto sobre la foto", "options": [{"value": "ninguno", "label": "Sin velo (foto tal cual)"}, {"value": "claro", "label": "Velo blanco y texto oscuro"}, {"value": "oscuro", "label": "Velo negro y texto blanco"}], "default": "claro"},
+    {"type": "header", "content": "Foto: tarjeta «30–60 €»"},
+    {"type": "image_picker", "id": "g2_foto", "label": "Foto de fondo (ordenador)", "info": "Opcional. Sin foto se ve el diseño de siempre."},
+    {"type": "select", "id": "g2_velo", "label": "Para que se lea el texto sobre la foto", "options": [{"value": "ninguno", "label": "Sin velo (foto tal cual)"}, {"value": "claro", "label": "Velo blanco y texto oscuro"}, {"value": "oscuro", "label": "Velo negro y texto blanco"}], "default": "claro"},
+    {"type": "header", "content": "Foto: tarjeta «Más de 60 €»"},
+    {"type": "image_picker", "id": "g3_foto", "label": "Foto de fondo (ordenador)", "info": "Opcional. Sin foto se ve el diseño de siempre."},
+    {"type": "select", "id": "g3_velo", "label": "Para que se lea el texto sobre la foto", "options": [{"value": "ninguno", "label": "Sin velo (foto tal cual)"}, {"value": "claro", "label": "Velo blanco y texto oscuro"}, {"value": "oscuro", "label": "Velo negro y texto blanco"}], "default": "claro"},
+    { "type": "header", "content": "Perfumes árabes" },
+    { "type": "image_picker", "id": "arab_image", "label": "Foto (ordenador)", "info": "Va en la mitad derecha del banner. Sin foto se ven los frascos dibujados." },
+    { "type": "image_picker", "id": "arab_image_movil", "label": "Foto (móvil)", "info": "Opcional. Si la dejas vacía se usa la de ordenador." },
+    { "type": "text", "id": "arab_title", "label": "Título", "default": "Oud, ámbar y vainilla que duran todo el día" },
+    { "type": "textarea", "id": "arab_text", "label": "Texto", "default": "Lattafa, Al Haramain, Armaf, Maison Alhambra y más. Fragancias intensas a precios que sorprenden." },
+    { "type": "header", "content": "Nina Skin Care" },
+    { "type": "textarea", "id": "sc_text", "label": "Texto", "default": "Rutinas sencillas para una piel cuidada: limpieza, sérums, cremas y protección solar de marcas dermatológicas." },
+    {"type": "header", "content": "Foto: fondo de toda la franja Skin Care"},
+    {"type": "image_picker", "id": "scb_foto", "label": "Foto de fondo (ordenador)", "info": "Opcional. Sin foto se ve el diseño de siempre."},
+    {"type": "image_picker", "id": "scb_foto_movil", "label": "Foto de fondo (móvil)", "info": "Opcional. Si la dejas vacía, en el móvil se usa la de ordenador."},
+    {"type": "select", "id": "scb_velo", "label": "Para que se lea el texto sobre la foto", "options": [{"value": "ninguno", "label": "Sin velo (foto tal cual)"}, {"value": "claro", "label": "Velo blanco y texto oscuro"}, {"value": "oscuro", "label": "Velo negro y texto blanco"}], "default": "claro"},
+    {"type": "header", "content": "Foto: tarjeta «Limpieza»"},
+    {"type": "image_picker", "id": "sc1_foto", "label": "Foto de fondo (ordenador)", "info": "Opcional. Sin foto se ve el diseño de siempre."},
+    {"type": "select", "id": "sc1_velo", "label": "Para que se lea el texto sobre la foto", "options": [{"value": "ninguno", "label": "Sin velo (foto tal cual)"}, {"value": "claro", "label": "Velo blanco y texto oscuro"}, {"value": "oscuro", "label": "Velo negro y texto blanco"}], "default": "claro"},
+    {"type": "header", "content": "Foto: tarjeta «Sérums y ampollas»"},
+    {"type": "image_picker", "id": "sc2_foto", "label": "Foto de fondo (ordenador)", "info": "Opcional. Sin foto se ve el diseño de siempre."},
+    {"type": "select", "id": "sc2_velo", "label": "Para que se lea el texto sobre la foto", "options": [{"value": "ninguno", "label": "Sin velo (foto tal cual)"}, {"value": "claro", "label": "Velo blanco y texto oscuro"}, {"value": "oscuro", "label": "Velo negro y texto blanco"}], "default": "claro"},
+    {"type": "header", "content": "Foto: tarjeta «Cremas»"},
+    {"type": "image_picker", "id": "sc3_foto", "label": "Foto de fondo (ordenador)", "info": "Opcional. Sin foto se ve el diseño de siempre."},
+    {"type": "select", "id": "sc3_velo", "label": "Para que se lea el texto sobre la foto", "options": [{"value": "ninguno", "label": "Sin velo (foto tal cual)"}, {"value": "claro", "label": "Velo blanco y texto oscuro"}, {"value": "oscuro", "label": "Velo negro y texto blanco"}], "default": "claro"},
+    {"type": "header", "content": "Foto: tarjeta «Protección solar»"},
+    {"type": "image_picker", "id": "sc4_foto", "label": "Foto de fondo (ordenador)", "info": "Opcional. Sin foto se ve el diseño de siempre."},
+    {"type": "select", "id": "sc4_velo", "label": "Para que se lea el texto sobre la foto", "options": [{"value": "ninguno", "label": "Sin velo (foto tal cual)"}, {"value": "claro", "label": "Velo blanco y texto oscuro"}, {"value": "oscuro", "label": "Velo negro y texto blanco"}], "default": "claro"},
+    { "type": "header", "content": "Marcas" },
+    { "type": "text", "id": "brands_title", "label": "Título", "default": "Tus marcas favoritas" },
+    { "type": "range", "id": "brands_vel", "label": "Velocidad del carrusel de marcas", "min": 10, "max": 80, "step": 5, "unit": "px", "default": 30, "info": "Píxeles por segundo. Para poner el logo de cada marca: «Añadir bloque» › «Marca»." },
+    { "type": "textarea", "id": "brands", "label": "Marcas (separadas por comas)", "info": "Solo se usa si no hay bloques «Marca».", "default": "Lattafa, Paco Rabanne, Givenchy, Hermès, Jean Paul Gaultier, Tous, Carolina Herrera, Al Haramain, Issey Miyake, Dior" },
+    { "type": "header", "content": "NinaCash" },
+    { "type": "text", "id": "cash_kicker", "label": "Etiqueta de arriba", "default": "Tu recompensa Nina" },
+    { "type": "text", "id": "cash_title", "label": "Título", "default": "NinaCash: comprar te da dinero" },
+    { "type": "text", "id": "cash_text", "label": "Texto", "default": "Hasta el 2 % de cada compra vuelve a ti en saldo para tus próximos caprichos." },
+    { "type": "text", "id": "cash_step2", "label": "Paso 2", "default": "Un perfume de 50 € te da de 0,50 € a 1 €." },
+    { "type": "text", "id": "cash_step3", "label": "Paso 3", "default": "Con tu cuenta iniciada, se descuenta del total." },
+    {"type": "header", "content": "Foto: recuadro NinaCash"},
+    {"type": "image_picker", "id": "cash_foto", "label": "Foto de fondo (ordenador)", "info": "Opcional. Sin foto se ve el diseño de siempre."},
+    {"type": "image_picker", "id": "cash_foto_movil", "label": "Foto de fondo (móvil)", "info": "Opcional. Si la dejas vacía, en el móvil se usa la de ordenador."},
+    {"type": "select", "id": "cash_velo", "label": "Para que se lea el texto sobre la foto", "options": [{"value": "ninguno", "label": "Sin velo (foto tal cual)"}, {"value": "claro", "label": "Velo blanco y texto oscuro"}, {"value": "oscuro", "label": "Velo negro y texto blanco"}], "default": "claro"},
+    { "type": "header", "content": "Club Nina" },
+    { "type": "text", "id": "club_title", "label": "Título", "default": "Únete al Club Nina" },
+    { "type": "text", "id": "club_text", "label": "Texto", "default": "Ofertas antes que nadie, novedades y avisos cuando vuelve lo que te gusta." },
+    {"type": "header", "content": "Foto: franja Club Nina"},
+    {"type": "image_picker", "id": "club_foto", "label": "Foto de fondo (ordenador)", "info": "Opcional. Sin foto se ve el diseño de siempre."},
+    {"type": "image_picker", "id": "club_foto_movil", "label": "Foto de fondo (móvil)", "info": "Opcional. Si la dejas vacía, en el móvil se usa la de ordenador."},
+    {"type": "select", "id": "club_velo", "label": "Para que se lea el texto sobre la foto", "options": [{"value": "ninguno", "label": "Sin velo (foto tal cual)"}, {"value": "claro", "label": "Velo blanco y texto oscuro"}, {"value": "oscuro", "label": "Velo negro y texto blanco"}], "default": "claro"}
+  ],
+  "blocks": [
+    {
+      "type": "marca",
+      "name": "Marca",
+      "settings": [
+        { "type": "text", "id": "nombre", "label": "Nombre de la marca", "default": "Marca" },
+        { "type": "image_picker", "id": "logo", "label": "Logo", "info": "Mejor en PNG con fondo transparente o blanco, cuadrado (400 × 400 px). Sin logo se ve el nombre." },
+        { "type": "url", "id": "link", "label": "Enlace", "info": "Si lo dejas vacío, lleva a todos los productos de esa marca." }
+      ]
+    }
+  ],
+  "max_blocks": 40,
+  "presets": [{ "name": "Nina · Portada resto" }]
+}
+{% endschema %}

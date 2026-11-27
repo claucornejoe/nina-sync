@@ -1,0 +1,264 @@
+{{ 'nina-home.css' | asset_url | stylesheet_tag }}
+{%- liquid
+  assign sc_logo = 'nina-skincare-logo-azul.svg' | asset_url
+  assign s = section.settings
+-%}
+<div class="nh">
+  <div class="nh-wrap">
+    <div class="nh-hero">
+      {%- liquid
+        assign n_slides = 1
+        for b in section.blocks
+          if b.type == 'diapositiva'
+            assign n_slides = n_slides | plus: 1
+          endif
+        endfor
+      -%}
+      <div class="nh-car" data-nh-car data-seg="{{ s.segundos | default: 5 }}" aria-roledescription="carrusel" aria-label="Novedades">
+        {%- if s.solo_imagen and s.image != blank or s.solo_imagen and s.image_movil != blank -%}
+        {%- assign hero_img = s.image | default: s.image_movil -%}
+        <a class="nh-hero__main nh-slide is-on nh-solo" data-slide="0" href="{{ section.settings.link | default: '/collections/ideas-para-navidad' }}" aria-label="{{ s.title | escape }}">
+          <picture>
+            {%- if s.image_movil != blank -%}<source media="(max-width: 749px)" srcset="{{ s.image_movil | image_url: width: 800 }} 800w, {{ s.image_movil | image_url: width: 1200 }} 1200w" sizes="100vw">{%- endif -%}
+            {{ hero_img | image_url: width: 2000 | image_tag: class: 'nh-solo__img', loading: 'eager', fetchpriority: 'high', alt: s.title, widths: '800,1200,1600,2000', sizes: '(min-width: 900px) 50vw, 100vw' }}
+          </picture>
+        </a>
+        {%- else -%}
+        <a class="nh-hero__main nh-slide is-on{% if s.hero_foto != blank or s.hero_foto_movil != blank %} nbf-on nbf--{{ s.hero_velo }}{% endif %}" data-slide="0" href="{{ section.settings.link | default: '/collections/ideas-para-navidad' }}">
+          {%- render 'nina-foto-fondo', foto: s.hero_foto, foto_movil: s.hero_foto_movil, eager: true -%}
+          <div class="nh-hero__txt">
+            {%- if section.settings.kicker != blank -%}<span class="nh-kicker">{{ section.settings.kicker }}</span>{%- endif -%}
+            <h1 class="nh-hero__h1 nh-serif">{{ section.settings.title }}</h1>
+            {%- if section.settings.text != blank -%}<p class="nh-hero__p">{{ section.settings.text }}</p>{%- endif -%}
+            <div class="nh-hero__btns">
+              <span class="nh-btn nh-btn--main">{{ section.settings.button }}</span>
+              {%- if section.settings.button2 != blank -%}<span class="nh-btn nh-btn--line">{{ section.settings.button2 }}</span>{%- endif -%}
+            </div>
+          </div>
+          <div class="nh-hero__art">
+            {%- if section.settings.image != blank or section.settings.image_movil != blank -%}
+              {%- assign hero_img = section.settings.image | default: section.settings.image_movil -%}
+              <picture>
+                {%- if section.settings.image_movil != blank -%}<source media="(max-width: 749px)" srcset="{{ section.settings.image_movil | image_url: width: 900 }} 900w, {{ section.settings.image_movil | image_url: width: 1200 }} 1200w" sizes="100vw">{%- endif -%}
+                {{ hero_img | image_url: width: 1200 | image_tag: class: 'nh-cover', loading: 'eager', fetchpriority: 'high', alt: section.settings.title, sizes: '(min-width: 900px) 40vw, 100vw' }}
+              </picture>
+            {%- else -%}
+              <svg width="92" height="190" viewBox="0 0 92 190" aria-hidden="true"><rect x="32" y="0" width="28" height="30" rx="4" fill="#2B2B2B"/><rect x="38" y="30" width="16" height="14" fill="#C9A35C"/><rect x="2" y="44" width="88" height="144" rx="18" fill="#fff" stroke="#F72E75" stroke-width="2"/><rect x="18" y="104" width="56" height="26" rx="3" fill="#FFCCD5"/></svg>
+              <svg width="130" height="250" viewBox="0 0 130 250" aria-hidden="true"><rect x="45" y="0" width="40" height="40" rx="6" fill="#C92F60"/><rect x="53" y="40" width="24" height="18" fill="#C9A35C"/><rect x="2" y="58" width="126" height="190" rx="26" fill="#F72E75"/><rect x="26" y="136" width="78" height="34" rx="4" fill="#fff"/></svg>
+              <svg width="150" height="120" viewBox="0 0 150 120" aria-hidden="true"><rect x="2" y="20" width="146" height="98" rx="8" fill="#fff" stroke="#C92F60" stroke-width="2"/><rect x="66" y="20" width="18" height="98" fill="#F72E75"/><path d="M75 20c-14-22-34-14-26 0M75 20c14-22 34-14 26 0" fill="none" stroke="#F72E75" stroke-width="6" stroke-linecap="round"/></svg>
+            {%- endif -%}
+          </div>
+        </a>
+        {%- endif -%}
+        {%- assign i_slide = 0 -%}
+        {%- for block in section.blocks -%}
+          {%- if block.type == 'diapositiva' -%}
+          {%- assign i_slide = i_slide | plus: 1 -%}
+          {%- assign bs = block.settings -%}
+          {%- if bs.solo_imagen and bs.image != blank or bs.solo_imagen and bs.foto != blank or bs.solo_imagen and bs.foto_movil != blank -%}
+          {%- assign d_img = bs.image | default: bs.foto | default: bs.foto_movil -%}
+          <a class="nh-hero__main nh-slide nh-solo" data-slide="{{ i_slide }}" href="{{ bs.link | default: '#' }}" aria-label="{{ bs.title | escape }}" aria-hidden="true" tabindex="-1" {{ block.shopify_attributes }}>
+            <picture>
+              {%- if bs.foto_movil != blank -%}<source media="(max-width: 749px)" srcset="{{ bs.foto_movil | image_url: width: 800 }} 800w, {{ bs.foto_movil | image_url: width: 1200 }} 1200w" sizes="100vw">{%- endif -%}
+              {{ d_img | image_url: width: 2000 | image_tag: class: 'nh-solo__img', loading: 'lazy', alt: bs.title, widths: '800,1200,1600,2000', sizes: '(min-width: 900px) 50vw, 100vw' }}
+            </picture>
+          </a>
+          {%- else -%}
+          <a class="nh-hero__main nh-slide{% if bs.foto != blank or bs.foto_movil != blank %} nbf-on nbf--{{ bs.velo }}{% endif %}" data-slide="{{ i_slide }}" href="{{ bs.link | default: '#' }}" style="{% if bs.fondo != blank %}background:{{ bs.fondo }};{% endif %}" aria-hidden="true" tabindex="-1" {{ block.shopify_attributes }}>
+            {%- render 'nina-foto-fondo', foto: bs.foto, foto_movil: bs.foto_movil -%}
+            <div class="nh-hero__txt">
+              {%- if bs.kicker != blank -%}<span class="nh-kicker">{{ bs.kicker }}</span>{%- endif -%}
+              {%- if bs.title != blank -%}<h2 class="nh-hero__h1 nh-serif">{{ bs.title }}</h2>{%- endif -%}
+              {%- if bs.text != blank -%}<p class="nh-hero__p">{{ bs.text }}</p>{%- endif -%}
+              {%- if bs.button != blank -%}<div class="nh-hero__btns"><span class="nh-btn nh-btn--main">{{ bs.button }}</span></div>{%- endif -%}
+            </div>
+            <div class="nh-hero__art">
+              {%- if bs.image != blank -%}{{ bs.image | image_url: width: 1200 | image_tag: class: 'nh-cover', loading: 'lazy', alt: bs.title, sizes: '(min-width: 900px) 30vw, 100vw' }}{%- endif -%}
+            </div>
+          </a>
+          {%- endif -%}
+          {%- endif -%}
+        {%- endfor -%}
+        {%- if n_slides > 1 -%}
+        <div class="nh-dots" role="tablist">
+          {%- for k in (1..n_slides) -%}<button type="button" class="nh-dot{% if forloop.first %} is-on{% endif %}" data-go="{{ forloop.index0 }}" aria-label="Ver banner {{ k }}"></button>{%- endfor -%}
+        </div>
+        {%- endif -%}
+      </div>
+      <div class="nh-side">
+        <a class="nh-mini nh-mini--skin{% if s.sc_foto != blank or s.sc_foto_movil != blank %} nbf-on nbf--{{ s.sc_velo }}{% endif %}" href="{{ section.settings.sc_link | default: '/pages/skin-care' }}">
+          {%- render 'nina-foto-fondo', foto: s.sc_foto, foto_movil: s.sc_foto_movil -%}
+          <div>
+            <img src="{{ sc_logo }}" alt="Nina Skin Care" height="56" style="height:56px;width:auto;display:block" loading="lazy">
+            <h2 class="nh-serif" style="color:#1F3A43">{{ section.settings.sc_title }}</h2>
+            <span style="font-size:13px;color:#33525C">{{ section.settings.sc_text }}</span>
+          </div>
+          <span class="nh-arrow">{{ section.settings.sc_button }} <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </a>
+        <a class="nh-mini nh-mini--probador{% if s.b2_foto != blank or s.b2_foto_movil != blank %} nbf-on nbf--{{ s.b2_velo }}{% endif %}" href="{{ section.settings.b2_link | default: '/pages/probador-virtual' }}">
+          {%- render 'nina-foto-fondo', foto: s.b2_foto, foto_movil: s.b2_foto_movil -%}
+          <svg class="nh-pb__lips" viewBox="0 0 120 150" aria-hidden="true"><rect x="38" y="92" width="44" height="54" rx="6" fill="#2B2B2B"/><rect x="34" y="84" width="52" height="12" rx="3" fill="#C9A35C"/><rect x="42" y="40" width="36" height="46" rx="4" fill="#FFCCD5"/><path d="M42 44V22c0-6 4-12 10-16l26-4v42z" fill="#fff"/><path d="M8 118c10-10 22-12 30-6M8 118c8 10 22 12 30 4" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/><circle cx="100" cy="30" r="4" fill="#fff" opacity=".9"/><circle cx="110" cy="52" r="2.5" fill="#fff" opacity=".7"/><path d="M96 70l2 6 6 2-6 2-2 6-2-6-6-2 6-2z" fill="#fff"/></svg>
+          <div>
+            <div class="nh-pb__top">
+              {%- if section.settings.b2_badge != blank -%}<span class="nh-pb__badge">{{ section.settings.b2_badge }}</span>{%- endif -%}
+              <span class="nh-pb__k">{{ section.settings.b2_kicker }}</span>
+            </div>
+            <h2 class="nh-serif">{{ section.settings.b2_title }}</h2>
+            {%- if section.settings.b2_text != blank -%}<p>{{ section.settings.b2_text }}</p>{%- endif -%}
+          </div>
+          <span class="nh-arrow">{{ section.settings.b2_button }} <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </a>
+      </div>
+    </div>
+
+    {%- if section.settings.show_trust -%}
+    <div class="nh-trust">
+      <div class="nh-trust__i"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C92F60" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="17.5" r="1.6"/><circle cx="17" cy="17.5" r="1.6"/></svg><div><strong>{{ section.settings.t1 }}</strong><span>{{ section.settings.t1s }}</span></div></div>
+      <div class="nh-trust__i"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C92F60" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg><div><strong>{{ section.settings.t2 }}</strong><span>{{ section.settings.t2s }}</span></div></div>
+      <div class="nh-trust__i"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C92F60" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg><div><strong>{{ section.settings.t3 }}</strong><span>{{ section.settings.t3s }}</span></div></div>
+      <div class="nh-trust__i"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C92F60" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M14.5 9.2c-.6-.8-1.5-1.2-2.6-1.2-1.6 0-2.7.9-2.7 2 0 2.8 5.6 1.3 5.6 4.1 0 1.2-1.2 2.1-2.8 2.1-1.2 0-2.2-.5-2.8-1.3M12 6.5v1.5M12 16v1.5"/></svg><div><strong>{{ section.settings.t4 }}</strong><span>{{ section.settings.t4s }}</span></div></div>
+    </div>
+    {%- endif -%}
+
+    {%- assign n_cats = 0 -%}{%- for b in section.blocks -%}{%- if b.type == 'categoria' -%}{%- assign n_cats = n_cats | plus: 1 -%}{%- endif -%}{%- endfor -%}
+    {%- if n_cats > 0 -%}
+    <div class="nh-sec">
+      <h2 class="nh-h2 nh-serif" style="text-align:center;margin-bottom:24px">{{ section.settings.cats_title }}</h2>
+      <div class="nh-cats">
+        {%- for block in section.blocks -%}
+          {%- unless block.type == 'categoria' -%}{%- continue -%}{%- endunless -%}
+          <a class="nh-cat" href="{{ block.settings.link }}" {{ block.shopify_attributes }}>
+            <span class="nh-cat__c" style="background:{{ block.settings.bg }}">
+              {%- if block.settings.image != blank -%}
+                {{ block.settings.image | image_url: width: 240 | image_tag: loading: 'lazy', alt: '' }}
+              {%- else -%}
+                <span class="nh-cat__ini nh-serif" style="color:{{ block.settings.fg }}">{{ block.settings.ini }}</span>
+              {%- endif -%}
+            </span>
+            <span class="nh-cat__n">{{ block.settings.label }}</span>
+          </a>
+        {%- endfor -%}
+      </div>
+    </div>
+    {%- endif -%}
+  </div>
+</div>
+
+<script>
+(function(){
+  document.querySelectorAll('[data-nh-car]').forEach(function(car){
+    if(car.dataset.ok) return; car.dataset.ok='1';
+    var sl=car.querySelectorAll('.nh-slide'), dots=car.querySelectorAll('.nh-dot');
+    if(sl.length<2) return;
+    var i=0, seg=Math.max(2,parseInt(car.dataset.seg,10)||5)*1000, t=null;
+    var quieto=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    function ir(n){
+      sl[i].classList.remove('is-on'); sl[i].setAttribute('aria-hidden','true'); sl[i].tabIndex=-1; if(dots[i]) dots[i].classList.remove('is-on');
+      i=(n+sl.length)%sl.length;
+      sl[i].classList.add('is-on'); sl[i].removeAttribute('aria-hidden'); sl[i].removeAttribute('tabindex'); if(dots[i]) dots[i].classList.add('is-on');
+    }
+    function play(){ if(quieto) return; stop(); t=setInterval(function(){ ir(i+1); }, seg); }
+    function stop(){ if(t){ clearInterval(t); t=null; } }
+    dots.forEach(function(d){ d.addEventListener('click',function(e){ e.preventDefault(); ir(+d.dataset.go); play(); }); });
+    car.addEventListener('mouseenter',stop); car.addEventListener('mouseleave',play);
+    car.addEventListener('focusin',stop); car.addEventListener('focusout',play);
+    var x0=null;
+    car.addEventListener('touchstart',function(e){ x0=e.touches[0].clientX; },{passive:true});
+    car.addEventListener('touchend',function(e){ if(x0===null) return; var dx=e.changedTouches[0].clientX-x0; if(Math.abs(dx)>40){ ir(i+(dx<0?1:-1)); play(); } x0=null; });
+    document.addEventListener('visibilitychange',function(){ document.hidden?stop():play(); });
+    if(window.Shopify && Shopify.designMode){
+      document.addEventListener('shopify:block:select',function(e){ var el=car.querySelector('[data-slide]'+'[data-shopify-editor-block*="'+e.detail.blockId+'"]'); if(el){ stop(); ir(+el.dataset.slide); } });
+    }
+    play();
+  });
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Nina · Portada inicio",
+  "tag": "section",
+  "class": "nina-home-hero",
+  "settings": [
+    { "type": "header", "content": "Imagen principal" },
+    { "type": "checkbox", "id": "solo_imagen", "label": "Solo imagen: quitar el recuadro de texto y botones", "default": true, "info": "Si subes una foto de campaña, la foto ocupa todo el banner y al pulsarla lleva al enlace. Medidas: 1200 × 420 px (móvil 720 × 400). Desmárcalo para ver el título, el texto y los botones." },
+    { "type": "image_picker", "id": "image", "label": "Foto de campaña (ordenador)", "info": "Va a la derecha del banner. Recomendado 400 × 480 px. Sin foto se ven los frascos dibujados." },
+    { "type": "image_picker", "id": "image_movil", "label": "Foto de campaña (móvil)", "info": "Opcional. En el móvil va arriba, en una franja baja: 720 × 170 px. Si la dejas vacía se usa la de ordenador." },
+    { "type": "text", "id": "kicker", "label": "Antetítulo", "default": "Ideas para Navidad" },
+    { "type": "text", "id": "title", "label": "Título", "default": "Regala un perfume que se recuerde" },
+    { "type": "textarea", "id": "text", "label": "Texto", "default": "Estuches y sets de tus marcas favoritas, rebajados y listos para envolver. Llegan en 24–72 h." },
+    { "type": "text", "id": "button", "label": "Botón principal", "default": "Ver ideas para Navidad" },
+    { "type": "text", "id": "button2", "label": "Botón secundario", "default": "Estuches y sets" },
+    { "type": "url", "id": "link", "label": "Enlace" },
+    { "type": "range", "id": "segundos", "label": "Carrusel: segundos de cada banner", "min": 3, "max": 12, "step": 1, "unit": "s", "default": 5, "info": "Para añadir más banners que vayan pasando: «Añadir bloque» › «Banner del carrusel». Este de aquí es siempre el primero." },
+    {"type": "header", "content": "Foto: banner principal entero (detrás del texto)"},
+    {"type": "image_picker", "id": "hero_foto", "label": "Foto de fondo (ordenador)", "info": "Opcional. Recomendado 1200 × 420 px. Sin foto se ve el diseño de siempre."},
+    {"type": "image_picker", "id": "hero_foto_movil", "label": "Foto de fondo (móvil)", "info": "Opcional. Recomendado 720 × 400 px. Si la dejas vacía, en el móvil se usa la de ordenador."},
+    {"type": "select", "id": "hero_velo", "label": "Para que se lea el texto sobre la foto", "options": [{"value": "ninguno", "label": "Sin velo (foto tal cual)"}, {"value": "claro", "label": "Velo blanco y texto oscuro"}, {"value": "oscuro", "label": "Velo negro y texto blanco"}], "default": "claro"},
+    { "type": "header", "content": "Minibanner 1: Nina Skin Care" },
+    { "type": "text", "id": "sc_title", "label": "Título", "default": "Tu rutina de piel, en un solo sitio" },
+    { "type": "text", "id": "sc_text", "label": "Texto", "default": "Limpieza, sérums, cremas y solar" },
+    { "type": "text", "id": "sc_button", "label": "Enlace (texto)", "default": "Entrar en Nina Skin Care" },
+    { "type": "url", "id": "sc_link", "label": "Enlace" },
+    {"type": "image_picker", "id": "sc_foto", "label": "Foto de fondo (ordenador)", "info": "Opcional. Sin foto se ve el diseño de siempre."},
+    {"type": "image_picker", "id": "sc_foto_movil", "label": "Foto de fondo (móvil)", "info": "Opcional. Si la dejas vacía, en el móvil se usa la de ordenador."},
+    {"type": "select", "id": "sc_velo", "label": "Para que se lea el texto sobre la foto", "options": [{"value": "ninguno", "label": "Sin velo (foto tal cual)"}, {"value": "claro", "label": "Velo blanco y texto oscuro"}, {"value": "oscuro", "label": "Velo negro y texto blanco"}], "default": "claro"},
+    { "type": "header", "content": "Minibanner 2: Probador de labiales" },
+    { "type": "text", "id": "b2_badge", "label": "Etiqueta destacada", "default": "Nuevo", "info": "Vacía para no mostrarla." },
+    { "type": "text", "id": "b2_kicker", "label": "Antetítulo", "default": "Probador virtual" },
+    { "type": "text", "id": "b2_title", "label": "Título", "default": "Pruébate los labiales con tu cámara" },
+    { "type": "text", "id": "b2_text", "label": "Texto (solo ordenador)", "default": "80 tonos de tus marcas favoritas, gratis y al instante" },
+    { "type": "text", "id": "b2_button", "label": "Enlace (texto)", "default": "Probar ahora" },
+    { "type": "url", "id": "b2_link", "label": "Enlace", "info": "Si lo dejas vacío, va al probador virtual." },
+    {"type": "image_picker", "id": "b2_foto", "label": "Foto de fondo (ordenador)", "info": "Opcional. Sin foto se ve el diseño de siempre."},
+    {"type": "image_picker", "id": "b2_foto_movil", "label": "Foto de fondo (móvil)", "info": "Opcional. Si la dejas vacía, en el móvil se usa la de ordenador."},
+    {"type": "select", "id": "b2_velo", "label": "Para que se lea el texto sobre la foto", "options": [{"value": "ninguno", "label": "Sin velo (foto tal cual)"}, {"value": "claro", "label": "Velo blanco y texto oscuro"}, {"value": "oscuro", "label": "Velo negro y texto blanco"}], "default": "oscuro"},
+    { "type": "header", "content": "Franja de confianza" },
+    { "type": "checkbox", "id": "show_trust", "label": "Mostrar", "default": true },
+    { "type": "text", "id": "t1", "label": "1 título", "default": "Envío gratis desde 49 €" },
+    { "type": "text", "id": "t1s", "label": "1 texto", "default": "Entrega en 24–72 h laborables" },
+    { "type": "text", "id": "t2", "label": "2 título", "default": "100 % originales" },
+    { "type": "text", "id": "t2s", "label": "2 texto", "default": "Caja precintada de fábrica" },
+    { "type": "text", "id": "t3", "label": "3 título", "default": "Pago seguro" },
+    { "type": "text", "id": "t3s", "label": "3 texto", "default": "PayPal o tarjeta" },
+    { "type": "text", "id": "t4", "label": "4 título", "default": "NinaCash" },
+    { "type": "text", "id": "t4s", "label": "4 texto", "default": "Acumulas en cada compra" },
+    { "type": "header", "content": "Categorías" },
+    { "type": "text", "id": "cats_title", "label": "Título", "default": "¿Qué te apetece hoy?" }
+  ],
+  "blocks": [
+    {
+      "type": "diapositiva",
+      "name": "Banner del carrusel",
+      "settings": [
+        { "type": "paragraph", "content": "Banner extra que va pasando en el hueco del banner principal." },
+        { "type": "checkbox", "id": "solo_imagen", "label": "Solo imagen: quitar el recuadro de texto y botones", "default": true, "info": "Si subes una foto, ocupa todo el banner y al pulsarla lleva al enlace. Desmárcalo para ver el título, el texto y el botón." },
+        { "type": "image_picker", "id": "foto", "label": "Foto de fondo (ordenador)", "info": "Tamaño recomendado 1200 × 420 px. Deja lo importante en el centro." },
+        { "type": "image_picker", "id": "foto_movil", "label": "Foto de fondo (móvil)", "info": "Opcional. Recomendado 720 × 400 px. Si la dejas vacía se usa la de ordenador." },
+        { "type": "select", "id": "velo", "label": "Para que se lea el texto sobre la foto", "options": [{"value": "ninguno", "label": "Sin velo (foto tal cual)"}, {"value": "claro", "label": "Velo blanco y texto oscuro"}, {"value": "oscuro", "label": "Velo negro y texto blanco"}], "default": "ninguno" },
+        { "type": "image_picker", "id": "image", "label": "Foto a la derecha (opcional)", "info": "Como la foto de campaña del primer banner." },
+        { "type": "text", "id": "kicker", "label": "Antetítulo" },
+        { "type": "text", "id": "title", "label": "Título", "default": "Nuevo banner" },
+        { "type": "textarea", "id": "text", "label": "Texto" },
+        { "type": "text", "id": "button", "label": "Botón", "default": "Ver más" },
+        { "type": "url", "id": "link", "label": "Enlace" },
+        { "type": "color", "id": "fondo", "label": "Color de fondo (si no hay foto)", "default": "#FFCCD5" }
+      ]
+    },
+    {
+      "type": "categoria",
+      "name": "Categoría",
+      "settings": [
+        { "type": "text", "id": "label", "label": "Nombre", "default": "Categoría" },
+        { "type": "url", "id": "link", "label": "Enlace" },
+        { "type": "image_picker", "id": "image", "label": "Imagen (opcional)" },
+        { "type": "text", "id": "ini", "label": "Letras si no hay imagen", "default": "N" },
+        { "type": "color", "id": "bg", "label": "Fondo", "default": "#FFCCD5" },
+        { "type": "color", "id": "fg", "label": "Color letras", "default": "#9E2149" }
+      ]
+    }
+  ],
+  "max_blocks": 20,
+  "presets": [{ "name": "Nina · Portada inicio" }]
+}
+{% endschema %}

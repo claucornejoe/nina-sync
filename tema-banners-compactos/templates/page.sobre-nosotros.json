@@ -1,0 +1,11 @@
+{
+  "sections": {
+    "main": {
+      "type": "nina-sobre-nosotros",
+      "settings": {}
+    }
+  },
+  "order": [
+    "main"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "sections": {
+    "main": {
+      "type": "nina-ninacash",
+      "settings": {
+        "actualizado": "26 de noviembre de 2026"
+      }
+    }
+  },
+  "order": [
+    "main"
+  ]
+}
