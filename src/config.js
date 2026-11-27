@@ -50,6 +50,7 @@ export const config = {
     minProfit: num('MIN_PROFIT', 2), // ganancia mínima por producto (si el PVP lo permite)
     offerTag: process.env.OFFER_TAG || 'oferta-semana',
     offerDays: num('OFFER_DAYS', 7),
+    offerMinDiscount: num('OFFER_MIN_DISCOUNT', 0.05), // descuento mínimo (precio tachado) para estar en ofertas
     manualPriceTag: process.env.MANUAL_PRICE_TAG || 'precio-manual',
     newProductsDays: num('NEW_PRODUCTS_DAYS', 7),
     newArrivalTag: process.env.NEW_ARRIVAL_TAG || 'recien-llegado',

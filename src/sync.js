@@ -9,6 +9,7 @@ import { notifyRestocked } from './stockAlerts/notify.js';
 import { matchPurchases } from './stockAlerts/report.js';
 import * as progress from './progress.js';
 import { writeProbadorStock } from './probadorStock.js';
+import { finalVariants, offerEligibility, offersToRemove } from './offers.js';
 import * as compStore from './competition/store.js';
 
 let running = null;
@@ -55,6 +56,12 @@ async function doSync(trigger, dryRun) {
       throw new Error(`BTS no trae ${plan.missing} de ${withEan} EAN: parece un fallo de BTS, no se toca nada`);
     }
 
+    // 3b. Ofertas: solo productos con stock y descuento real (precio tachado).
+    const finals = finalVariants(variants, plan);
+    const eligible = offerEligibility(finals, r.offerMinDiscount);
+    for (const id of [...plan.offerProducts.keys()]) if (!eligible.get(id)) plan.offerProducts.delete(id);
+    const notOffers = offersToRemove(finals, r.offerTag, r.offerMinDiscount);
+
     // 4. Aplicar.
     if (!dryRun) {
       const work = 1 + plan.priceUpdates.size + plan.tagUpdates.length + plan.offerProducts.size;
@@ -90,9 +97,19 @@ async function doSync(trigger, dryRun) {
       }
     }
 
-    // 5. Ofertas caducadas (más de 7 días).
+    // 5a. Fuera de ofertas lo que está agotado o ya no tiene descuento.
+    for (const [productId, title] of notOffers) {
+      if (!dryRun) {
+        await shopify.removeTags(productId, [r.offerTag]);
+        await db.deleteOffer(productId);
+      }
+      plan.changes.push({ productId, productTitle: title, kind: 'oferta_fin', oldValue: r.offerTag, newValue: '', note: 'Sale de ofertas: agotado o sin descuento' });
+    }
+
+    // 5b. Ofertas caducadas (más de 7 días).
     const expired = await db.expiredOffers();
     for (const o of expired) {
+      if (notOffers.has(o.product_id)) continue; // ya se quitó arriba
       if (plan.offerProducts.has(o.product_id)) continue; // ha vuelto a bajar: se renueva
       if (!dryRun) {
         await shopify.removeTags(o.product_id, [r.offerTag]);

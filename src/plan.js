@@ -1,4 +1,4 @@
-import { computePrice, computeStock, round2, profit } from './pricing.js';
+import { computePrice, computeStock, round2, profit, saleCompareAt } from './pricing.js';
 import { applyOverride } from './competition/engine.js';
 import { expectedTags, tagDiff, isPerfumeCategory } from './tags.js';
 
@@ -48,7 +48,7 @@ export function planSync(variants, bts, r, prevCosts = new Map(), overrides = ne
           if (adj < p.price) {
             p.price = adj;
             p.profit = profit(adj, b.cost, r);
-            p.compareAt = b.rrp && b.rrp > adj ? round2(b.rrp) : null;
+            p.compareAt = saleCompareAt(b.rrp, adj, r);
             p.competencia = true;
           }
         }
@@ -99,6 +99,24 @@ export function planSync(variants, bts, r, prevCosts = new Map(), overrides = ne
     }
 
     if (targetStock !== v.available) stockUpdates.push({ inventoryItemId: v.inventoryItemId, quantity: targetStock });
+  }
+
+  // Precio tachado falso: si la rebaja es menor que r.offerMinDiscount (p. ej. 82,99 € frente a 83,00 €)
+  // se quita, también en productos con precio-manual o que ya no están en BTS. El precio no cambia.
+  const touched = new Set([...priceUpdates.values()].flat().map((u) => u.id));
+  for (const v of variants) {
+    if (!v.compareAt || touched.has(v.id) || saleCompareAt(v.compareAt, v.price, r)) continue;
+    if (!priceUpdates.has(v.productId)) priceUpdates.set(v.productId, []);
+    priceUpdates.get(v.productId).push({ id: v.id, price: money(v.price), compareAtPrice: null });
+    changes.push({
+      ean: v.ean, productTitle: v.productTitle, variantTitle: v.variantTitle, productId: v.productId,
+      kind: 'precio',
+      oldValue: `${eur(v.price)} (PVP ${eur(v.compareAt)})`,
+      newValue: eur(v.price),
+      onSale: false,
+      priceDrop: false,
+      note: `Se quita el precio tachado: rebaja menor del ${Math.round((r.offerMinDiscount ?? 0.05) * 100)} %`,
+    });
   }
 
   // Etiquetas de colección (género, tipo, marca, Árabe) según los datos de BTS.

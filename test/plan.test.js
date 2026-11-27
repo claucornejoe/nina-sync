@@ -73,3 +73,21 @@ test('el informe se dibuja', () => {
   assert.match(html, /A &lt;b&gt;/);
   assert.match(changesCsv(changes), /Baja de precio/);
 });
+
+test('precio tachado por céntimos se quita, aunque tenga precio-manual o no esté en BTS', () => {
+  const vs = [
+    v({ ean: '7', id: 'VA', productId: 'PA', available: 0, price: 82.99, compareAt: 83, tags: ['precio-manual'] }),
+    v({ ean: '8', id: 'VB', productId: 'PB', available: 0, price: 79.99, compareAt: 120, tags: ['precio-manual'] }),
+  ];
+  const p = planSync(vs, new Map(), r);
+  assert.deepEqual(p.priceUpdates.get('PA'), [{ id: 'VA', price: '82.99', compareAtPrice: null }]);
+  assert.ok(!p.priceUpdates.has('PB')); // 33 % de rebaja: se mantiene
+});
+
+test('fórmula topada al PVP con rebaja de céntimos: sin precio tachado', () => {
+  const bts = new Map([['1', { ean: '1', cost: 50, rrp: 83, stock: 10 }]]);
+  const p = planSync([v({ ean: '1', available: 10, price: 82.99, compareAt: 83 })], bts, r);
+  const u = p.priceUpdates.get('P1')?.[0];
+  assert.ok(u, 'debe actualizar');
+  assert.equal(u.compareAtPrice, null);
+});
