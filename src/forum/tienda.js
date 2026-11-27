@@ -35,6 +35,25 @@ const loginUrl = (vuelta) => `${LOGIN}?return_to=${encodeURIComponent(vuelta)}&a
 
 const MARIPOSA = `<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><g fill="currentColor"><ellipse cx="7.3" cy="8.4" rx="5" ry="3.8" transform="rotate(-35 7.3 8.4)"/><ellipse cx="16.7" cy="8.4" rx="5" ry="3.8" transform="rotate(35 16.7 8.4)"/><ellipse cx="8.4" cy="15.6" rx="3.4" ry="2.7" transform="rotate(30 8.4 15.6)"/><ellipse cx="15.6" cy="15.6" rx="3.4" ry="2.7" transform="rotate(-30 15.6 15.6)"/></g><path d="M12 6.5v12M12 6.5 10.2 3.2M12 6.5l1.8-3.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/></svg>`;
 
+// Iconos de línea de las categorías (idea de las tarjetas con icono de las plantillas de belleza).
+const ICONOS = {
+  todo: '<path d="M4 5h7v7H4zM13 5h7v7h-7zM4 14h7v5H4zM13 14h7v5h-7z"/>',
+  skincare: '<path d="M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z"/><path d="M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/>',
+  maquillaje: '<path d="M9 21h6v-8H9z"/><path d="M10 13V7.5L14 4v9"/>',
+  perfumes: '<rect x="6" y="9" width="12" height="12" rx="3"/><path d="M10 9V6h4v3M9 3h6"/>',
+  'cabello-cuerpo': '<path d="M7 21c0-7 2-13 9-17"/><path d="M11 21c0-5 2-9 7-12"/><path d="M4 12c3-1 5 0 6 2"/>',
+  consejos: '<path d="M4 6h16v10H9l-5 4z"/><path d="M8 10h8M8 13h5"/>',
+};
+const icono = (id, size = 22) =>
+  `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONOS[id] || ICONOS.consejos}</svg>`;
+// Destello de cuatro puntas y línea ondulada: las «pegatinas» de las plantillas juveniles, en colores Nina.
+const DESTELLO = (c, s, extra = '') =>
+  `<svg class="nf-deco ${extra}" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="${c}" d="M12 0c1 7 5 11 12 12-7 1-11 5-12 12-1-7-5-11-12-12 7-1 11-5 12-12z"/></svg>`;
+const ONDA = (c, extra = '') =>
+  `<svg class="nf-deco ${extra}" viewBox="0 0 120 24" width="120" height="24" aria-hidden="true"><path d="M2 12c10-12 20-12 29 0s19 12 29 0 19-12 29 0 19 12 29 0" fill="none" stroke="${c}" stroke-width="4" stroke-linecap="round"/></svg>`;
+// Color de cada categoría para su icono y su avatar (todo dentro de la paleta Nina).
+const TONO = { skincare: '#C92F60', maquillaje: '#F72E75', perfumes: '#B0245A', 'cabello-cuerpo': '#E0567F', consejos: '#6E6E6E' };
+
 const CSS = `
 .nf{--rosa:#F72E75;--petalo:#FFCCD5;--petalo2:#FFF1F4;--fram:#C92F60;--graf:#2B2B2B;--gris:#6E6E6E;--linea:#F3DDE3;
   --serif:'Cormorant Garamond','Cormorant',var(--font-heading--family,Georgia),serif;--sans:Montserrat,var(--font-body--family,system-ui),sans-serif;
@@ -136,6 +155,79 @@ a.nf-card:hover{box-shadow:0 10px 26px rgba(201,47,96,.12);transform:translateY(
 .nf-legal{font-size:12px;color:var(--gris);margin-top:24px;line-height:1.5}
 .nf-normas{background:#fff;border:1px solid var(--linea);border-radius:24px;padding:26px;max-width:780px;margin:24px auto 0}
 .nf-normas li{margin:6px 0}
+/* ===== Rediseño 2026-11-27: llamativo y fácil ===== */
+.nf{position:relative}
+.nf .nf-deco{position:absolute;pointer-events:none;z-index:0}
+.nf-top{position:relative;display:grid;gap:18px;align-items:center;padding:20px 22px;border-radius:28px;background:linear-gradient(135deg,#FFF1F4 0%,#FFE3EA 55%,#FFCCD5 100%);overflow:hidden}
+.nf-top>*:not(.nf-deco){position:relative;z-index:1}
+.nf-top .d1{top:14px;right:46%;z-index:0}.nf-top .d2{bottom:16px;left:8px;z-index:0}.nf-top .o1{top:-4px;left:38%;opacity:.55;z-index:0}
+.nf-etiqueta{display:inline-block;background:var(--graf);color:#fff;font:700 11px var(--sans);letter-spacing:.18em;text-transform:uppercase;padding:6px 12px;border-radius:6px;transform:rotate(-2deg);box-shadow:3px 3px 0 var(--rosa)}
+.nf-top h1{font-size:clamp(38px,4.6vw,50px);color:var(--graf);margin:6px 0 2px;line-height:1}
+.nf-top h1 em{font-style:italic;color:var(--rosa)}
+.nf-top p{margin:0;max-width:440px}
+.nf-cifras{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.nf-cifra{display:inline-flex;align-items:center;gap:6px;background:#fff;border-radius:999px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--graf);box-shadow:0 2px 0 var(--petalo)}
+.nf-cifra b{color:var(--rosa);font-size:14px}
+.nf-top .nf-banners{margin:0;grid-template-columns:1fr;gap:12px}
+.nf-banner{position:relative;border-radius:18px;min-height:62px;padding:9px 18px;box-shadow:5px 5px 0 var(--graf);border:2px solid var(--graf)}
+.nf-banner:hover{transform:translate(-2px,-2px);box-shadow:7px 7px 0 var(--graf)}
+.nf-banner.petalo{background:#fff}
+.nf-banner .nf-pegatina{position:absolute;top:-12px;right:64px;background:#FFE25C;color:var(--graf);font:800 10px var(--sans);letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px;transform:rotate(6deg);border:1.5px solid var(--graf);display:block;margin:0}
+@media(min-width:800px){.nf-top{grid-template-columns:1.05fr 1fr;padding:16px 28px}}
+.nf-cats2{display:flex;gap:10px;margin:26px 0 8px;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:none}
+.nf-cats2::-webkit-scrollbar{display:none}
+.nf-tile{flex:1 0 128px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;background:#fff;border:1.5px solid var(--linea);border-radius:18px;padding:12px 14px;text-decoration:none;color:var(--graf)!important;transition:transform .15s,box-shadow .15s,border-color .15s}
+.nf-tile i{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;font-style:normal}
+.nf-tile b{font-size:14px;line-height:1.2}
+.nf-tile small{font-size:12px;color:var(--gris)}
+.nf-tile:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(201,47,96,.14)}
+.nf-tile.on{border-color:var(--graf);box-shadow:4px 4px 0 var(--rosa)}
+.nf-cabeza{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:14px 0 14px}
+.nf-cabeza h2{font-size:30px}
+.nf-card{position:relative;display:grid;grid-template-columns:46px 1fr;gap:14px;border:1.5px solid var(--linea);border-radius:20px;padding:16px 18px;background:rgba(255,255,255,.96)}
+a.nf-card:hover{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--petalo);border-color:var(--rosa)}
+.nf-card.fijada{border-color:var(--graf);box-shadow:5px 5px 0 var(--rosa)}
+.nf-avatar{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;color:#fff;font:600 21px var(--serif)}
+.nf-card h3{font-size:22px;margin:6px 0 2px}
+.nf-extracto{margin:0 0 6px;color:#555;font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.nf-chip.nina{background:#fff;border:1.5px solid var(--rosa);color:var(--rosa);display:inline-flex;align-items:center;gap:4px}
+.nf-pastilla{display:inline-flex;align-items:center;gap:4px;font-weight:600;color:var(--fram)}
+.nf-pasos{display:grid;gap:12px;margin-top:28px}
+@media(min-width:700px){.nf-pasos{grid-template-columns:repeat(3,1fr)}}
+.nf-paso{position:relative;background:#fff;border:1.5px solid var(--linea);border-radius:20px;padding:16px 18px 16px 62px}
+.nf-paso span{position:absolute;left:16px;top:16px;width:34px;height:34px;border-radius:50%;background:var(--rosa);color:#fff;display:grid;place-items:center;font:600 20px var(--serif)}
+.nf-paso b{display:block;font-size:14px}.nf-paso p{margin:2px 0 0;font-size:13px;color:var(--gris)}
+.nf-fab{display:none}
+@media(max-width:899px){.nf-fab{display:inline-flex;position:fixed;left:16px;bottom:18px;z-index:20;align-items:center;gap:6px;background:var(--rosa);color:#fff!important;text-decoration:none;font:700 14px var(--sans);padding:12px 18px;border-radius:999px;box-shadow:3px 3px 0 var(--graf);border:2px solid var(--graf)}}
+.nf-volver{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1.5px solid var(--linea);border-radius:999px;padding:6px 14px;font-weight:600;font-size:13px;text-decoration:none}
+.nf-tema{position:relative;border:2px solid var(--graf);box-shadow:6px 6px 0 var(--petalo);overflow:hidden}
+.nf-tema .dt{top:18px;right:22px}
+.nf-tema .nf-etiqueta{background:var(--rosa);box-shadow:3px 3px 0 var(--graf)}
+.nf-autor{display:flex;align-items:center;gap:10px;margin-top:8px}
+.nf-autor .nf-avatar{width:38px;height:38px;font-size:18px}
+.nf-compartir{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.nf-resp{grid-template-columns:40px 1fr;border:0;background:transparent;padding:0}
+.nf-burbuja{position:relative;background:#fff;border:1.5px solid var(--linea);border-radius:4px 20px 20px 20px;padding:12px 16px}
+.nf-resp.nina{background:transparent}
+.nf-resp.nina .nf-burbuja{background:var(--petalo2);border-color:var(--rosa)}
+@media(max-width:699px){
+  .nf-top{padding:14px 14px 16px;gap:12px}
+  .nf-top h1{font-size:36px;margin-top:4px}
+  .nf-top p{font-size:13px;line-height:1.45}
+  .nf-cifras{margin-top:6px;gap:6px}.nf-cifra{padding:3px 9px;font-size:11px}.nf-cifra:last-child{display:none}
+  .nf-top .nf-banners{grid-template-columns:1fr 1fr;gap:10px}
+  .nf-banner{min-height:0;padding:10px 12px;box-shadow:3px 3px 0 var(--graf)}
+  .nf-banner b{font-size:18px}
+  .nf-banner .nf-pegatina{right:10px;top:-11px;display:block}
+  .nf-cats2{margin:18px 0 4px;gap:8px}
+  .nf-tile{flex:0 0 auto;display:grid;grid-template-columns:32px auto;column-gap:8px;row-gap:0;align-items:center;padding:7px 12px 7px 8px;border-radius:14px}
+  .nf-tile i{width:32px;height:32px;border-radius:10px;grid-row:span 2}
+  .nf-tile i svg{width:18px;height:18px}
+  .nf-tile b{font-size:13px;white-space:nowrap}.nf-tile small{font-size:11px;white-space:nowrap}
+  .nf-card{grid-template-columns:38px 1fr;gap:10px;padding:14px}
+  .nf-avatar{width:38px;height:38px;font-size:18px}
+  .nf-card h3{font-size:20px}
+}
 @media(min-width:900px){.nf-dos{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:start}.nf-dos .nf-caja{margin-top:0;position:sticky;top:20px}}
 `;
 
@@ -147,16 +239,21 @@ body,main#MainContent{background-image:${FONDO_MARIPOSAS}!important;background-s
 `;
 const envolver = (html, extra = '') => `<style>${PAGINA}${CSS}</style><div class="nf">${html}</div>${extra}`;
 
-function cabecera(enPortada = true) {
-  return `<section class="nf-hero">
-  <p class="nf-kicker">Comunidad Nina Beauty</p>
-  <h1>Foro Nina</h1>
-  <p>Pregunta, comparte tus trucos y ayuda a otras chicas. Nuestro equipo también responde.</p>
-</section>
-<div class="nf-banners">
-  <a class="nf-banner rosa" href="${enPortada ? '' : BASE}#abrir-tema"><div><b>Abre tu tema en el foro</b><span>Cuéntanos tu duda o comparte tu truco</span></div><i aria-hidden="true">${MARIPOSA.replace('width="14" height="14"', 'width="22" height="22"')}</i></a>
-  <a class="nf-banner petalo" href="/blogs/nina-blog"><div><b>Visita nuestro blog</b><span>Rutinas, perfumes y trucos explicados fácil</span></div><i aria-hidden="true">→</i></a>
-</div>`;
+function cabecera(enPortada = true, cifras = null) {
+  const c = cifras && cifras.temas ? `<div class="nf-cifras"><span class="nf-cifra"><b>${cifras.temas}</b> ${cifras.temas === 1 ? 'tema' : 'temas'}</span><span class="nf-cifra"><b>${cifras.respuestas}</b> ${cifras.respuestas === 1 ? 'respuesta' : 'respuestas'}</span><span class="nf-cifra">${MARIPOSA} Responde el equipo Nina</span></div>` : '';
+  return `<section class="nf-top">
+  ${DESTELLO('#F72E75', 22, 'd1')}${DESTELLO('#FFFFFF', 30, 'd2')}${ONDA('#FFFFFF', 'o1')}
+  <div>
+    <span class="nf-etiqueta">Comunidad Nina</span>
+    <h1>Foro <em>Nina</em></h1>
+    <p>Pregunta, comparte tus trucos y ayuda a otras chicas. Nuestro equipo también responde.</p>
+    ${c}
+  </div>
+  <div class="nf-banners">
+    <a class="nf-banner rosa" href="${enPortada ? '' : BASE}#abrir-tema"><div><b>Abre tu tema en el foro</b><span>Cuéntanos tu duda o comparte tu truco</span></div><i aria-hidden="true">${MARIPOSA.replace('width="14" height="14"', 'width="22" height="22"')}</i></a>
+    <a class="nf-banner petalo" href="/blogs/nina-blog"><em class="nf-pegatina">Trucos</em><div><b>Visita nuestro blog</b><span>Rutinas, perfumes y trucos explicados fácil</span></div><i aria-hidden="true">→</i></a>
+  </div>
+</section>`;
 }
 const LUPA = `<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16.5 16.5 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
 /** Buscador discreto: solo busca en los temas del foro, no en productos. */
@@ -211,17 +308,31 @@ function formTema({ sesion, perfil, sugerido, token, valores = {}, catActual }) 
 
 function tarjeta(tm) {
   const cat = categoria(tm.categoria);
-  return `<a class="nf-card" href="${BASE}/${rutaTema(tm)}">
-  ${tm.fijado ? '<span class="nf-chip fijo">Destacado</span> ' : ''}<span class="nf-chip">${t(cat?.nombre || tm.categoria)}</span>${chipEjemplo(tm)}
-  <h3>${t(tm.titulo)}</h3>
-  <div class="nf-meta"><span>${tm.equipo ? `<span class="nf-equipo">${MARIPOSA} Equipo Nina</span>` : t(autorDe(tm))}</span><span>${fecha(tm.actividad)}</span><span>${plural(tm.respuestas, 'respuesta', 'respuestas')}</span>${tm.ayuda ? `<span>♥ ${tm.ayuda}</span>` : ''}</div>
+  const color = tm.equipo ? '#C92F60' : TONO[tm.categoria] || '#C92F60';
+  const extracto = String(tm.cuerpo || '').replace(/\s+/g, ' ').slice(0, 170);
+  return `<a class="nf-card${tm.fijado ? ' fijada' : ''}" href="${BASE}/${rutaTema(tm)}">
+  <span class="nf-avatar" style="background:${color}">${tm.equipo ? MARIPOSA.replace('width="14" height="14"', 'width="22" height="22"') : t((tm.autor || '?').charAt(0).toUpperCase())}</span>
+  <div>
+    ${tm.fijado ? '<span class="nf-chip fijo">Destacado</span> ' : ''}<span class="nf-chip">${t(cat?.nombre || tm.categoria)}</span>${chipEjemplo(tm)}${tm.con_nina && !tm.equipo ? ` <span class="nf-chip nina">${MARIPOSA} Responde Nina</span>` : ''}
+    <h3>${t(tm.titulo)}</h3>
+    ${extracto ? `<p class="nf-extracto">${t(extracto)}</p>` : ''}
+    <div class="nf-meta"><span>${tm.equipo ? `<span class="nf-equipo">${MARIPOSA} Equipo Nina</span>` : t(autorDe(tm))}</span><span>${fecha(tm.actividad)}</span><span class="nf-pastilla">💬 ${tm.respuestas}</span>${tm.ayuda ? `<span class="nf-pastilla">♥ ${tm.ayuda}</span>` : ''}</div>
+  </div>
 </a>`;
 }
 
+const PASOS = `<section class="nf-pasos" aria-label="Cómo funciona el foro">
+  <div class="nf-paso"><span>1</span><b>Pregunta o comparte</b><p>Abre tu tema con tu duda o tu truco favorito.</p></div>
+  <div class="nf-paso"><span>2</span><b>La comunidad responde</b><p>Otras chicas te cuentan lo que les funciona.</p></div>
+  <div class="nf-paso"><span>3</span><b>El equipo Nina te ayuda</b><p>Revisamos cada mensaje y respondemos también.</p></div>
+</section>`;
+
 /** Portada del foro: categorías, lista de temas y formulario. */
-export function portada({ temas, total, pagina, porPagina, catActual, buscar = '', sesion, perfil, sugerido, token, ok, error, valores }) {
-  const cats = [`<a class="nf-cat${!catActual ? ' on' : ''}" href="${BASE}">Todo</a>`]
-    .concat(CATEGORIAS.map((c) => `<a class="nf-cat${catActual === c.id ? ' on' : ''}" href="${BASE}?c=${c.id}" title="${t(c.desc)}">${t(c.nombre)}</a>`))
+export function portada({ temas, total, pagina, porPagina, catActual, buscar = '', conteo = {}, cifras = null, sesion, perfil, sugerido, token, ok, error, valores }) {
+  const n = (k) => (k ? `${k} ${k === 1 ? 'tema' : 'temas'}` : 'Sé la primera');
+  const todos = Object.values(conteo).reduce((a, b) => a + b, 0);
+  const cats = [`<a class="nf-tile${!catActual ? ' on' : ''}" href="${BASE}"><i style="background:var(--graf)">${icono('todo')}</i><b>Todo</b><small>${n(todos)}</small></a>`]
+    .concat(CATEGORIAS.map((c) => `<a class="nf-tile${catActual === c.id ? ' on' : ''}" href="${BASE}?c=${c.id}" title="${t(c.desc)}"><i style="background:${TONO[c.id]}">${icono(c.id)}</i><b>${t(c.nombre)}</b><small>${n(conteo[c.id] || 0)}</small></a>`))
     .join('');
   const paginas = Math.max(1, Math.ceil(total / porPagina));
   const q = (p) => `${BASE}?${catActual ? `c=${catActual}&amp;` : ''}${buscar ? `q=${encodeURIComponent(buscar)}&amp;` : ''}p=${p}`;
@@ -238,11 +349,13 @@ export function portada({ temas, total, pagina, porPagina, catActual, buscar = '
   const tituloLista = buscar
     ? `Resultados para «${t(buscar)}» <a href="${BASE}${catActual ? `?c=${catActual}` : ''}" style="font:600 13px var(--sans);margin-left:8px">Quitar búsqueda</a>`
     : cat ? t(cat.nombre) : 'Últimos temas';
-  return envolver(`${cabecera()}
+  return envolver(`${cabecera(true, cifras)}
 ${aviso(ok, error)}
-<div class="nf-barra"><nav class="nf-cats" aria-label="Categorías">${cats}</nav>${buscador(buscar, catActual)}</div>
-<div class="nf-dos"><div><h2 style="font-size:30px;margin-bottom:14px">${tituloLista}</h2>${lista}</div>
+<nav class="nf-cats2" aria-label="Categorías">${cats}</nav>
+<div class="nf-dos"><div><div class="nf-cabeza"><h2>${tituloLista}</h2>${buscador(buscar, catActual)}</div>${lista}</div>
 ${formTema({ sesion, perfil, sugerido, token, valores, catActual })}</div>
+${PASOS}
+<a class="nf-fab" href="#abrir-tema">＋ Abrir tema</a>
 <p class="nf-legal">Los consejos del foro los escriben clientas y nuestro equipo, son orientativos y no sustituyen la opinión de un profesional. Si tienes una irritación o un problema de piel que no mejora, consulta a tu dermatólogo. <a href="${BASE}/normas">Normas del foro</a>.</p>`);
 }
 
@@ -265,14 +378,14 @@ export function paginaTema({ tema, respuestas, sesion, perfil, sugerido, token, 
     .map(
       (r) => `<article class="nf-resp${r.equipo ? ' nina' : ''}" id="r${r.id}">
   <div class="nf-av">${r.equipo ? MARIPOSA.replace('width="14" height="14"', 'width="20" height="20"') : t((r.autor || '?').charAt(0).toUpperCase())}</div>
-  <div><div class="nf-meta"><b style="color:var(--graf)">${r.equipo ? `<span class="nf-equipo">${MARIPOSA} Equipo Nina</span>` : t(autorDe(r))}</b><span>${fecha(r.creado)}</span></div>
+  <div class="nf-burbuja"><div class="nf-meta"><b style="color:var(--graf)">${r.equipo ? `<span class="nf-equipo">${MARIPOSA} Equipo Nina</span>` : t(autorDe(r))}</b><span>${fecha(r.creado)}</span></div>
   <div class="nf-cuerpo" style="margin-top:4px;font-size:15px">${parrafos(r.cuerpo)}</div>
   <div class="nf-pie">${votar('respuesta', r.id, r.ayuda)}${denunciar('respuesta', r.id, r.equipo)}</div></div>
 </article>`,
     )
     .join('');
   const responder = !sesion
-    ? `<div class="nf-caja"><h2>Responder</h2><p class="nf-nota">Inicia sesión con tu cuenta de Nina Beauty para responder.</p><p style="margin:16px 0 0"><a class="nf-btn" href="${loginUrl(ruta + '#responder')}">Iniciar sesión para responder</a></p></div>`
+    ? `<div class="nf-caja" id="responder"><h2>Responder</h2><p class="nf-nota">Inicia sesión con tu cuenta de Nina Beauty para responder.</p><p style="margin:16px 0 0"><a class="nf-btn" href="${loginUrl(ruta + '#responder')}">Iniciar sesión para responder</a></p></div>`
     : `<div class="nf-caja" id="responder"><h2>Responder</h2>
 <form class="nf-form" method="post" action="${BASE}/responder">
   <input type="hidden" name="token" value="${t(token)}"><input type="hidden" name="tema" value="${tema.id}">
@@ -303,17 +416,19 @@ export function paginaTema({ tema, respuestas, sesion, perfil, sugerido, token, 
   // En JSON nunca hay «{{» ni «{%» fuera de un texto; dentro de un texto los escapamos para que Liquid no los toque.
   const ldTxt = JSON.stringify(ld).replace(/</g, '\\u003c').replace(/\{(?=[{%])/g, '\\u007b');
   return envolver(
-    `<nav class="nf-miga"><a href="${BASE}">Foro Nina</a> › <a href="${BASE}?c=${t(tema.categoria)}">${t(cat?.nombre || tema.categoria)}</a></nav>
+    `<nav class="nf-miga"><a class="nf-volver" href="${BASE}">← Foro Nina</a> <a class="nf-volver" href="${BASE}?c=${t(tema.categoria)}">${icono(tema.categoria, 16)} ${t(cat?.nombre || tema.categoria)}</a></nav>
 ${aviso(ok, error)}
 <article class="nf-tema">
-  ${tema.fijado ? '<span class="nf-chip fijo">Destacado</span> ' : ''}<span class="nf-chip">${t(cat?.nombre || tema.categoria)}</span>${chipEjemplo(tema)}
+  ${DESTELLO('#FFCCD5', 26, 'dt')}
+  <span class="nf-etiqueta">${t(cat?.nombre || tema.categoria)}</span> ${tema.fijado ? '<span class="nf-chip fijo">Destacado</span>' : ''}${chipEjemplo(tema)}
   <h1>${t(tema.titulo)}</h1>
-  <div class="nf-meta"><span>${tema.equipo ? `<span class="nf-equipo">${MARIPOSA} Equipo Nina</span>` : `Pregunta de <b>${t(autorDe(tema))}</b>`}</span><span>${fecha(tema.publicado_at || tema.creado)}</span></div>
+  <div class="nf-autor"><span class="nf-avatar" style="background:${tema.equipo ? '#C92F60' : TONO[tema.categoria] || '#C92F60'}">${tema.equipo ? MARIPOSA.replace('width="14" height="14"', 'width="20" height="20"') : t((tema.autor || '?').charAt(0).toUpperCase())}</span><div class="nf-meta"><span>${tema.equipo ? `<span class="nf-equipo">${MARIPOSA} Equipo Nina</span>` : `Pregunta de <b>${t(autorDe(tema))}</b>`}</span><span>${fecha(tema.publicado_at || tema.creado)}</span></div></div>
   <div class="nf-cuerpo">${parrafos(tema.cuerpo)}</div>
-  <div class="nf-pie">${votar('tema', tema.id, tema.ayuda)}${denunciar('tema', tema.id, tema.equipo)}</div>
+  <div class="nf-pie">${votar('tema', tema.id, tema.ayuda)}<a class="nf-mini" style="text-decoration:none" href="https://wa.me/?text=${encodeURIComponent(`${tema.titulo} ${url || ''}`)}" target="_blank" rel="noopener">Compartir por WhatsApp</a>${denunciar('tema', tema.id, tema.equipo)}</div>
 </article>
 <section class="nf-resps"><h2>${respuestas.length ? plural(respuestas.length, 'respuesta', 'respuestas') : 'Aún no hay respuestas'}</h2>${resp || '<p class="nf-nota">¿Sabes algo que pueda ayudar? ¡Sé la primera en responder!</p>'}</section>
 ${responder}
+<a class="nf-fab" href="#responder">＋ Responder</a>
 <p class="nf-legal">Los consejos del foro son orientativos y no sustituyen la opinión de un profesional. Si tienes una irritación o un problema de piel que no mejora, consulta a tu dermatólogo. <a href="${BASE}/normas">Normas del foro</a>.</p>`,
     // Los temas de ejemplo no se marcan como conversaciones reales para Google.
     tema.ejemplo ? '' : `<script type="application/ld+json">${ldTxt}</script>`,

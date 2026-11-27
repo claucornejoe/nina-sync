@@ -117,7 +117,9 @@ export async function temasPublicados({ categoria = null, limite = 20, offset = 
   const palabras = String(buscar || '').trim().split(/\s+/).filter(Boolean).slice(0, 6)
     .map((w) => `%${w.replace(/[\\%_]/g, (c) => '\\' + c)}%`);
   const r = await pool.query(
-    `SELECT *, count(*) OVER() AS total FROM foro_temas t WHERE estado='publicado' AND ($1::text IS NULL OR categoria=$1)
+    `SELECT *, count(*) OVER() AS total,
+       EXISTS (SELECT 1 FROM foro_respuestas r WHERE r.tema_id=t.id AND r.estado='publicado' AND r.equipo) AS con_nina
+     FROM foro_temas t WHERE estado='publicado' AND ($1::text IS NULL OR categoria=$1)
        AND NOT EXISTS (SELECT 1 FROM unnest($4::text[]) w WHERE NOT (t.titulo ILIKE w OR t.cuerpo ILIKE w
          OR EXISTS (SELECT 1 FROM foro_respuestas r WHERE r.tema_id=t.id AND r.estado='publicado' AND r.cuerpo ILIKE w)))
      ORDER BY fijado DESC, actividad DESC LIMIT $2 OFFSET $3`,
@@ -144,6 +146,12 @@ export async function recontar(temaId) {
      FROM (SELECT count(*)::int AS n, max(creado) AS ultima FROM foro_respuestas WHERE tema_id=$1 AND estado='publicado') s WHERE t.id=$1`,
     [temaId],
   );
+}
+
+/** Temas publicados por categoría, para las tarjetas de categorías del foro. */
+export async function conteoCategorias() {
+  const r = await pool.query(`SELECT categoria, count(*)::int AS n FROM foro_temas WHERE estado='publicado' GROUP BY categoria`);
+  return Object.fromEntries(r.rows.map((x) => [x.categoria, x.n]));
 }
 
 // ---- Temas de ejemplo (para arrancar; se borran con un botón) ----

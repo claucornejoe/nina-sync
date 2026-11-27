@@ -112,11 +112,13 @@ export async function mountForum(app, auth) {
     const cat = rules.categoria(String(req.query.c || ''))?.id || null;
     const pagina = Math.max(1, Math.min(500, Number(req.query.p) || 1));
     const buscar = rules.limpiar(req.query.q, 80).replace(/\n/g, ' ');
-    const [{ temas, total }, ses] = await Promise.all([
+    const [{ temas, total }, ses, conteo, cifras] = await Promise.all([
       store.temasPublicados({ categoria: cat, limite: ajustes.porPagina, offset: (pagina - 1) * ajustes.porPagina, buscar }),
       sesionDe(req),
+      store.conteoCategorias(),
+      store.cifras(),
     ]);
-    liquid(res, tienda.portada({ temas, total, pagina, porPagina: ajustes.porPagina, catActual: cat, buscar, ...ses, ok: req.query.ok, ...extra }));
+    liquid(res, tienda.portada({ temas, total, pagina, porPagina: ajustes.porPagina, catActual: cat, buscar, conteo, cifras, ...ses, ok: req.query.ok, ...extra }));
   }
   async function verTema(req, res, id, extra = {}) {
     const tema = await store.tema(id);
