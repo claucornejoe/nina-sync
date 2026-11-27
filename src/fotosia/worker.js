@@ -4,7 +4,8 @@ import * as store from './store.js';
 import * as sh from './shopify.js';
 import { needsPhoto, isPlaceholder, buildPrompt, fileName, extFor, sizeOf, altOf } from './rules.js';
 import { findImage, download } from './source.js';
-import { generate } from './magnific.js';
+import { generate, magnificKey } from './magnific.js';
+import { slugify, currentName } from '../seo/filenames.js';
 import { publicBase } from '../seo/settings.js';
 import { shopInfo } from '../shopify.js';
 
@@ -62,13 +63,16 @@ export async function countPending() {
  */
 export async function processOne(p, { sourceUrl, force = false, autoUpload = false } = {}) {
   const ean = eanOf(p);
+  const prev = await store.get(p.id);
+  // La copia anterior que no llegó a la tienda ya no sirve (se repite la foto).
+  if (prev?.file_id && prev.status !== 'subida') await sh.deleteFile(prev.file_id).catch((e) => console.error('Fotos IA: no pude borrar la copia anterior:', e.message));
   await store.upsert({ productId: p.id, title: p.title, ean, handle: p.handle, beforeUrl: p.media[0]?.url || '', vendor: p.vendor });
   await store.set(p.id, { status: 'generando' });
   try {
     const src = sourceUrl
       ? { original: sourceUrl, link: sourceUrl, query: 'elegida a mano', ok: true, why: '' }
       : await findImage(p, ean, sizeOf(p));
-    if (src) await store.set(p.id, { source_url: src.original, source_page: src.link || '', source_query: src.query || '' });
+    if (src) await store.set(p.id, { source_url: src.original, source_page: src.link || '', source_query: src.query || '', source_title: src.title || '' });
     if (!src || (!src.ok && !force)) {
       // Dudosa: no se gastan créditos de Magnific. Va al listado para que Clau la busque a mano.
       await store.set(p.id, { status: 'dudosa', doubt: src?.why || 'No encontré ninguna foto' });
@@ -78,7 +82,14 @@ export async function processOne(p, { sourceUrl, force = false, autoUpload = fal
     const mime = /png|webp|jpe?g/.test(type) ? type.split(';')[0].replace('image/jpg', 'image/jpeg') : 'image/jpeg';
     if (!publicBase()) throw Object.assign(new Error('Falta PUBLIC_URL en Railway'), { fatal: true });
     const { url, model } = await generate(share(buf, mime), mime, buildPrompt(p));
-    await store.set(p.id, { result_url: url, model, filename: fileName(p, 'png'), status: 'lista', error: null, doubt: src.ok ? null : src.why });
+    await store.set(p.id, { result_url: url, model, filename: fileName(p, 'png'), doubt: src.ok ? null : src.why });
+    // Copia en Shopify al momento: el enlace de Magnific caduca y la foto dejaba de verse en el panel.
+    try {
+      const kept = await keep(p, url);
+      await store.set(p.id, { ...kept, status: 'lista', error: null });
+    } catch (e) {
+      await store.set(p.id, { status: 'lista', error: `Magnific la hizo, pero no pude guardar una copia (${e.message.slice(0, 200)}). Súbela ya o pulsa «Repetir»: su enlace caduca.` });
+    }
     if (autoUpload && src.ok) {
       await upload(p.id);
       return 'subida';
@@ -133,18 +144,100 @@ export async function redo(productId, sourceUrl, { force = false } = {}) {
   await processOne(p, { sourceUrl: sourceUrl || undefined, force });
 }
 
-/** Sube la foto aprobada a Shopify con el nombre del producto. */
+/**
+ * Descarga la foto de Magnific (sin clave y, si da 401/403, con la clave de la API; reintenta los fallos de red).
+ * Sus enlaces caducan: hay que bajarla en cuanto está hecha.
+ */
+async function fetchResult(url) {
+  let last = '';
+  for (let i = 0; i < 4; i++) {
+    const headers = { 'User-Agent': 'Mozilla/5.0 (NinaSync)', ...(i % 2 && magnificKey() ? { 'x-magnific-api-key': magnificKey() } : {}) };
+    try {
+      const res = await fetch(url, { headers, signal: AbortSignal.timeout(60_000) });
+      if (res.ok) return { buf: Buffer.from(await res.arrayBuffer()), type: (res.headers.get('content-type') || 'image/png').split(';')[0] };
+      last = `HTTP ${res.status}`;
+    } catch (e) {
+      last = e.message;
+    }
+    await new Promise((r) => setTimeout(r, 1500 * (i + 1)));
+  }
+  throw new Error(`No pude descargar la foto de Magnific (${last})`);
+}
+
+/** Guarda la foto nueva en Archivos de Shopify con el nombre del producto. */
+async function keep(p, url) {
+  const { buf, type } = await fetchResult(url);
+  const filename = fileName(p, extFor(type));
+  const f = await sh.keepFile(buf, filename, type, altOf(p));
+  return { file_id: f.id, kept_url: f.url || null, filename };
+}
+
+const uploading = new Set();
+
+/** Pone la foto aprobada en el producto (con el nombre del producto) y quita el logo. */
 export async function upload(productId) {
+  if (uploading.has(productId)) return; // doble clic
+  uploading.add(productId);
+  try {
+    const row = await store.get(productId);
+    if (row?.status === 'subida') return;
+    if (!row?.file_id && !row?.result_url) throw new Error('Esta foto aún no está lista');
+    const p = await sh.getProduct(productId);
+    if (!p) throw new Error('Producto no encontrado');
+    const placeholders = p.media.filter((m) => isPlaceholder(m.url)).map((m) => m.id);
+    if (row.file_id) {
+      await sh.attachFile(p.id, row.file_id, placeholders);
+      const url = row.kept_url || (await sh.fileUrl(row.file_id));
+      await store.set(productId, { status: 'subida', error: null, shopify_url: url || null, kept_url: url || null });
+      return;
+    }
+    // Fotos hechas antes de guardar copia: solo se pueden subir mientras el enlace de Magnific siga vivo.
+    let got;
+    try {
+      got = await fetchResult(row.result_url);
+    } catch {
+      throw new Error('El enlace de Magnific de esta foto ya caducó. Pulsa «Repetir» para hacerla de nuevo');
+    }
+    const name = fileName(p, extFor(got.type));
+    const resourceUrl = await sh.stage(got.buf, name, got.type);
+    await sh.attach(p.id, resourceUrl, altOf(p), placeholders);
+    await store.set(productId, { status: 'subida', filename: name, error: null });
+  } finally {
+    uploading.delete(productId);
+  }
+}
+
+/** Descarta una foto: si su copia no llegó a la tienda, se borra de Archivos. */
+export async function discard(productId) {
   const row = await store.get(productId);
-  if (!row?.result_url) throw new Error('Esta foto aún no está lista');
-  const p = await sh.getProduct(productId);
-  if (!p) throw new Error('Producto no encontrado');
-  const res = await fetch(row.result_url, { signal: AbortSignal.timeout(60_000) });
-  if (!res.ok) throw new Error(`No pude descargar la foto de Magnific (HTTP ${res.status}); pulsa «Repetir»`);
-  const type = (res.headers.get('content-type') || 'image/png').split(';')[0];
-  const buf = Buffer.from(await res.arrayBuffer());
-  const name = fileName(p, extFor(type));
-  const resourceUrl = await sh.stage(buf, name, type);
-  await sh.attach(p.id, resourceUrl, altOf(p), p.media.filter((m) => isPlaceholder(m.url)).map((m) => m.id));
-  await store.set(productId, { status: 'subida', filename: name, error: null });
+  if (row?.file_id && row.status !== 'subida') await sh.deleteFile(row.file_id).catch((e) => console.error('Fotos IA:', e.message));
+  await store.set(productId, { status: 'descartada', file_id: null, kept_url: null });
+}
+
+/**
+ * Repaso de las ya subidas (se hace al arrancar):
+ * - guarda la URL de Shopify para enseñarla en el panel (la de Magnific caduca);
+ * - corrige el texto alternativo si llevaba un tamaño falso («…Sg 100ml» en un estuche de 50);
+ *   el renombrado nocturno de fotos para Google cambia luego el nombre del archivo a juego.
+ */
+export async function repairUploaded() {
+  const rows = await store.uploadedWithoutUrl();
+  let fixed = 0;
+  for (const r of rows) {
+    try {
+      const p = await sh.getProduct(r.product_id);
+      const m = p?.media.find((x) => x.url && !isPlaceholder(x.url));
+      if (m) {
+        const alt = altOf(p);
+        if (m.alt && m.alt !== alt && slugify(m.alt).startsWith(slugify(p.title))) {
+          await sh.setAlt(m.id, alt);
+          fixed++;
+        }
+      }
+      await store.set(r.product_id, { shopify_url: m?.url || '', filename: m ? currentName(m.url).name : r.filename });
+    } catch (e) {
+      console.error('Fotos IA (repaso de subidas):', r.title, e.message);
+    }
+  }
+  if (rows.length) console.log(`Fotos IA: repasadas ${rows.length} fotos subidas · ${fixed} con el tamaño del nombre corregido`);
 }
