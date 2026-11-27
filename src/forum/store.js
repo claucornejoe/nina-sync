@@ -131,6 +131,12 @@ export async function respuestasPublicadas(temaId) {
   const r = await pool.query(`SELECT * FROM foro_respuestas WHERE tema_id=$1 AND estado='publicado' ORDER BY id`, [temaId]);
   return r.rows;
 }
+/** Respuestas de una clienta que aún esperan revisión: solo se le enseñan a ella, para que sepa que han llegado. */
+export async function respuestasPendientesDe(temaId, clienteId) {
+  if (!clienteId) return [];
+  const r = await pool.query(`SELECT * FROM foro_respuestas WHERE tema_id=$1 AND cliente_id=$2 AND estado='pendiente' ORDER BY id`, [temaId, String(clienteId)]);
+  return r.rows;
+}
 export async function crearRespuesta({ temaId, cuerpo, clienteId = null, autor, equipo = false, estado, motivo = null }) {
   const r = await pool.query(
     `INSERT INTO foro_respuestas (tema_id, cuerpo, cliente_id, autor, equipo, estado, motivo) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
