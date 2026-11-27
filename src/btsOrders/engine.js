@@ -73,8 +73,21 @@ export async function sendOrder(orderId) {
   }
 
   let res;
+  let payment = config.btsOrders.paymentMethod;
   try {
-    res = await postForm('setCreateOrder', createOrderParams(b, rate.id, config.btsOrders.paymentMethod));
+    try {
+      res = await postForm('setCreateOrder', createOrderParams(b, rate.id, payment));
+    } catch (e) {
+      // Monedero sin saldo (Clau, 2026-11-27): BTS no ha creado nada, así que se crea igualmente
+      // con pago por transferencia. Queda «Pendiente de pago» en BTS hasta que Clau transfiera.
+      if (payment !== 'wallet' || !config.btsOrders.fallbackTransfer || !isNoMoney(e.message)) throw e;
+      payment = 'banktransfer';
+      res = await postForm('setCreateOrder', createOrderParams(b, rate.id, payment));
+    }
+    if (!res?.order_number && payment === 'wallet' && config.btsOrders.fallbackTransfer && isNoMoney(JSON.stringify(res))) {
+      payment = 'banktransfer';
+      res = await postForm('setCreateOrder', createOrderParams(b, rate.id, payment));
+    }
   } catch (e) {
     // Si BTS respondió con un error claro, el pedido no se creó y se puede reintentar.
     // Si no hubo respuesta (corte de red), puede que sí se creara: queda en «revisar» y no se reintenta solo.
@@ -90,13 +103,16 @@ export async function sendOrder(orderId) {
   await store.markSent(orderId, {
     number: String(res.order_number),
     total: Number(res.order_total) || null,
-    status: res.order_status || null,
+    status: res.order_status || (payment === 'banktransfer' ? 'Pending payment' : null),
+    payment,
     company: rate.company_name || null,
     shippingCost: Number(rate.shipping_cost) || 0,
     detail: { lines: b.lines, other: b.other, address: b.address, expected_delivery_date: res.expected_delivery_date || null },
   });
-  return res;
+  return { ...res, payment };
 }
+
+const isNoMoney = (t) => /no_enough_money/i.test(String(t));
 
 const ERRORS = {
   no_enough_money: 'No hay saldo suficiente en el monedero de BTS. Recárgalo y vuelve a pulsar «Enviar a BTS».',

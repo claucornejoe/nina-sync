@@ -59,3 +59,14 @@ test('pedido BTS: teléfonos, enlaces de seguimiento y mensajes de error claros'
   assert.equal(trackingUrl('Otra', '1'), null);
   assert.match(explain('BTS setCreateOrder respondió 400: {"error":"no_enough_money"}'), /saldo/);
 });
+
+test('pedido BTS: un pedido pagado por transferencia se ve como pendiente de pago', async () => {
+  const { ordersPage } = await import('../src/btsOrders/views.js');
+  const html = ordersPage({
+    orders: [{ order_id: 'gid://shopify/Order/1', name: 'NB1001', status: 'enviado', payment: 'banktransfer', bts_order_number: '743799256961', bts_total: 21.5, detail: {} }],
+    counts: { enviado: 1 }, last: {}, flash: null, dryRun: false, paymentMethod: 'wallet',
+  });
+  assert.match(html, /falta pagar/);
+  assert.match(html, /Pendiente de transferencia/);
+  assert.match(html, /743799256961/);
+});

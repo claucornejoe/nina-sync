@@ -53,7 +53,9 @@ export async function mountBtsOrders(app, auth) {
     const id = gid(req.params.id);
     try {
       const r = await sendOrder(id);
-      flash = { ok: true, text: `Enviado a BTS: pedido ${r.order_number} (${r.order_total} €).` };
+      flash = r.payment === 'banktransfer'
+        ? { ok: true, text: `Creado en BTS: pedido ${r.order_number} (${r.order_total} €). El monedero no tenía saldo, así que queda pendiente de transferencia: BTS no lo envía hasta recibir el pago.` }
+        : { ok: true, text: `Enviado a BTS: pedido ${r.order_number} (${r.order_total} €), pagado con el monedero.` };
     } catch (e) {
       flash = { ok: false, text: e.message };
     }
