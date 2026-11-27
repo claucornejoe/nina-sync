@@ -117,3 +117,10 @@ tiene la 2.1 usa la 2 y lo dice) con el prompt de Clau (fondo blanco para Google
 - El logo se desvincula del producto (el archivo compartido no se borra). Metacampo `nina_seo.foto = ia-magnific`.
 Opcionales: `MAGNIFIC_MODEL` (fija el modelo), `MAGNIFIC_RESOLUTION` (`1K`), `MAGNIFIC_PROMPT` (`{producto}` = nombre y
 tamaño), `FOTOS_IA_A_LA_VEZ` (3). Por la API cada foto gasta créditos de Magnific.
+
+## Correo de bienvenida
+
+Cada 15 minutos Nina Sync busca clientas recién suscritas al correo (sin pedidos) y les envía el correo de bienvenida desde `avisos@ninabeauty.es`: cupón BIENVENIDA3 (3 € desde 30 €), Nina Blog, Foro Nina y NinaCash. La primera vez solo apunta a las suscriptoras que ya había, sin escribirles. Vista previa en `/bienvenida`.
+
+- `BIENVENIDA_ACTIVO=false` lo apaga.
+- `BIENVENIDA_CRON` cambia la frecuencia (por defecto `*/15 * * * *`).

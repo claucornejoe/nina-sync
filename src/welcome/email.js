@@ -22,6 +22,7 @@ const utm = (url, content) => {
  * @param {string} [p.code]       código de bienvenida (BIENVENIDA3)
  * @param {number} [p.amount]     euros de descuento (3)
  * @param {number} [p.minimum]    pedido mínimo en euros (30)
+ * @param {string} [p.unsubscribeUrl] enlace de baja de Shopify (marketingUnsubscribeUrl)
  */
 export function renderWelcomeEmail(p) {
   const code = p.code || 'BIENVENIDA3';
@@ -107,7 +108,7 @@ export function renderWelcomeEmail(p) {
   </td></tr>
   <tr><td align="center" style="padding:14px 24px 18px;font-family:${SANS};font-size:10px;line-height:1.6;color:${C.gris}">
    Recibes este correo porque te has suscrito en ninabeauty.es. Nina Beauty es una marca de DEVSECUP SPA.
-   Si no quieres recibir más correos, responde con «baja» o cambia tus preferencias en tu cuenta.
+   ${p.unsubscribeUrl ? `Si no quieres recibir más correos, <a href="${esc(p.unsubscribeUrl)}" style="color:${C.gris}">date de baja aquí</a>.` : 'Si no quieres recibir más correos, responde con «baja».'}
   </td></tr>
  </table>
 </td></tr></table></body></html>`;
@@ -126,7 +127,7 @@ Nina es más que una tienda:
 NinaCash: con cada compra ganas saldo para la siguiente. ${ninacash}
 
 Nina Beauty, una marca de DEVSECUP SPA · www.ninabeauty.es
-Si no quieres recibir más correos, responde con «baja».`;
+${p.unsubscribeUrl ? `Darte de baja: ${p.unsubscribeUrl}` : 'Si no quieres recibir más correos, responde con «baja».'}`;
 
   return { subject, html, text };
 }

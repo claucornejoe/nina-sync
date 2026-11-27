@@ -12,6 +12,7 @@ import { mountSeo } from './seo/routes.js';
 import { mountLoyalty } from './loyalty/routes.js';
 import { mountStockAlerts } from './stockAlerts/routes.js';
 import { mountBtsOrders } from './btsOrders/routes.js';
+import { mountWelcome } from './welcome/index.js';
 import { mountForum } from './forum/routes.js';
 import { mountCompetition } from './competition/routes.js';
 import { mountFotosIa } from './fotosia/routes.js';
@@ -96,6 +97,7 @@ await mountCompetition(app, auth); // Tus precios frente a Google Shopping Espa�
 await mountFotosIa(app, auth); // Fotos con IA (Nano Banana en Magnific) para los productos que solo tienen el logo
 await mountAudioBlog(app, auth); // «Escuchar artículo» en Nina Blog: audio de ElevenLabs con la palabra resaltada
 await mountBtsOrders(app, auth); // Pedidos pagados → BTS con el botón «Enviar a BTS» y seguimiento de vuelta a Shopify
+await mountWelcome(app, auth); // Correo de bienvenida a cada nueva suscriptora (BIENVENIDA3, blog, foro)
 app.get('/recien-llegados', auth, async (_req, res) => res.send(views.newArrivalsPage(await db.activeNewArrivals())));
 
 // ---- Automática cada 4 horas ----
