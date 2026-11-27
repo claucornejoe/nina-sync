@@ -22,6 +22,12 @@
       var u = new URL(a.href, location.href);
       if (!u.searchParams.has(P)) { u.searchParams.set(P, 'last'); a.href = u.toString(); }
     }, true);
+    {%- if template.name == 'index' %}
+    /* Portada: el carrusel de ofertas siempre empieza en la primera tarjeta, sin cortarla */
+    var alInicio = function () { document.querySelectorAll('[data-nh-track]').forEach(function (t) { t.scrollLeft = 0; }); };
+    window.addEventListener('pageshow', function () { requestAnimationFrame(alInicio); });
+    if (document.readyState !== 'loading') alInicio(); else document.addEventListener('DOMContentLoaded', alInicio);
+    {%- endif %}
     {%- if template.name == 'search' %}
     if (!new URLSearchParams(location.search).has(P) && new URLSearchParams(location.search).get('q')) {
       var u = new URL(location.href); u.searchParams.set(P, 'last'); location.replace(u.toString());

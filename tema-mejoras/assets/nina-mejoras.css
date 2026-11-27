@@ -104,3 +104,9 @@ html body .nbc-hero--solo .nbc-hero__sr{position:absolute !important;width:1px;h
 .nbc-sep{grid-column:1/-1;display:flex;align-items:center;gap:12px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#8A7A80;padding:6px 0}
 .nbc-sep::before,.nbc-sep::after{content:"";flex:1;height:1px;background:#EADDE1}
 @media screen and (max-width:749px){ main media-gallery{position:relative} }
+
+/* 2026-11-27 (Clau): sin el botón «VER MÁS» de arriba en «Lo que más gusta»; queda el de abajo.
+   La primera tarjeta ya no queda cortada a la izquierda. */
+.nh-top .nh-top__more{display:none !important}
+.nh-top .nh-top__head{margin-bottom:14px}
+.nh-top .nh-top__track{scroll-padding-inline:2px}
