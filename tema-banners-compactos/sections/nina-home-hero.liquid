@@ -15,6 +15,15 @@
         endfor
       -%}
       <div class="nh-car" data-nh-car data-seg="{{ s.segundos | default: 5 }}" aria-roledescription="carrusel" aria-label="Novedades">
+        {%- if s.solo_imagen and s.image != blank or s.solo_imagen and s.image_movil != blank -%}
+        {%- assign hero_img = s.image | default: s.image_movil -%}
+        <a class="nh-hero__main nh-slide is-on nh-solo" data-slide="0" href="{{ section.settings.link | default: '/collections/ideas-para-navidad' }}" aria-label="{{ s.title | escape }}">
+          <picture>
+            {%- if s.image_movil != blank -%}<source media="(max-width: 749px)" srcset="{{ s.image_movil | image_url: width: 800 }} 800w, {{ s.image_movil | image_url: width: 1200 }} 1200w" sizes="100vw">{%- endif -%}
+            {{ hero_img | image_url: width: 2000 | image_tag: class: 'nh-solo__img', loading: 'eager', fetchpriority: 'high', alt: s.title, widths: '800,1200,1600,2000', sizes: '(min-width: 900px) 50vw, 100vw' }}
+          </picture>
+        </a>
+        {%- else -%}
         <a class="nh-hero__main nh-slide is-on{% if s.hero_foto != blank or s.hero_foto_movil != blank %} nbf-on nbf--{{ s.hero_velo }}{% endif %}" data-slide="0" href="{{ section.settings.link | default: '/collections/ideas-para-navidad' }}">
           {%- render 'nina-foto-fondo', foto: s.hero_foto, foto_movil: s.hero_foto_movil, eager: true -%}
           <div class="nh-hero__txt">
@@ -40,11 +49,21 @@
             {%- endif -%}
           </div>
         </a>
+        {%- endif -%}
         {%- assign i_slide = 0 -%}
         {%- for block in section.blocks -%}
           {%- if block.type == 'diapositiva' -%}
           {%- assign i_slide = i_slide | plus: 1 -%}
           {%- assign bs = block.settings -%}
+          {%- if bs.solo_imagen and bs.image != blank or bs.solo_imagen and bs.foto != blank or bs.solo_imagen and bs.foto_movil != blank -%}
+          {%- assign d_img = bs.image | default: bs.foto | default: bs.foto_movil -%}
+          <a class="nh-hero__main nh-slide nh-solo" data-slide="{{ i_slide }}" href="{{ bs.link | default: '#' }}" aria-label="{{ bs.title | escape }}" aria-hidden="true" tabindex="-1" {{ block.shopify_attributes }}>
+            <picture>
+              {%- if bs.foto_movil != blank -%}<source media="(max-width: 749px)" srcset="{{ bs.foto_movil | image_url: width: 800 }} 800w, {{ bs.foto_movil | image_url: width: 1200 }} 1200w" sizes="100vw">{%- endif -%}
+              {{ d_img | image_url: width: 2000 | image_tag: class: 'nh-solo__img', loading: 'lazy', alt: bs.title, widths: '800,1200,1600,2000', sizes: '(min-width: 900px) 50vw, 100vw' }}
+            </picture>
+          </a>
+          {%- else -%}
           <a class="nh-hero__main nh-slide{% if bs.foto != blank or bs.foto_movil != blank %} nbf-on nbf--{{ bs.velo }}{% endif %}" data-slide="{{ i_slide }}" href="{{ bs.link | default: '#' }}" style="{% if bs.fondo != blank %}background:{{ bs.fondo }};{% endif %}" aria-hidden="true" tabindex="-1" {{ block.shopify_attributes }}>
             {%- render 'nina-foto-fondo', foto: bs.foto, foto_movil: bs.foto_movil -%}
             <div class="nh-hero__txt">
@@ -57,6 +76,7 @@
               {%- if bs.image != blank -%}{{ bs.image | image_url: width: 1200 | image_tag: class: 'nh-cover', loading: 'lazy', alt: bs.title, sizes: '(min-width: 900px) 30vw, 100vw' }}{%- endif -%}
             </div>
           </a>
+          {%- endif -%}
           {%- endif -%}
         {%- endfor -%}
         {%- if n_slides > 1 -%}
@@ -161,6 +181,7 @@
   "class": "nina-home-hero",
   "settings": [
     { "type": "header", "content": "Imagen principal" },
+    { "type": "checkbox", "id": "solo_imagen", "label": "Solo imagen: quitar el recuadro de texto y botones", "default": true, "info": "Si subes una foto de campaña, la foto ocupa todo el banner y al pulsarla lleva al enlace. Medidas: 1200 × 420 px (móvil 720 × 400). Desmárcalo para ver el título, el texto y los botones." },
     { "type": "image_picker", "id": "image", "label": "Foto de campaña (ordenador)", "info": "Va a la derecha del banner. Recomendado 400 × 480 px. Sin foto se ven los frascos dibujados." },
     { "type": "image_picker", "id": "image_movil", "label": "Foto de campaña (móvil)", "info": "Opcional. En el móvil va arriba, en una franja baja: 720 × 170 px. Si la dejas vacía se usa la de ordenador." },
     { "type": "text", "id": "kicker", "label": "Antetítulo", "default": "Ideas para Navidad" },
@@ -211,6 +232,7 @@
       "name": "Banner del carrusel",
       "settings": [
         { "type": "paragraph", "content": "Banner extra que va pasando en el hueco del banner principal." },
+        { "type": "checkbox", "id": "solo_imagen", "label": "Solo imagen: quitar el recuadro de texto y botones", "default": true, "info": "Si subes una foto, ocupa todo el banner y al pulsarla lleva al enlace. Desmárcalo para ver el título, el texto y el botón." },
         { "type": "image_picker", "id": "foto", "label": "Foto de fondo (ordenador)", "info": "Tamaño recomendado 1200 × 420 px. Deja lo importante en el centro." },
         { "type": "image_picker", "id": "foto_movil", "label": "Foto de fondo (móvil)", "info": "Opcional. Recomendado 720 × 400 px. Si la dejas vacía se usa la de ordenador." },
         { "type": "select", "id": "velo", "label": "Para que se lea el texto sobre la foto", "options": [{"value": "ninguno", "label": "Sin velo (foto tal cual)"}, {"value": "claro", "label": "Velo blanco y texto oscuro"}, {"value": "oscuro", "label": "Velo negro y texto blanco"}], "default": "ninguno" },

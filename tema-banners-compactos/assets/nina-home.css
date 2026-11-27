@@ -520,3 +520,11 @@
   .nh-nc__levels span{font-size:10px}
   .nh-nc__levels .nh-nc__mar{width:22px;height:22px}
 }
+
+/* 2026-11-27 · Banner «solo imagen» (Clau: quitar el recuadro de texto cuando sube una imagen) */
+.nh-hero__main.nh-solo{display:block;position:relative;padding:0;background:var(--nh-petalo)}
+.nh-hero__main.nh-solo picture{position:absolute;inset:0;display:block}
+.nh-hero__main.nh-solo .nh-solo__img{position:absolute;inset:0;width:100%;height:100%;max-width:none;object-fit:cover;object-position:center;display:block}
+@container (max-width: 900px){
+  .nh-hero__main.nh-solo{aspect-ratio:720/400;min-height:0}
+}
