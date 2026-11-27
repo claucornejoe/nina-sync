@@ -6,8 +6,8 @@
 //    Con NINACASH_ABONO=tras-devolucion se queda «pendiente» hasta 14 días después de la entrega.
 //  - Si el pedido se cancela o se devuelve, se ajusta: si aún estaba pendiente se recalcula; si ya se había
 //    sumado, se resta la diferencia del saldo.
-//  - El nivel sale de lo comprado en los últimos 12 meses y se guarda como etiqueta (nivel-glam…) y en
-//    metacampos de la clienta (nina.nivel, nina.gasto_12m, nina.ninacash, nina.ninacash_pendiente) para «Mi cuenta».
+//  - El nivel sale del NinaCash GANADO en los últimos 12 meses (gastarlo no baja de nivel) y se guarda como etiqueta (nivel-glam…) y en
+//    metacampos de la clienta (nina.nivel, nina.ninacash_ganado, nina.nivel_siguiente, nina.gasto_12m, nina.ninacash, nina.ninacash_pendiente) para «Mi cuenta».
 //  - Glam: 1 código de envío gratis al mes (nina.cupones). Butterfly: envío gratis automático y obsequio mensual
 //    (el primer pedido del mes lleva la etiqueta «obsequio-butterfly»).
 import { config } from '../config.js';
@@ -46,7 +46,7 @@ export async function processOrder(orderId, origin = 'aviso') {
   let levelAt = prev?.level_at;
   let rate = prev ? Number(prev.rate) : null;
   if (!prev) {
-    const lvl = rules.levelFor(await store.spent12m(customerId, order.id));
+    const lvl = rules.levelFor(await store.earned12m(customerId, order.id));
     levelAt = lvl.n;
     rate = lvl.rate;
   }
@@ -81,7 +81,7 @@ export async function processOrder(orderId, origin = 'aviso') {
 
   // Obsequio Butterfly: el primer pedido pagado del mes de una clienta Butterfly.
   let gift = prev?.gift || false;
-  const levelNow = rules.levelFor(await store.spent12m(customerId, order.id) + (counts ? amount : 0)).n;
+  const levelNow = rules.levelFor(await store.earned12m(customerId, order.id) + (counts ? earned : 0)).n;
   if (!prev && counts && levelNow === 4 && !dry) {
     const month = rules.monthKey(new Date(order.processedAt || order.createdAt));
     if (!(await store.getMonthly(customerId, month, 'obsequio'))) {
@@ -115,7 +115,8 @@ export async function processOrder(orderId, origin = 'aviso') {
 export async function refreshCustomer(customerId, name = null) {
   const dry = !active();
   const spent = rules.round2(await store.spent12m(customerId));
-  const lvl = rules.levelFor(spent);
+  const earned = rules.round2(await store.earned12m(customerId));
+  const lvl = rules.levelFor(earned);
   const pending = rules.round2(await store.pendingFor(customerId));
   const before = await store.getCustomer(customerId);
   const cust = await sh.getCustomer(customerId);
@@ -129,16 +130,16 @@ export async function refreshCustomer(customerId, name = null) {
     if (!(cust.tags || []).includes(want)) await sh.addTags(customerId, [want]);
   }
   if (before && before.level !== lvl.n) {
-    await store.log({ customerId, kind: 'nivel', note: `${rules.LEVELS[before.level - 1].name} → ${lvl.name} (${spent.toFixed(2)} € en 12 meses)`, dryRun: dry });
+    await store.log({ customerId, kind: 'nivel', note: `${rules.LEVELS[before.level - 1].name} → ${lvl.name} (${rules.fmtUnits(rules.toUnits(earned))} ganados en 12 meses)`, dryRun: dry });
   }
-  await store.saveCustomer({ customer_id: customerId, name: name || cust.displayName, level: lvl.n, spent_12m: spent, balance, pending });
+  await store.saveCustomer({ customer_id: customerId, name: name || cust.displayName, level: lvl.n, spent_12m: spent, earned_12m: earned, balance, pending });
 
   if (lvl.n === 3 && !dry) await ensureGlamShipping(customerId);
-  if (!dry) await writeCustomerMetafields(customerId, { level: lvl.n, spent, balance, pending });
-  return { level: lvl.n, spent, balance, pending };
+  if (!dry) await writeCustomerMetafields(customerId, { level: lvl.n, earned, spent, balance, pending });
+  return { level: lvl.n, earned, spent, balance, pending };
 }
 
-async function writeCustomerMetafields(customerId, { level, spent, balance, pending }) {
+async function writeCustomerMetafields(customerId, { level, earned, spent, balance, pending }) {
   const codes = (await store.activeMonthlyCodes(customerId)).map((m) => ({
     codigo: m.code,
     texto: `Envío gratis de tu nivel Glam (1 al mes, pedidos de menos de ${config.rules.freeShippingFrom} €)`,
@@ -146,6 +147,8 @@ async function writeCustomerMetafields(customerId, { level, spent, balance, pend
   }));
   await sh.setMetafields([
     { ownerId: customerId, key: 'nivel', type: 'number_integer', value: level },
+    { ownerId: customerId, key: 'ninacash_ganado', type: 'number_integer', value: String(rules.toUnits(earned)) },
+    { ownerId: customerId, key: 'nivel_siguiente', type: 'json', value: JSON.stringify(rules.nextLevel(earned) || {}) },
     { ownerId: customerId, key: 'gasto_12m', type: 'number_decimal', value: spent.toFixed(2) },
     { ownerId: customerId, key: 'ninacash', type: 'number_decimal', value: balance.toFixed(2) },
     { ownerId: customerId, key: 'ninacash_pendiente', type: 'number_decimal', value: pending.toFixed(2) },
@@ -181,6 +184,9 @@ export async function setup() {
   const def = (key, name, type, description) => ({ key, name, type, description, ownerType: 'CUSTOMER' });
   await sh.ensureDefinitions([
     def('nivel', 'Nivel Nina', 'number_integer', '1 Sparkle, 2 Glow, 3 Glam, 4 Butterfly (lo pone Nina Sync)'),
+    def('ninacash_ganado', 'NinaCash ganado 12 meses', 'number_integer', 'NinaCash ganados en 12 meses (1 NinaCash = 1 céntimo): suben el nivel (lo pone Nina Sync)'),
+    def('nivel_siguiente', 'Siguiente nivel Nina', 'json', '{nivel, nombre, falta}: NinaCash que faltan para el siguiente nivel ({} si es Butterfly)'),
+    { key: 'niveles', name: 'Niveles Nina', type: 'json', ownerType: 'SHOP', description: '[{nivel, nombre, ninacash, compras, porcentaje}] NinaCash (1 = 1 céntimo) para cada nivel' },
     def('gasto_12m', 'Compras últimos 12 meses', 'number_decimal', 'Euros comprados en los últimos 12 meses (lo pone Nina Sync)'),
     def('ninacash', 'Saldo NinaCash', 'number_decimal', 'Saldo disponible en euros (crédito en tienda)'),
     def('ninacash_pendiente', 'NinaCash pendiente', 'number_decimal', 'Se suma 14 días después de la entrega'),
@@ -188,8 +194,13 @@ export async function setup() {
     def('cupones', 'Cupones personales', 'json', 'Códigos personales activos [{codigo, texto, caduca}]'),
     { key: 'cupones_semana', name: 'Cupones de la semana por nivel', type: 'json', ownerType: 'SHOP', description: '[{codigo, texto, caduca, niveles:[1-4], nivel_min}]' },
   ]);
+  // Umbrales para los textos de la tienda («Acumula 5,25 € de NinaCash para llegar a Glam»).
+  await sh.setMetafields([{ ownerId: await sh.shopId(), key: 'niveles', type: 'json', value: JSON.stringify(levelsTable()) }]);
   state.setup = 'listo';
 }
+
+/** [{nivel, nombre, ninacash, compras, porcentaje}] para el tema y el panel. */
+export const levelsTable = () => rules.LEVELS.map((l) => ({ nivel: l.n, nombre: l.name, ninacash: l.from, compras: rules.salesFor(l.from), porcentaje: l.rate }));
 
 /** Repaso diario: suma lo que ya toca, revisa devoluciones, baja o sube niveles y pone Sparkle a las cuentas nuevas. */
 export async function dailyRun({ backfill = false } = {}) {

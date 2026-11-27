@@ -53,6 +53,8 @@ export async function migrate() {
       creado TIMESTAMPTZ NOT NULL DEFAULT now(),
       PRIMARY KEY (tipo, objeto_id, cliente_id)
     );
+    ALTER TABLE foro_temas ADD COLUMN IF NOT EXISTS ejemplo BOOLEAN NOT NULL DEFAULT false;
+    ALTER TABLE foro_respuestas ADD COLUMN IF NOT EXISTS ejemplo BOOLEAN NOT NULL DEFAULT false;
   `);
 }
 
@@ -110,16 +112,29 @@ export async function tema(id) {
   const r = await pool.query('SELECT * FROM foro_temas WHERE id=$1', [id]);
   return r.rows[0] || null;
 }
-export async function temasPublicados({ categoria = null, limite = 20, offset = 0 } = {}) {
+/** `buscar`: palabras que deben salir en el título o el mensaje del tema (o en sus respuestas publicadas). */
+export async function temasPublicados({ categoria = null, limite = 20, offset = 0, buscar = '' } = {}) {
+  const palabras = String(buscar || '').trim().split(/\s+/).filter(Boolean).slice(0, 6)
+    .map((w) => `%${w.replace(/[\\%_]/g, (c) => '\\' + c)}%`);
   const r = await pool.query(
-    `SELECT *, count(*) OVER() AS total FROM foro_temas WHERE estado='publicado' AND ($1::text IS NULL OR categoria=$1)
+    `SELECT *, count(*) OVER() AS total,
+       EXISTS (SELECT 1 FROM foro_respuestas r WHERE r.tema_id=t.id AND r.estado='publicado' AND r.equipo) AS con_nina
+     FROM foro_temas t WHERE estado='publicado' AND ($1::text IS NULL OR categoria=$1)
+       AND NOT EXISTS (SELECT 1 FROM unnest($4::text[]) w WHERE NOT (t.titulo ILIKE w OR t.cuerpo ILIKE w
+         OR EXISTS (SELECT 1 FROM foro_respuestas r WHERE r.tema_id=t.id AND r.estado='publicado' AND r.cuerpo ILIKE w)))
      ORDER BY fijado DESC, actividad DESC LIMIT $2 OFFSET $3`,
-    [categoria, limite, offset],
+    [categoria, limite, offset, palabras],
   );
   return { temas: r.rows, total: Number(r.rows[0]?.total || 0) };
 }
 export async function respuestasPublicadas(temaId) {
   const r = await pool.query(`SELECT * FROM foro_respuestas WHERE tema_id=$1 AND estado='publicado' ORDER BY id`, [temaId]);
+  return r.rows;
+}
+/** Respuestas de una clienta que aún esperan revisión: solo se le enseñan a ella, para que sepa que han llegado. */
+export async function respuestasPendientesDe(temaId, clienteId) {
+  if (!clienteId) return [];
+  const r = await pool.query(`SELECT * FROM foro_respuestas WHERE tema_id=$1 AND cliente_id=$2 AND estado='pendiente' ORDER BY id`, [temaId, String(clienteId)]);
   return r.rows;
 }
 export async function crearRespuesta({ temaId, cuerpo, clienteId = null, autor, equipo = false, estado, motivo = null }) {
@@ -137,6 +152,45 @@ export async function recontar(temaId) {
      FROM (SELECT count(*)::int AS n, max(creado) AS ultima FROM foro_respuestas WHERE tema_id=$1 AND estado='publicado') s WHERE t.id=$1`,
     [temaId],
   );
+}
+
+/** Temas publicados por categoría, para las tarjetas de categorías del foro. */
+export async function conteoCategorias() {
+  const r = await pool.query(`SELECT categoria, count(*)::int AS n FROM foro_temas WHERE estado='publicado' GROUP BY categoria`);
+  return Object.fromEntries(r.rows.map((x) => [x.categoria, x.n]));
+}
+
+// ---- Temas de ejemplo (para arrancar; se borran con un botón) ----
+export async function hayEjemplos() {
+  const r = await pool.query('SELECT count(*)::int AS n FROM foro_temas WHERE ejemplo');
+  return r.rows[0].n;
+}
+/** Publica los temas de ejemplo con sus respuestas, escalonados en el tiempo. No hace nada si ya existen. */
+export async function crearEjemplos(lista) {
+  if (await hayEjemplos()) return 0;
+  for (const e of lista) {
+    const t = await pool.query(
+      `INSERT INTO foro_temas (categoria, titulo, cuerpo, autor, estado, ejemplo, creado, publicado_at, actividad)
+       VALUES ($1,$2,$3,$4,'publicado',true, now() - make_interval(hours => $5), now() - make_interval(hours => $5), now() - make_interval(hours => $5)) RETURNING id`,
+      [e.categoria, e.titulo, e.cuerpo, e.autor, e.hace],
+    );
+    for (const r of e.respuestas || []) {
+      await pool.query(
+        `INSERT INTO foro_respuestas (tema_id, cuerpo, autor, equipo, estado, ejemplo, creado)
+         VALUES ($1,$2,$3,$4,'publicado',true, now() - make_interval(hours => $5))`,
+        [t.rows[0].id, r.cuerpo, r.equipo ? 'Equipo Nina' : r.autor, !!r.equipo, Math.max(0, e.hace - (r.despues || 1))],
+      );
+    }
+    await recontar(t.rows[0].id);
+  }
+  return lista.length;
+}
+/** Borra los temas de ejemplo (con todas sus respuestas) y las respuestas de ejemplo sueltas. */
+export async function borrarEjemplos() {
+  const r = await pool.query('DELETE FROM foro_temas WHERE ejemplo RETURNING id');
+  const sueltas = await pool.query('DELETE FROM foro_respuestas WHERE ejemplo RETURNING tema_id');
+  for (const x of sueltas.rows) await recontar(x.tema_id);
+  return r.rowCount;
 }
 
 // ---- Moderación ----

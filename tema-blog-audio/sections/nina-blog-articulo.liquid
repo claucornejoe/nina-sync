@@ -1,0 +1,226 @@
+{%- comment -%} Nina Blog · página de artículo: cabecera centrada, «Escuchar artículo», foto, texto cómodo de leer, índice, compartir, relacionados y comentarios (2026-11-26) {%- endcomment -%}
+{{ 'nina-blog.css' | asset_url | stylesheet_tag }}
+{{ 'nina-blog-articulo.css' | asset_url | stylesheet_tag }}
+{%- liquid
+  assign ocultas = section.settings.ocultas | downcase | remove: ' '
+  assign cat = ''
+  for t in article.tags
+    assign tl = t | downcase | strip
+    unless ocultas contains tl
+      assign cat = t
+      break
+    endunless
+  endfor
+  assign palabras = article.content | strip_html | split: ' ' | size
+  assign minutos = palabras | divided_by: 200
+  if minutos < 1
+    assign minutos = 1
+  endif
+  assign meses = 'enero,febrero,marzo,abril,mayo,junio,julio,agosto,septiembre,octubre,noviembre,diciembre' | split: ','
+  assign fecha_a = article.published_at | default: article.created_at
+  assign mi = fecha_a | date: '%-m' | minus: 1
+  assign anio = fecha_a | date: '%Y'
+  assign fecha = fecha_a | date: '%-d' | append: ' de ' | append: meses[mi] | append: ' de ' | append: anio
+  assign url_abs = shop.url | append: article.url
+  assign firma = section.settings.firma | default: article.author
+-%}
+<style>.nba-prod__img { background-image: url({{ 'nina-mariposa-rosa.svg' | asset_url }}); }</style>
+<div class="nba-progreso" aria-hidden="true"></div>
+<div class="nba-wrap">
+  <nav class="nba-migas" aria-label="Estás aquí">
+    <a href="{{ routes.root_url }}">Inicio</a><span>›</span><a href="{{ blog.url }}">{{ blog.title }}</a>
+    {%- if cat != blank -%}<span>›</span><a href="{{ blog.url }}/tagged/{{ cat | handle }}">{{ cat }}</a>{%- endif -%}
+  </nav>
+
+  <article>
+    <header class="nba-cab">
+      {%- if cat != blank -%}<a class="nbl-chip" href="{{ blog.url }}/tagged/{{ cat | handle }}">{{ cat }}</a>{%- endif -%}
+      <h1 class="nba-titulo">{{ article.title }}</h1>
+      {%- if article.excerpt != blank -%}<p class="nba-entradilla">{{ article.excerpt | strip_html }}</p>{%- endif -%}
+      <div class="nba-firma">
+        <span class="nba-firma__avatar"><img src="{{ 'nina-mariposa-rosa.svg' | asset_url }}" alt="" width="18" height="24"></span>
+        <span><strong>{{ firma }}</strong> · {{ fecha }} · {{ minutos }} min de lectura</span>
+      </div>
+      {%- render 'nina-blog-audio', article: article -%}
+    </header>
+
+    {%- if article.image -%}
+      <div class="nba-foto">
+        <div class="nbl-img">
+          {{- article.image | image_url: width: 2000 | image_tag: widths: '600, 900, 1200, 1600, 2000', sizes: '(min-width: 1100px) 1040px, 100vw', loading: 'eager', fetchpriority: 'high', alt: article.image.alt | default: article.title -}}
+        </div>
+      </div>
+    {%- endif -%}
+
+    <div class="nba-cuerpo" data-nba-cuerpo data-indice="{{ section.settings.indice }}">
+      {{ article.content }}
+    </div>
+
+    <div class="nba-pie">
+      <div class="nba-tags">
+        {%- for t in article.tags -%}
+          {%- assign tl = t | downcase | strip -%}
+          {%- unless ocultas contains tl -%}<a class="nbl-chip" href="{{ blog.url }}/tagged/{{ t | handle }}">{{ t }}</a>{%- endunless -%}
+        {%- endfor -%}
+      </div>
+      <div class="nba-compartir">
+        <span>Compartir</span>
+        <a href="https://wa.me/?text={{ article.title | append: ' ' | append: url_abs | url_encode }}" target="_blank" rel="noopener" aria-label="Compartir por WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.8-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.7.3-.2.3-.9.9-.9 2.2s1 2.5 1.1 2.7c.1.2 1.9 2.9 4.6 4 1.7.7 2.4.8 3.2.7.5-.1 1.5-.6 1.8-1.2.2-.6.2-1.1.1-1.2l-.4-.3Z"/></svg></a>
+        <a href="https://www.pinterest.com/pin/create/button/?url={{ url_abs | url_encode }}&description={{ article.title | url_encode }}{% if article.image %}&media={{ article.image | image_url: width: 1200 | prepend: 'https:' | url_encode }}{% endif %}" target="_blank" rel="noopener" aria-label="Guardar en Pinterest"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-3.6 19.3c-.1-.8-.2-2 0-2.9l1.2-5s-.3-.6-.3-1.5c0-1.4.8-2.4 1.8-2.4.9 0 1.3.6 1.3 1.4 0 .9-.5 2.1-.8 3.3-.2 1 .5 1.8 1.5 1.8 1.8 0 3.1-1.9 3.1-4.6 0-2.4-1.7-4.1-4.2-4.1-2.9 0-4.5 2.1-4.5 4.4 0 .9.3 1.8.8 2.3l.1.4-.3 1.1c0 .2-.2.2-.4.1-1.3-.6-2.1-2.5-2.1-4 0-3.3 2.4-6.3 6.9-6.3 3.6 0 6.4 2.6 6.4 6 0 3.6-2.3 6.5-5.4 6.5-1.1 0-2.1-.6-2.4-1.2l-.7 2.5c-.2.9-.9 2.1-1.3 2.8A10 10 0 1 0 12 2Z"/></svg></a>
+        <a href="https://www.facebook.com/sharer/sharer.php?u={{ url_abs | url_encode }}" target="_blank" rel="noopener" aria-label="Compartir en Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 22v-8h2.7l.4-3.2h-3.1V8.8c0-.9.3-1.5 1.6-1.5h1.6V4.4c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.4-4 4.1v2.4H7.6V14h2.7v8h3.2Z"/></svg></a>
+        <button type="button" data-nba-copiar="{{ url_abs }}" aria-label="Copiar enlace"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></button>
+      </div>
+    </div>
+    {%- if section.settings.aviso != blank -%}<p class="nba-aviso">{{ section.settings.aviso }}</p>{%- endif -%}
+  </article>
+
+  {%- if section.settings.relacionados -%}
+    {%- liquid
+      assign rel_ids = ','
+      assign n = 0
+      if cat != blank
+        for a in blog.articles limit: 50
+          if a.id != article.id and a.tags contains cat and n < 3
+            assign rel_ids = rel_ids | append: a.id | append: ','
+            assign n = n | plus: 1
+          endif
+        endfor
+      endif
+      for a in blog.articles limit: 50
+        assign aid = ',' | append: a.id | append: ','
+        if a.id != article.id and n < 3
+          unless rel_ids contains aid
+            assign rel_ids = rel_ids | append: a.id | append: ','
+            assign n = n | plus: 1
+          endunless
+        endif
+      endfor
+    -%}
+    {%- if n > 0 -%}
+      <section class="nba-rel">
+        <div class="nbl-seccion"><h2>{{ section.settings.titulo_rel }}</h2><a class="nbl-chip" href="{{ blog.url }}">Ver todos</a></div>
+        <div class="nbl-grid">
+          {%- for a in blog.articles limit: 50 -%}
+            {%- assign aid = ',' | append: a.id | append: ',' -%}
+            {%- if rel_ids contains aid -%}
+              {%- render 'nina-blog-card', article: a, ocultas: ocultas, destacado: false, eager: false -%}
+            {%- endif -%}
+          {%- endfor -%}
+        </div>
+      </section>
+    {%- endif -%}
+  {%- endif -%}
+
+  {%- if blog.comments_enabled? -%}
+    <section class="nba-coment" id="comentarios">
+      <h2>Comentarios{% if article.comments_count > 0 %} ({{ article.comments_count }}){% endif %}</h2>
+      {%- paginate article.comments by 20 -%}
+        {%- for comment in article.comments -%}
+          <div class="nba-coment__item">
+            {{ comment.content }}
+            <p class="nba-coment__autor"><strong>{{ comment.author }}</strong> · {{ comment.created_at | date: '%d/%m/%Y' }}</p>
+          </div>
+        {%- endfor -%}
+      {%- endpaginate -%}
+      {%- form 'new_comment', article -%}
+        {%- if form.posted_successfully? -%}
+          <p class="nba-coment__msg">{% if blog.moderated? %}¡Gracias! Publicaremos tu comentario en cuanto lo revisemos.{% else %}¡Gracias por comentar!{% endif %}</p>
+        {%- endif -%}
+        {%- if form.errors -%}<p class="nba-coment__msg">Revisa los campos: {{ form.errors | default_errors }}</p>{%- endif -%}
+        <input type="text" name="comment[author]" value="{{ form.author }}" placeholder="Tu nombre" aria-label="Tu nombre" required>
+        <input type="email" name="comment[email]" value="{{ form.email }}" placeholder="Tu correo (no se publica)" aria-label="Tu correo" required>
+        <textarea name="comment[body]" placeholder="Escribe tu comentario" aria-label="Tu comentario" required>{{ form.body }}</textarea>
+        <small>Los comentarios se publican tras revisarlos, solo con el nombre que indiques; tu correo nunca se muestra. Más información en nuestra <a href="{{ shop.privacy_policy.url | default: '/policies/privacy-policy' }}">política de privacidad</a>.</small>
+        <button type="submit">Publicar comentario</button>
+      {%- endform -%}
+    </section>
+  {%- endif -%}
+</div>
+
+<script type="application/ld+json">
+  {{ article | structured_data }}
+</script>
+<script>
+  (function () {
+    var barra = document.querySelector('.nba-progreso');
+    var cuerpo = document.querySelector('[data-nba-cuerpo]');
+    if (barra && cuerpo) {
+      var mover = function () {
+        var r = cuerpo.getBoundingClientRect();
+        var total = r.height - window.innerHeight * 0.6;
+        var p = total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 1;
+        barra.style.width = (p * 100) + '%';
+      };
+      window.addEventListener('scroll', mover, { passive: true });
+      mover();
+    }
+    if (cuerpo && cuerpo.getAttribute('data-indice') === 'true') {
+      var hs = cuerpo.querySelectorAll('h2');
+      if (hs.length >= 3) {
+        var ol = document.createElement('ol');
+        hs.forEach(function (h, i) {
+          if (!h.id) h.id = 'apartado-' + (i + 1);
+          var li = document.createElement('li');
+          var a = document.createElement('a');
+          a.href = '#' + h.id; a.textContent = h.textContent;
+          li.appendChild(a); ol.appendChild(li);
+        });
+        var box = document.createElement('nav');
+        box.className = 'nba-indice'; box.setAttribute('aria-label', 'En este artículo');
+        box.innerHTML = '<strong>En este artículo</strong>';
+        box.appendChild(ol);
+        var resumen = cuerpo.querySelector('.nba-resumen');
+        if (resumen && resumen.parentNode === cuerpo) cuerpo.insertBefore(box, resumen.nextSibling);
+        else cuerpo.insertBefore(box, cuerpo.firstChild);
+      }
+    }
+    var euro = function (c) { return (c / 100).toLocaleString('es-ES', { style: 'currency', currency: 'EUR' }); };
+    document.querySelectorAll('.nba-prod').forEach(function (card) {
+      var link = card.querySelector('.nba-prod__nombre');
+      if (!link || !window.fetch) return;
+      var url = (link.getAttribute('href') || '').split('?')[0].split('#')[0];
+      if (url.indexOf('/products/') === -1) return;
+      fetch(url + '.js').then(function (r) { return r.ok ? r.json() : null; }).then(function (p) {
+        if (!p) return;
+        var img = card.querySelector('.nba-prod__img');
+        if (img && p.featured_image) {
+          var src = p.featured_image + (p.featured_image.indexOf('?') > -1 ? '&' : '?') + 'width=500';
+          img.innerHTML = '<img src="' + src + '" alt="" loading="lazy">';
+        }
+        var precio = card.querySelector('.nba-prod__precio');
+        var boton = card.querySelector('.nba-prod__btn');
+        if (!precio) return;
+        if (!p.available) {
+          precio.innerHTML = '<span class="nba-prod__agotado">Agotado ahora</span>';
+          if (boton) boton.textContent = 'Avísame cuando vuelva';
+          return;
+        }
+        var t = (p.price_varies ? 'Desde ' : '') + euro(p.price_min);
+        if (p.compare_at_price_min && p.compare_at_price_min > p.price_min) t += ' <s>' + euro(p.compare_at_price_min) + '</s>';
+        precio.innerHTML = t;
+      }).catch(function () {});
+    });
+    document.querySelectorAll('[data-nba-copiar]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var url = b.getAttribute('data-nba-copiar');
+        if (navigator.share) { navigator.share({ title: document.title, url: url }).catch(function () {}); return; }
+        if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { b.setAttribute('aria-label', 'Enlace copiado'); b.style.background = '#C92F60'; b.style.color = '#fff'; });
+      });
+    });
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Nina Blog · artículo",
+  "settings": [
+    { "type": "text", "id": "firma", "label": "Firma", "default": "Equipo Nina", "info": "Vacío: se usa el autor del artículo." },
+    { "type": "checkbox", "id": "indice", "label": "Índice automático (si el artículo tiene 3 apartados o más)", "default": true },
+    { "type": "checkbox", "id": "relacionados", "label": "Mostrar artículos relacionados", "default": true },
+    { "type": "text", "id": "titulo_rel", "label": "Título de relacionados", "default": "Te puede interesar" },
+    { "type": "text", "id": "ocultas", "label": "Etiquetas que no son categorías", "default": "nina-blog, comunidad" },
+    { "type": "textarea", "id": "aviso", "label": "Aviso al final", "default": "Los consejos de Nina Blog son orientativos y no sustituyen la opinión de un profesional. Si tienes una irritación o un problema de piel que no mejora, consulta a tu dermatólogo." }
+  ],
+  "presets": [{ "name": "Nina Blog · artículo" }]
+}
+{% endschema %}

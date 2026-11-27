@@ -12,22 +12,40 @@ let lastCall = 0;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function get(fn, params) {
+export async function get(fn, params) {
+  return call(fn, params, 'GET');
+}
+
+/** POST con formulario (setCreateOrder). No reintenta: un pedido no debe salir dos veces. */
+export async function postForm(fn, params) {
+  return call(fn, params, 'POST');
+}
+
+async function call(fn, params, method) {
   const url = new URL(`${config.bts.apiUrl()}/${fn}`);
-  for (const [k, v] of params) url.searchParams.append(k, v);
+  if (method === 'GET') for (const [k, v] of params) url.searchParams.append(k, v);
 
   for (let attempt = 0; ; attempt++) {
     const wait = lastCall + MIN_GAP_MS - Date.now();
     if (wait > 0) await sleep(wait);
     lastCall = Date.now();
 
-    const res = await fetch(url, { headers: { Authorization: `Bearer ${config.bts.token()}`, Accept: 'application/json' } });
+    const res = await fetch(url, {
+      method,
+      headers: {
+        Authorization: `Bearer ${config.bts.token()}`,
+        Accept: 'application/json',
+        ...(method === 'POST' ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}),
+      },
+      body: method === 'POST' ? new URLSearchParams(params).toString() : undefined,
+    });
     if (res.status === 429 && attempt < 6) {
+      // 429 = BTS no ha procesado la petición: se puede repetir sin riesgo.
       const retry = Number(res.headers.get('retry-after')) || 10;
       await sleep(retry * 1000 + 500);
       continue;
     }
-    if (res.status >= 500 && attempt < 3) {
+    if (res.status >= 500 && attempt < 3 && method === 'GET') {
       await sleep(3000 * (attempt + 1));
       continue;
     }

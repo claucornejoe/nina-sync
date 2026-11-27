@@ -1,4 +1,5 @@
 // Fotos extra desde Icecat (catálogo de contenido oficial de las marcas para tiendas), por EAN.
+// Si Icecat no tiene el producto gratis, se prueba en Open Beauty Facts (catálogo libre de cosmética).
 // Primero se COMPRUEBA cuántas fotos hay (sin tocar nada). Añadirlas es un paso aparte, a mano desde el panel.
 // Regla de Clau: las fotos van a nivel de producto, nunca repetidas por cada tamaño.
 import { pool } from '../db.js';
@@ -7,6 +8,9 @@ import { gql } from '../shopify.js';
 import { isPlaceholderUrl } from './images.js';
 
 const USER = () => process.env.ICECAT_USER || 'openIcecat-live';
+// Icecat de pago (Full Icecat): su app_key, en Mi Perfil de icecat.biz. Sin ella solo se ve el catálogo gratis (Open Icecat).
+const APP_KEY = () => process.env.ICECAT_APP_KEY || '';
+let fullOnly = 0; // productos que Icecat solo enseña con Full Icecat
 const MAX_EXTRA = () => Number(process.env.ICECAT_MAX_EXTRA || 3);
 // Automático: cada noche busca en Icecat los productos aún no comprobados (los nuevos) y añade sus fotos.
 // ICECAT_AUTO=false lo apaga (los botones del panel siguen funcionando).
@@ -21,15 +25,39 @@ export async function migrate() {
 
 /** Fotos de Icecat para un EAN: [{ url, main }] (la principal primero). */
 export async function icecatPhotos(ean) {
-  const url = `https://live.icecat.biz/api?UserName=${encodeURIComponent(USER())}&Language=es&GTIN=${encodeURIComponent(ean)}`;
+  const url = `https://live.icecat.biz/api?UserName=${encodeURIComponent(USER())}&Language=es&GTIN=${encodeURIComponent(ean)}${APP_KEY() ? `&app_key=${encodeURIComponent(APP_KEY())}` : ''}`;
   const res = await fetch(url, { headers: { Accept: 'application/json' } });
   if (res.status === 404) return [];
   const j = await res.json().catch(() => ({}));
   if (!res.ok) {
     if (/not found|no product|does not exist/i.test(JSON.stringify(j))) return [];
+    // Sin Full Icecat: el producto existe pero solo es para clientes de pago. No es un fallo: no hay fotos gratis.
+    if (res.status === 403 && /app_key/i.test(JSON.stringify(j)) && !APP_KEY()) {
+      fullOnly++;
+      return [];
+    }
     throw new Error(`Icecat ${res.status}: ${(j.Message || j.message || '').slice(0, 150)}`);
   }
   return parseGallery(j);
+}
+
+// Open Beauty Facts: catálogo libre de cosmética (fotos con licencia CC BY-SA, citar la fuente). OBF=false lo apaga.
+const OBF = () => process.env.OBF !== 'false';
+export function parseObf(j) {
+  if (!j || j.status !== 1 || !j.product) return [];
+  const p = j.product;
+  const urls = [p.image_front_url, p.image_url].filter((u) => /^https?:/.test(u || ''));
+  // La versión .400 es pequeña: se pide la grande (.full).
+  const big = [...new Set(urls.map((u) => u.replace(/\.(\d+)\.jpg$/, '.full.jpg')))];
+  return big.slice(0, 1).map((url) => ({ url, main: true, w: 0, source: 'openbeautyfacts' }));
+}
+export async function obfPhotos(ean) {
+  if (!OBF()) return [];
+  const res = await fetch(`https://world.openbeautyfacts.org/api/v2/product/${encodeURIComponent(ean)}.json?fields=image_front_url,image_url`, {
+    headers: { Accept: 'application/json', 'User-Agent': 'NinaSync/1.0' },
+  });
+  if (!res.ok) return [];
+  return parseObf(await res.json().catch(() => null));
 }
 
 export function parseGallery(j) {
@@ -48,6 +76,7 @@ export const icecatStatus = () => running;
 export async function checkAll({ onlyNew = false } = {}) {
   if (running) return;
   running = { done: 0, total: 0, withPhotos: 0, errors: 0, noEan: 0, firstError: null };
+  fullOnly = 0;
   try {
     const checked = onlyNew ? new Set((await pool.query('SELECT product_id FROM icecat_check WHERE error IS NULL')).rows.map((r) => r.product_id)) : null;
     const products = [];
@@ -61,9 +90,11 @@ export async function checkAll({ onlyNew = false } = {}) {
       try {
         for (const v of p.variants) {
           if (!v.sku) continue;
-          photos = await icecatPhotos(v.sku);
-          if (photos.length) { ean = v.sku; break; }
+          photos = await icecatPhotos(v.sku).catch((e) => ((error = e.message), []));
+          if (!photos.length) photos = await obfPhotos(v.sku).catch(() => []);
+          if (photos.length) { ean = v.sku; error = null; break; }
         }
+        if (error && !photos.length) throw new Error(error);
       } catch (e) {
         error = e.message;
         running.errors++;
@@ -79,7 +110,7 @@ export async function checkAll({ onlyNew = false } = {}) {
     }
   } finally {
     running = { ...running, finished: new Date() };
-    console.log(`Icecat: comprobados ${running.done} productos, ${running.withPhotos} con fotos, ${running.errors} con error, ${running.noEan} sin EAN${running.firstError ? ` · primer error: ${running.firstError}` : ''}`);
+    console.log(`Icecat: comprobados ${running.done} productos, ${running.withPhotos} con fotos, ${running.errors} con error, ${running.noEan} sin EAN, ${fullOnly} búsquedas solo en Icecat de pago${running.firstError ? ` · primer error: ${running.firstError}` : ''}`);
     const fin = running;
     setTimeout(() => running === fin && (running = null), 60_000);
   }
@@ -89,7 +120,7 @@ export async function checkAll({ onlyNew = false } = {}) {
 export async function autoRun() {
   await checkAll({ onlyNew: true });
   running = null; // la comprobación ya terminó: deja pasar a addAll
-  await addAll();
+  await addAll({ auto: true });
 }
 
 export async function summary() {
@@ -114,9 +145,11 @@ export function plan(p, photos, max = MAX_EXTRA()) {
 }
 
 /** Añade las fotos de Icecat a los productos comprobados que aún no las tienen. */
-export async function addAll() {
+/** auto=true (ronda nocturna): no añade las fotos de Open Beauty Facts; esas se añaden a mano desde el panel, tras revisarlas. */
+export async function addAll({ auto = false } = {}) {
   if (running) return;
-  const rows = (await pool.query(`SELECT * FROM icecat_check WHERE pics > 0 AND added = 0`)).rows;
+  const all = (await pool.query(`SELECT * FROM icecat_check WHERE pics > 0 AND added = 0`)).rows;
+  const rows = auto ? all.filter((r) => !(r.urls || []).some((u) => u.source === 'openbeautyfacts')) : all;
   running = { done: 0, total: rows.length, adding: true };
   try {
     for (const r of rows) {
@@ -132,7 +165,7 @@ export async function addAll() {
         const d = await gql(
           `mutation($product: ProductUpdateInput!, $media: [CreateMediaInput!]) { productUpdate(product: $product, media: $media) { userErrors { field message } } }`,
           {
-            product: { id: p.id, metafields: [{ namespace: 'nina_seo', key: 'foto', type: 'single_line_text_field', value: 'icecat' }] },
+            product: { id: p.id, metafields: [{ namespace: 'nina_seo', key: 'foto', type: 'single_line_text_field', value: (r.urls || []).some((u) => u.source === 'openbeautyfacts') ? 'openbeautyfacts' : 'icecat' }] },
             media: add.map((x) => ({ originalSource: x.url, mediaContentType: 'IMAGE', alt: p.title })),
           },
         );

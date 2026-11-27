@@ -8,6 +8,7 @@ import * as store from './store.js';
 import * as rules from './rules.js';
 import * as tienda from './tienda.js';
 import { foroPage } from './panel.js';
+import { EJEMPLOS } from './ejemplos.js';
 
 const { BASE } = tienda;
 const PROXY = '/proxy/foro';
@@ -110,18 +111,21 @@ export async function mountForum(app, auth) {
   async function verPortada(req, res, extra = {}) {
     const cat = rules.categoria(String(req.query.c || ''))?.id || null;
     const pagina = Math.max(1, Math.min(500, Number(req.query.p) || 1));
-    const [{ temas, total }, ses] = await Promise.all([
-      store.temasPublicados({ categoria: cat, limite: ajustes.porPagina, offset: (pagina - 1) * ajustes.porPagina }),
+    const buscar = rules.limpiar(req.query.q, 80).replace(/\n/g, ' ');
+    const [{ temas, total }, ses, conteo, cifras] = await Promise.all([
+      store.temasPublicados({ categoria: cat, limite: ajustes.porPagina, offset: (pagina - 1) * ajustes.porPagina, buscar }),
       sesionDe(req),
+      store.conteoCategorias(),
+      store.cifras(),
     ]);
-    liquid(res, tienda.portada({ temas, total, pagina, porPagina: ajustes.porPagina, catActual: cat, ...ses, ok: req.query.ok, ...extra }));
+    liquid(res, tienda.portada({ temas, total, pagina, porPagina: ajustes.porPagina, catActual: cat, buscar, conteo, cifras, ...ses, ok: req.query.ok, ...extra }));
   }
   async function verTema(req, res, id, extra = {}) {
     const tema = await store.tema(id);
     if (!tema || tema.estado !== 'publicado') return liquid(res, tienda.noEncontrado(), 404);
-    const [respuestas, ses] = await Promise.all([store.respuestasPublicadas(tema.id), sesionDe(req)]);
+    const [respuestas, ses, enRevision] = await Promise.all([store.respuestasPublicadas(tema.id), sesionDe(req), store.respuestasPendientesDe(tema.id, req.clienteId)]);
     const url = `${config.stockAlerts.storeUrl}${BASE}/${rules.rutaTema(tema)}`;
-    liquid(res, tienda.paginaTema({ tema, respuestas, ...ses, ok: req.query.ok, url, ...extra }));
+    liquid(res, tienda.paginaTema({ tema, respuestas, enRevision, ...ses, ok: req.query.ok, url, ...extra }));
   }
 
   proxy.get('/', safe((req, res) => verPortada(req, res)));
@@ -138,7 +142,8 @@ export async function mountForum(app, auth) {
         titulo: x.titulo,
         url: `${BASE}/${rules.rutaTema(x)}`,
         categoria: rules.categoria(x.categoria)?.nombre || x.categoria,
-        autor: x.equipo ? 'Equipo Nina' : x.autor,
+        autor: x.equipo ? 'Equipo Nina' : x.ejemplo ? `${x.autor} · ejemplo` : x.autor,
+        ejemplo: x.ejemplo,
         equipo: x.equipo,
         respuestas: x.respuestas,
         extracto: x.cuerpo.slice(0, 180),
@@ -161,7 +166,7 @@ export async function mountForum(app, auth) {
     const tema = await store.crearTema({ ...v, clienteId: req.clienteId, autor: p.apodo, estado: d.estado, motivo: d.motivo });
     if (d.estado === 'publicado') return ir(res, `${BASE}/${rules.rutaTema(tema)}?ok=publicado`);
     avisarPendientes();
-    ir(res, `${BASE}?ok=enviado`);
+    ir(res, `${BASE}?ok=enviado#abrir-tema`);
   }));
 
   proxy.post('/responder', safe(async (req, res) => {
@@ -209,8 +214,8 @@ export async function mountForum(app, auth) {
 
   // ---------- Panel: moderación ----------
   app.get('/foro', auth, safe(async (_req, res) => {
-    const [revisar, denuncias, recientes, cifras] = await Promise.all([store.porRevisar(), store.denunciados(), store.recientes(40), store.cifras()]);
-    res.send(foroPage({ revisar, denuncias, recientes, cifras, estado, ajustes: { modo: ajustes.modo(), minConfianza: ajustes.minConfianza(), umbral: ajustes.umbralDenuncias() }, proxyUrl: config.publicUrl ? `${config.publicUrl.replace(/\/$/, '')}${PROXY}` : '', tiendaUrl: `${config.stockAlerts.storeUrl}${BASE}`, flash }));
+    const [revisar, denuncias, recientes, cifras, ejemplos] = await Promise.all([store.porRevisar(), store.denunciados(), store.recientes(40), store.cifras(), store.hayEjemplos()]);
+    res.send(foroPage({ revisar, denuncias, recientes, cifras, ejemplos, estado, ajustes: { modo: ajustes.modo(), minConfianza: ajustes.minConfianza(), umbral: ajustes.umbralDenuncias() }, proxyUrl: config.publicUrl ? `${config.publicUrl.replace(/\/$/, '')}${PROXY}` : '', tiendaUrl: `${config.stockAlerts.storeUrl}${BASE}`, flash }));
     flash = null;
   }));
   const tipoDe = (s) => (s === 'respuesta' ? 'respuesta' : 'tema');
@@ -245,6 +250,16 @@ export async function mountForum(app, auth) {
     if (tema.estado === 'pendiente') await store.cambiarEstado('tema', tema.id, 'publicado');
     await store.crearRespuesta({ temaId: tema.id, cuerpo: v.cuerpo, autor: 'Equipo Nina', equipo: true, estado: 'publicado' });
     flash = { ok: true, text: `Respuesta publicada como Equipo Nina en «${tema.titulo}».` };
+    res.redirect('/foro');
+  }));
+  app.post('/foro/ejemplos', auth, safe(async (req, res) => {
+    if (req.body.accion === 'borrar') {
+      const n = await store.borrarEjemplos();
+      flash = { ok: true, text: n ? `Borrados ${n} temas de ejemplo con sus respuestas.` : 'No había temas de ejemplo.' };
+    } else {
+      const n = await store.crearEjemplos(EJEMPLOS);
+      flash = n ? { ok: true, text: `Publicados ${n} temas de ejemplo con sus respuestas.` } : { ok: false, text: 'Los temas de ejemplo ya estaban publicados.' };
+    }
     res.redirect('/foro');
   }));
   app.post('/foro/nuevo', auth, safe(async (req, res) => {

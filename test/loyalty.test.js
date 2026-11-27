@@ -8,10 +8,11 @@ const order = (o = {}) => ({ displayFinancialStatus: 'PAID', cancelledAt: null, 
 
 test('niveles por compras de 12 meses', () => {
   assert.equal(r.levelFor(0).name, 'Sparkle');
-  assert.equal(r.levelFor(99.99).name, 'Sparkle');
-  assert.equal(r.levelFor(100).name, 'Glow');
-  assert.equal(r.levelFor(250).name, 'Glam');
-  assert.equal(r.levelFor(1200).name, 'Butterfly');
+  assert.equal(r.levelFor(1.49).name, 'Sparkle');
+  assert.equal(r.levelFor(1.5).name, 'Glow');
+  assert.equal(r.levelFor(5.25).name, 'Glam');
+  assert.equal(r.levelFor(13.24).name, 'Glam');
+  assert.equal(r.levelFor(13.25).name, 'Butterfly');
   assert.deepEqual(r.LEVELS.map((l) => l.rate), [1, 1.5, 2, 2]);
 });
 
@@ -89,4 +90,14 @@ test('avisos de caducidad: agrupa por día lo que queda y elige el aviso', () =>
   const m = reminderEmail({ name: 'Ana', amount: 2, day: '2026-11-20', stage: 7 });
   assert.match(m.subject, /2,00 €/);
   assert.match(m.html, /20 de noviembre/);
+});
+
+test('nivel por NinaCash ganado: equivalencia en compras y lo que falta', () => {
+  assert.equal(r.salesFor(150), 150);
+  assert.equal(r.salesFor(525), 400);
+  assert.equal(r.salesFor(1325), 800);
+  assert.equal(r.salesFor(5000), 2638);
+  assert.deepEqual(r.nextLevel(4), { nivel: 3, nombre: 'Glam', falta: 125 });
+  assert.equal(r.fmtUnits(1325), '1.325 NinaCash');
+  assert.equal(r.nextLevel(20), null);
 });

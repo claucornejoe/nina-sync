@@ -29,6 +29,13 @@ export const config = {
     lang: process.env.BTS_LANG || 'es-ES',
   },
 
+  // Pedidos Shopify → BTS (Clau, 2026-11-27: con botón en el panel, pago con monedero).
+  btsOrders: {
+    paymentMethod: process.env.BTS_ORDER_PAYMENT || 'wallet', // wallet | banktransfer | btscredit
+    cron: process.env.BTS_ORDERS_CRON || '*/15 * * * *', // buscar pedidos y seguimientos
+    since: process.env.BTS_ORDERS_SINCE || '', // por defecto: el primer arranque (no se envían pedidos antiguos)
+  },
+
   rules: {
     minStock: num('MIN_STOCK', 3), // menos de esto => 0
     vat: num('VAT', 1.21),

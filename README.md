@@ -67,7 +67,7 @@ npm start             # panel web en el puerto 3000
 Página **NinaCash** del panel (`/ninacash`). Con avisos de Shopify (`orders/paid`, `orders/cancelled`, `orders/fulfilled`, `refunds/create`, `customers/create`) y un repaso diario:
 
 - **NinaCash**: cada pedido pagado con cuenta genera el 1 %, 1,5 % o 2 % (según el nivel con el que se compró) de los productos tras descuentos, sin envío ni la parte pagada con NinaCash. Se suma **al pagar** como **crédito en tienda** de Shopify (caduca a los 12 meses). La clienta lo ve en su cuenta y, con la sesión iniciada, lo aplica al pagar en el checkout. Si devuelve o se cancela, se resta (si ya lo gastó, se resta lo que quede y se avisa en el panel). Con `NINACASH_ABONO=tras-devolucion` se espera a 14 días después de la entrega.
-- **Nivel** por compras de los últimos 12 meses: Sparkle 0 €, Glow 100 €, Glam 250 €, Butterfly 500 €. Etiqueta en la clienta (`nivel-sparkle`, `nivel-glow`, `nivel-glam`, `nivel-butterfly`) y segmentos «Nivel Nina …» para limitar descuentos.
+- **Nivel** por NinaCash **ganado** en los últimos 12 meses (gastarlo no baja de nivel): 1 NinaCash = 1 céntimo de saldo. Sparkle 0, Glow 150 NinaCash (≈150 € de compras), Glam 525 (≈400 €), Butterfly 1.325 (≈800 €). Se cambian con `NIVEL_*_NINACASH`. Metacampos `nina.ninacash_ganado` (entero, en NinaCash), `nina.nivel_siguiente` ({nivel, nombre, falta}) y, en la tienda, `nina.niveles`. Etiqueta en la clienta (`nivel-sparkle`, `nivel-glow`, `nivel-glam`, `nivel-butterfly`) y segmentos «Nivel Nina …» para limitar descuentos.
 - **Metacampos para «Mi cuenta»** (espacio `nina` del cliente): `nivel` (1-4), `gasto_12m`, `ninacash`, `ninacash_pendiente`, `cupones` (JSON de códigos personales). En la tienda: `nina.cupones_semana` (JSON con `codigo`, `texto`, `caduca`, `niveles`, `nivel_min`).
 - **Cupones por nivel**: se crean en el panel eligiendo niveles; Shopify solo los acepta a clientas de esos segmentos. También se puede elegir el segmento al crear un descuento en el admin.
 - **Glam**: un código de envío gratis personal cada mes. **Butterfly**: envío gratis automático y la etiqueta `obsequio-butterfly` en su primer pedido del mes.
@@ -104,3 +104,42 @@ Compara tus precios con Google Shopping España, buscando cada tamaño por su EA
 | `COMPETENCIA_AJUSTE_DIAS` | 30 | Días que dura un ajuste |
 | `COMPETENCIA_REVISAR_DIAS` | 30 | Días antes de volver a buscar un producto |
 | `COMPETENCIA_AUTO` | true | `false` apaga la búsqueda diaria |
+
+## Fotos con IA (`/fotos-ia`)
+
+Para los productos que solo tienen el logo de Nina: busca la foto por EAN en Google Imágenes (SerpApi, `SERPAPI_KEY`),
+la pasa por **Nano Banana 2 a 1K** en Magnific (`MAGNIFIC_API_KEY`) con un prompt que conserva frasco y etiqueta y pone
+fondo blanco, y enseña antes / foto encontrada / foto nueva. Nada se sube a Shopify hasta pulsar «Subir a Shopify»; entonces
+la foto se guarda como `marca-producto-tamano.png` y el logo se desvincula de ese producto (el archivo compartido no se borra).
+Variables opcionales: `MAGNIFIC_MODEL` (por defecto `text-to-image/nano-banana-pro-flash`), `MAGNIFIC_RESOLUTION` (`1K`),
+`MAGNIFIC_PROMPT` (prompt propio; `{producto}` = nombre y tamaño). Por la API cada foto gasta créditos de Magnific.
+
+## Escuchar artículo (`/audio-blog`)
+
+Botón «Escuchar artículo» en Nina Blog con una voz de **ElevenLabs**: mientras suena, el artículo resalta la frase y la
+palabra que se está leyendo. Desde el panel eliges la voz (y escuchas una muestra) y pulsas «Generar audio» en cada artículo:
+Nina Sync lee el título, la entradilla y el texto (no las tarjetas de productos, el índice, los botones ni las fuentes),
+lo manda a ElevenLabs por trozos con el endpoint `with-timestamps`, junta el MP3, lo sube a Contenido → Archivos y guarda
+en el artículo el metacampo `nina.audio` (JSON: enlace, duración y el milisegundo en que empieza cada palabra).
+El tema (sección `nina-blog-articulo`) solo enseña el botón si el artículo tiene ese metacampo.
+
+- Gasta créditos solo al generar: ~1 crédito por carácter con `eleven_multilingual_v2` (la mitad con `eleven_flash_v2_5`).
+  Un artículo de 10.000 caracteres son ~10.000 créditos. El panel muestra los créditos del mes y avisa si no llegan.
+- Si cambias el texto del artículo, el panel lo marca como «El texto ha cambiado» para volver a generarlo.
+- Para que no se lea una parte del artículo, ponle la clase `nba-no-leer`.
+- Permisos de la app de Shopify: `read_content`, `write_content` y `write_files`.
+
+| Variable | Por defecto | Para qué |
+|---|---|---|
+| `ELEVENLABS_API_KEY` | — | Clave de ElevenLabs (Developers → API Keys). Permisos: Text to Speech, Voices (leer) y User (leer) |
+| `ELEVENLABS_VOICE_ID` | — | Voz por defecto si no se elige en el panel |
+| `ELEVENLABS_MODEL` | `eleven_multilingual_v2` | Modelo por defecto |
+| `AUDIO_BLOG_HANDLE` | `nina-blog` | Blog cuyos artículos se leen |
+
+## Pedidos BTS (botón «Enviar a BTS»)
+- Cada 15 minutos Nina Sync busca los pedidos pagados y sin enviar de Shopify y los muestra en **Pedidos BTS**. No se envía nada a BTS hasta pulsar «Enviar a BTS» (Clau, 2026-11-27).
+- Al pulsarlo: elige el envío más barato de `getShippingPrices` y crea el pedido con `setCreateOrder` (dropshipping=1, pago `BTS_ORDER_PAYMENT`, por defecto `wallet`). BTS no tiene modo de prueba: es un pedido real.
+- Cuando BTS da el seguimiento (`getTrackings`), marca el pedido como enviado en Shopify con el número y el enlace, y Shopify manda el correo a la clienta.
+- Si se corta la conexión al enviar, el pedido queda en «Comprueba en BTS» y no se reintenta solo, para no duplicarlo.
+- Permisos de la app de Shopify: `read_orders`, `read_merchant_managed_fulfillment_orders`, `write_merchant_managed_fulfillment_orders` y acceso a datos protegidos de clientes (nombre, dirección y teléfono).
+- Variables opcionales: `BTS_ORDER_PAYMENT`, `BTS_ORDERS_CRON` (por defecto `*/15 * * * *`), `BTS_ORDERS_SINCE` (AAAA-MM-DD).

@@ -28,8 +28,8 @@ export function limpiar(s, max = 5000) {
 /** Valida un apodo: letras, números, espacios, puntos y guiones. */
 export function validarApodo(s) {
   const a = limpiar(s, 60).replace(/\n/g, ' ');
-  if (a.length < LIMITES.apodo[0] || a.length > LIMITES.apodo[1]) return { error: 'Tu nombre en el foro debe tener entre 2 y 30 caracteres.' };
-  if (!/^[\p{L}\p{N} ._'-]+$/u.test(a)) return { error: 'Tu nombre en el foro solo puede llevar letras, números, espacios, puntos y guiones.' };
+  if (a.length < LIMITES.apodo[0] || a.length > LIMITES.apodo[1]) return { error: 'Tu nombre debe tener entre 2 y 30 caracteres.' };
+  if (!/^[\p{L}\p{N} ._'-]+$/u.test(a)) return { error: 'Tu nombre solo puede llevar letras, números, espacios, puntos y guiones.' };
   if (/nina|equipo|admin|moderador/i.test(a)) return { error: 'Ese nombre está reservado para el equipo de Nina Beauty. Elige otro, por favor.' };
   return { apodo: a };
 }

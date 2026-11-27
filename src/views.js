@@ -48,6 +48,8 @@ const TRIGGER = { cron: 'Automática', manual: 'Manual' };
 const I = {
   home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/>',
   tag: '<path d="M3 12V4h8l10 10-8 8L3 12Z"/><circle cx="7.5" cy="8.5" r="1.5"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7"/>',
+  image: '<rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="m4 18 5-5 4 4 3-3 4 4"/>',
   spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/>',
   out: '<path d="M15 4h4v16h-4"/><path d="M10 8l-4 4 4 4M6 12h10"/>',
   sync: '<path d="M20 11a8 8 0 0 0-14.5-4.5L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.5 4.5L20 16"/><path d="M20 20v-4h-4"/>',
@@ -62,6 +64,7 @@ const I = {
   heart: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"/>',
   chat: '<path d="M4 5h16v11H9l-5 4V5Z"/><path d="M8 9.5h8M8 12.5h5"/>',
   search: '<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/>',
+  sound: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4v-5Z"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11"/>',
   bell: '<path d="M6 16V11a6 6 0 1 1 12 0v5l1.5 2h-15L6 16Z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
 };
 export const icon = (n, size = 20) =>
@@ -186,10 +189,13 @@ ${refresh ? '<meta http-equiv="refresh" content="15">' : ''}
  <a class="brand" href="/"><img src="/static/logo.svg" alt="Nina Beauty"><small>Sync</small></a>
  <nav class="nav">
   ${link('/', 'panel', 'home', 'Panel')}
+  ${link('/pedidos-bts', 'pedidosbts', 'box', 'Pedidos BTS')}
   ${link('/ofertas', 'ofertas', 'tag', 'Ofertas')}
   ${link('/recien-llegados', 'nuevos', 'spark', 'Recién llegados')}
   ${link('/competencia', 'competencia', 'euro', 'Competencia')}
   ${link('/seo', 'seo', 'layers', 'Google y descripciones')}
+  ${link('/fotos-ia', 'fotosia', 'image', 'Fotos con IA')}
+  ${link('/audio-blog', 'audioblog', 'sound', 'Escuchar artículo')}
   ${link('/ninacash', 'ninacash', 'heart', 'NinaCash')}
   ${link('/avisos', 'avisos', 'bell', 'Avisos de stock')}
   ${link('/foro', 'foro', 'chat', 'Foro Nina')}
